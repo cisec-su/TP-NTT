@@ -1,1 +1,1 @@
-# Iterative-TP-NTT
+# Throughput-oriented iterative/n-step NTT.
