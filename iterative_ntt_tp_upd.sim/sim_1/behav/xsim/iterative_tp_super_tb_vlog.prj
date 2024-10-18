@@ -1,0 +1,25 @@
+# compile verilog/system verilog design source files
+verilog xil_defaultlib  --include "../../../../btf_files" \
+"../../../../btf_files/BRAM.v" \
+"../../../../btf_files/butterfly_parametric.v" \
+"../../../../btf_files/fa.v" \
+"../../../../btf_files/intmul.v" \
+"../../../../iterative_ntt_files/iterative_ntt_first_block.v" \
+"../../../../iterative_ntt_files/iterative_ntt_second_block.v" \
+"../../../../iterative_ntt_files/iterative_tp_param.v" \
+"../../../../iterative_ntt_files/iterative_tp_super_top.v" \
+"../../../../iterative_ntt_files/large_addr_gen_upd.v" \
+"../../../../btf_files/modadd.v" \
+"../../../../btf_files/modmul.v" \
+"../../../../btf_files/modred.v" \
+"../../../../btf_files/modsub.v" \
+"../../../../btf_files/shiftreg.v" \
+"../../../../iterative_ntt_files/small_addr_gen_upd.v" \
+"../../../../btf_files/wordred.v" \
+"../../../../iterative_ntt_files/iterative_tp_super_tb.v" \
+
+# compile glbl module
+verilog xil_defaultlib "glbl.v"
+
+# Do not sort compile order
+nosort

@@ -1,0 +1,4 @@
+Running: xsim.dir/iterative_tp_super_tb_behav/xsimk -simmode gui -wdb iterative_tp_super_tb_behav.wdb -simrunnum 0 -socket 33891
+Design successfully loaded
+Design Loading Memory Usage: 67672 KB (Peak: 67672 KB)
+Design Loading CPU Usage: 120 ms

@@ -33,16 +33,17 @@ module small_addr_gen_upd#(
         input                 clk,
         input                 rst,
         input                 start,
-        output reg [($rtoi($ceil($clog2(n2)))+1)*TP-1:0]         read_addr,
-        output reg [($rtoi($ceil($clog2(n2)))+1)*TP-1:0]         write_addr     
+        output reg [($rtoi($ceil($clog2(size0_over_tp)))+1)*TP-1:0]         read_addr,
+        output reg [($rtoi($ceil($clog2(size0_over_tp)))+1)*TP-1:0]         write_addr     
     );
 
     localparam log_n2 = $rtoi($ceil($clog2(n2)));
 
     localparam log_size0_over_tp = $rtoi($ceil($clog2((n1*n2)/TP)));
+    localparam size0_over_tp = $rtoi($ceil((n1*n2)/TP));
 
 
-    reg [log_n2:0] ctr;
+    reg [log_size0_over_tp:0] ctr;
 
     localparam OP_IDLE          = 1'd0;
     localparam OP_STARTED       = 1'd1;
@@ -91,21 +92,21 @@ module small_addr_gen_upd#(
     always @(posedge clk or posedge rst) begin
         if (rst) begin
             for (i = 0; i < TP  ; i = i+1 ) begin
-                read_addr[((TP-i)*(log_n2+1))-1-:(log_n2+1)]       <= 0;
-                write_addr[((TP-i)*(log_n2+1))-1-:(log_n2+1)]      <= 0;
+                read_addr[((TP-i)*(log_size0_over_tp+1))-1-:(log_size0_over_tp+1)]       <= 0;
+                write_addr[((TP-i)*(log_size0_over_tp+1))-1-:(log_size0_over_tp+1)]      <= 0;
             end
         end else begin
             case (curr_state)
                 OP_STARTED: begin
                     for (i = 0; i < TP  ; i = i+1 ) begin
-                        read_addr[((TP-((i+(ctr&(size0/TP-1)))&(TP-1)))*(log_n2+1))-1-:(log_n2+1)]       <= ((i&(size0/TP-1)) + n2*(ctr<n2));
-                        write_addr[((TP-i)*((log_n2+1)))-1-:(log_n2+1)]      <= ctr;
+                        read_addr[((TP-((i+(ctr&(size0/TP-1)))&(TP-1)))*(log_size0_over_tp+1))-1-:(log_size0_over_tp+1)]       <= ((i&(size0_over_tp-1)) + size0_over_tp*(ctr<size0_over_tp));
+                        write_addr[((TP-i)*((log_size0_over_tp+1)))-1-:(log_size0_over_tp+1)]      <= ctr;
                     end
                 end 
                 default: begin
                     for (i = 0; i < TP  ; i = i+1 ) begin
-                        read_addr[((TP-i)*((log_n2+1)))-1-:((log_n2+1))]       <= 0;
-                        write_addr[((TP-i)*((log_n2+1)))-1-:((log_n2+1))]      <= 0;
+                        read_addr[((TP-i)*((log_size0_over_tp+1)))-1-:((log_size0_over_tp+1))]       <= 0;
+                        write_addr[((TP-i)*((log_size0_over_tp+1)))-1-:((log_size0_over_tp+1))]      <= 0;
                     end
                 end
             endcase

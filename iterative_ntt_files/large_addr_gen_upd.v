@@ -110,7 +110,7 @@ module large_addr_gen_upd#(
             case (curr_state)
                 OP_STARTED: begin
                     for (i = 0; i < TP  ; i = i+1 ) begin
-                        read_addr[((TP-((i+(ctr>>(size1_over_tp_log2)))&(TP-1)))*(log_depth+1))-1-:(log_depth+1)]       <= (((size0_over_tp)<<(size1_over_tp_log2)*i + (size0_over_tp)*(ctr&(size1_over_tp-1)) + ((ctr&(depth-1))>>log_size1)) & (depth-1)) + ((ctr<depth)<<log_depth);
+                        read_addr[((TP-((i+(ctr>>(size1_over_tp_log2)))&(TP-1)))*(log_depth+1))-1-:(log_depth+1)]       <= ((((size0_over_tp)<<(size1_over_tp_log2))*i + (size0_over_tp)*(ctr&(size1_over_tp-1)) + ((ctr&(depth-1))>>log_size1)) & (depth-1)) + ((ctr<depth)<<log_depth);
                         write_addr[((TP-i)*((log_depth+1)))-1-:(log_depth+1)]      <= ctr;
                     end
                 end 

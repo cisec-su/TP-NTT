@@ -1,0 +1,36 @@
+INFO: [VRFC 10-2263] Analyzing Verilog file "/home/cisechw/Desktop/github_iterative_ntt_upd/btf_files/BRAM.v" into library xil_defaultlib
+INFO: [VRFC 10-311] analyzing module BRAM
+INFO: [VRFC 10-2263] Analyzing Verilog file "/home/cisechw/Desktop/github_iterative_ntt_upd/btf_files/butterfly_parametric.v" into library xil_defaultlib
+INFO: [VRFC 10-311] analyzing module butterfly_parametric
+INFO: [VRFC 10-2263] Analyzing Verilog file "/home/cisechw/Desktop/github_iterative_ntt_upd/btf_files/fa.v" into library xil_defaultlib
+INFO: [VRFC 10-311] analyzing module FA
+INFO: [VRFC 10-2263] Analyzing Verilog file "/home/cisechw/Desktop/github_iterative_ntt_upd/btf_files/intmul.v" into library xil_defaultlib
+INFO: [VRFC 10-311] analyzing module intmul
+INFO: [VRFC 10-2263] Analyzing Verilog file "/home/cisechw/Desktop/github_iterative_ntt_upd/iterative_ntt_files/iterative_ntt_first_block.v" into library xil_defaultlib
+INFO: [VRFC 10-311] analyzing module iterative_ntt_first_block
+INFO: [VRFC 10-2263] Analyzing Verilog file "/home/cisechw/Desktop/github_iterative_ntt_upd/iterative_ntt_files/iterative_ntt_second_block.v" into library xil_defaultlib
+INFO: [VRFC 10-311] analyzing module iterative_ntt_second_block
+INFO: [VRFC 10-2263] Analyzing Verilog file "/home/cisechw/Desktop/github_iterative_ntt_upd/iterative_ntt_files/iterative_tp_param.v" into library xil_defaultlib
+INFO: [VRFC 10-311] analyzing module iterative_tp_param
+INFO: [VRFC 10-2263] Analyzing Verilog file "/home/cisechw/Desktop/github_iterative_ntt_upd/iterative_ntt_files/iterative_tp_super_top.v" into library xil_defaultlib
+INFO: [VRFC 10-311] analyzing module iterative_tp_super_top
+INFO: [VRFC 10-2263] Analyzing Verilog file "/home/cisechw/Desktop/github_iterative_ntt_upd/iterative_ntt_files/large_addr_gen_upd.v" into library xil_defaultlib
+INFO: [VRFC 10-311] analyzing module large_addr_gen_upd
+INFO: [VRFC 10-2263] Analyzing Verilog file "/home/cisechw/Desktop/github_iterative_ntt_upd/btf_files/modadd.v" into library xil_defaultlib
+INFO: [VRFC 10-311] analyzing module modadd
+INFO: [VRFC 10-2263] Analyzing Verilog file "/home/cisechw/Desktop/github_iterative_ntt_upd/btf_files/modmul.v" into library xil_defaultlib
+INFO: [VRFC 10-311] analyzing module modmul
+INFO: [VRFC 10-2263] Analyzing Verilog file "/home/cisechw/Desktop/github_iterative_ntt_upd/btf_files/modred.v" into library xil_defaultlib
+INFO: [VRFC 10-311] analyzing module modred
+INFO: [VRFC 10-2263] Analyzing Verilog file "/home/cisechw/Desktop/github_iterative_ntt_upd/btf_files/modsub.v" into library xil_defaultlib
+INFO: [VRFC 10-311] analyzing module modsub
+INFO: [VRFC 10-2263] Analyzing Verilog file "/home/cisechw/Desktop/github_iterative_ntt_upd/btf_files/shiftreg.v" into library xil_defaultlib
+INFO: [VRFC 10-311] analyzing module shiftreg
+INFO: [VRFC 10-2263] Analyzing Verilog file "/home/cisechw/Desktop/github_iterative_ntt_upd/iterative_ntt_files/small_addr_gen_upd.v" into library xil_defaultlib
+INFO: [VRFC 10-311] analyzing module small_addr_gen_upd
+WARNING: [VRFC 10-3380] identifier 'size0_over_tp' is used before its declaration [/home/cisechw/Desktop/github_iterative_ntt_upd/iterative_ntt_files/small_addr_gen_upd.v:36]
+WARNING: [VRFC 10-3380] identifier 'size0_over_tp' is used before its declaration [/home/cisechw/Desktop/github_iterative_ntt_upd/iterative_ntt_files/small_addr_gen_upd.v:37]
+INFO: [VRFC 10-2263] Analyzing Verilog file "/home/cisechw/Desktop/github_iterative_ntt_upd/btf_files/wordred.v" into library xil_defaultlib
+INFO: [VRFC 10-311] analyzing module wordred
+INFO: [VRFC 10-2263] Analyzing Verilog file "/home/cisechw/Desktop/github_iterative_ntt_upd/iterative_ntt_files/iterative_tp_super_tb.v" into library xil_defaultlib
+INFO: [VRFC 10-311] analyzing module iterative_tp_super_tb

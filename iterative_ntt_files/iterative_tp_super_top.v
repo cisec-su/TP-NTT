@@ -21,10 +21,12 @@
 
 
 module iterative_tp_super_top#(
+        parameter iter_choice   = 1, // Default is 6-step
         parameter N             = 1<<16,
         parameter n1            = 1<<6,
         parameter n2            = 1<<4,
         parameter n3            = 1<<6,
+        parameter n4            = 1<<0,
         parameter TP            = 1<<6,
         parameter LOGQ          = 32,
         parameter BTF_LAT       = 8
@@ -44,7 +46,10 @@ module iterative_tp_super_top#(
     localparam log_n1 = $rtoi($ceil($clog2(n1)));
     localparam log_n2 = $rtoi($ceil($clog2(n2)));
     localparam log_n3 = $rtoi($ceil($clog2(n3)));
+    localparam log_n4 = $rtoi($ceil($clog2(n4)));
     localparam depth         =  $rtoi($ceil(N/TP));
+    localparam size0_over_tp =  $rtoi($ceil(n1*n2/TP));
+    localparam size1_over_tp =  $rtoi($ceil(n3*n4/TP));
     //localparam log_TP = $rtoi($ceil($clog2(TP)));
     //localparam log_N = $rtoi($ceil($clog2(N)));
     //localparam log_size0_over_tp = $rtoi($ceil($clog2((n1*n2)/TP)));
@@ -58,9 +63,9 @@ module iterative_tp_super_top#(
 
     //reg [1:0] OP_TYPE;
 
-    wire START_NTT_2, START_NTT_3;
+    wire START_NTT_2, START_NTT_3, START_NTT_4;
 
-    wire [TP*LOGQ-1:0] NTT_READ_STAGE0, NTT_READ_STAGE1, NTT_READ_STAGE2;
+    wire [TP*LOGQ-1:0] NTT_READ_STAGE0, NTT_READ_STAGE1, NTT_READ_STAGE2, NTT_READ_STAGE3;
 
 
 
@@ -96,22 +101,50 @@ module iterative_tp_super_top#(
         //iterative_tp_super_unit#(2, N, n1, n2, n3, 0, TP, LOGQ, BTF_LAT) unit_super3 (clk, rst, START_NTT_3 ,OP_TYPE_INPUT ,NTT_READ_STAGE1, TWIDDLE_INPUT, NTT_READ_STAGE2);
     endgenerate
 
-    iterative_ntt_first_block#(N, n1, n2, n1*n2, TP, LOGQ, BTF_LAT, 0, 0) unit_super1 (clk, rst, START_NTT_ALL ,OP_TYPE_INPUT, NTT_INPUT, TWIDDLE_INPUT, NTT_READ_STAGE0);
-    iterative_ntt_second_block#(N, n2, n1*n2, n3, TP, LOGQ, BTF_LAT) unit_super_v2 (clk, rst, START_NTT_2 ,OP_TYPE_INPUT, NTT_READ_STAGE0, TWIDDLE_INPUT, NTT_READ_STAGE1);
-    iterative_ntt_first_block#(N, n3, 1, n3*1, TP, LOGQ, BTF_LAT, 1, 2) unit_super2 (clk, rst, START_NTT_3 ,OP_TYPE_INPUT, NTT_READ_STAGE1, TWIDDLE_INPUT, NTT_READ_STAGE2);
+    generate
+        if(iter_choice == 0) begin // If we choose 4-step iterative
+            iterative_ntt_first_block#(iter_choice, N, n1, n2, n1*n2, TP, LOGQ, BTF_LAT, 0, 0) unit_super1 (clk, rst, START_NTT_ALL ,OP_TYPE_INPUT, NTT_INPUT, TWIDDLE_INPUT, NTT_READ_STAGE0);
+            iterative_ntt_second_block#(iter_choice, N, n2, n1*n2, 1, TP, LOGQ, BTF_LAT, 1) unit_super_v2 (clk, rst, START_NTT_2 ,OP_TYPE_INPUT, NTT_READ_STAGE0, TWIDDLE_INPUT, NTT_READ_STAGE1);
+        end
+        else if(iter_choice == 1) begin // If we choose 6-step iterative
+            iterative_ntt_first_block#(iter_choice, N, n1, n2, n1*n2, TP, LOGQ, BTF_LAT, 0, 0) unit_super1 (clk, rst, START_NTT_ALL ,OP_TYPE_INPUT, NTT_INPUT, TWIDDLE_INPUT, NTT_READ_STAGE0);
+            iterative_ntt_second_block#(iter_choice, N, n2, n1*n2, n3, TP, LOGQ, BTF_LAT, 0) unit_super_v2 (clk, rst, START_NTT_2 ,OP_TYPE_INPUT, NTT_READ_STAGE0, TWIDDLE_INPUT, NTT_READ_STAGE1);
+            iterative_ntt_first_block#(iter_choice, N, n3, 1, n3*1, TP, LOGQ, BTF_LAT, 1, 2) unit_super2 (clk, rst, START_NTT_3 ,OP_TYPE_INPUT, NTT_READ_STAGE1, TWIDDLE_INPUT, NTT_READ_STAGE2);
+
+        end
+        else begin
+            iterative_ntt_first_block#(iter_choice, N, n1, n2, n1*n2, TP, LOGQ, BTF_LAT, 0, 0) unit_super1 (clk, rst, START_NTT_ALL ,OP_TYPE_INPUT, NTT_INPUT, TWIDDLE_INPUT, NTT_READ_STAGE0);
+            iterative_ntt_second_block#(iter_choice, N, n2, n1*n2, n3*n4, TP, LOGQ, BTF_LAT, 0) unit_super_v2 (clk, rst, START_NTT_2 ,OP_TYPE_INPUT, NTT_READ_STAGE0, TWIDDLE_INPUT, NTT_READ_STAGE1);
+            iterative_ntt_first_block#(iter_choice, N, n3, n4, n3*n4, TP, LOGQ, BTF_LAT, 0, 2) unit_super2 (clk, rst, START_NTT_3 ,OP_TYPE_INPUT, NTT_READ_STAGE1, TWIDDLE_INPUT, NTT_READ_STAGE2);
+            iterative_ntt_first_block#(iter_choice, N, n4, n3, n3*n4, TP, LOGQ, BTF_LAT, 1, 3) unit_super3 (clk, rst, START_NTT_4 ,OP_TYPE_INPUT, NTT_READ_STAGE2, TWIDDLE_INPUT, NTT_READ_STAGE3);
+        end
+        
+    endgenerate
+
+    
 
 
+    shiftreg #(.SHIFT(BTF_LAT*log_n1+size0_over_tp+4),.DATA(1)) sre101(clk,rst,START_NTT_ALL,START_NTT_2);
 
-    shiftreg #(.SHIFT(BTF_LAT*log_n1+n2+4),.DATA(1)) sre101(clk,rst,START_NTT_ALL,START_NTT_2);
+    shiftreg #(.SHIFT(BTF_LAT*log_n2+6+depth),.DATA(1)) sre102(clk,rst,START_NTT_2,START_NTT_3); // degisecek // 6-step ve 4-step icin +6, 7-step icin +8?
 
-    shiftreg #(.SHIFT(BTF_LAT*log_n2+6+depth),.DATA(1)) sre102(clk,rst,START_NTT_2,START_NTT_3); // degisecek
+    shiftreg #(.SHIFT(BTF_LAT*log_n3+size1_over_tp+6),.DATA(1)) sre103(clk,rst,START_NTT_3,START_NTT_4); // degisecek
 
 
     always @(posedge clk or posedge rst) begin
         if (rst) begin
             NTT_OUTPUT <= 0;
         end else begin
-            NTT_OUTPUT <= NTT_READ_STAGE2;
+            if(iter_choice == 0) begin // If we choose 4-step iterative
+                NTT_OUTPUT <= NTT_READ_STAGE1;
+            end
+            else if(iter_choice == 1) begin
+                NTT_OUTPUT <= NTT_READ_STAGE2;
+            end
+            else begin
+                NTT_OUTPUT <= NTT_READ_STAGE3;
+            end
+            
         end    
     end
     

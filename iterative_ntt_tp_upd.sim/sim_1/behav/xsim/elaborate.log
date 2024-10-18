@@ -1,0 +1,68 @@
+Vivado Simulator v2023.1
+Copyright 1986-2022 Xilinx, Inc. All Rights Reserved.
+Copyright 2022-2023 Advanced Micro Devices, Inc. All Rights Reserved.
+Running: /home/cisechw/XilinxSetup/Vivado/2023.1/bin/unwrapped/lnx64.o/xelab --incr --debug typical --relax --mt 8 -L xil_defaultlib -L unisims_ver -L unimacro_ver -L secureip --snapshot iterative_tp_super_tb_behav xil_defaultlib.iterative_tp_super_tb xil_defaultlib.glbl -log elaborate.log 
+Using 8 slave threads.
+Starting static elaboration
+Pass Through NonSizing Optimizer
+WARNING: [VRFC 10-3091] actual bit length 576 differs from formal bit length 256 for port 'read_addr' [/home/cisechw/Desktop/github_iterative_ntt_upd/iterative_ntt_files/iterative_ntt_first_block.v:370]
+WARNING: [VRFC 10-3091] actual bit length 1 differs from formal bit length 6 for port 'k1_in' [/home/cisechw/Desktop/github_iterative_ntt_upd/btf_files/butterfly_parametric.v:101]
+Completed static elaboration
+Starting simulation data flow analysis
+Completed simulation data flow analysis
+Time Resolution for simulation is 1ps
+Compiling module xil_defaultlib.small_addr_gen_upd(N=32768,n1=32...
+Compiling module xil_defaultlib.BRAM(MSIZE=16,DEPTH=4)
+Compiling module xil_defaultlib.BRAM(MSIZE=512,DEPTH=9)
+Compiling module xil_defaultlib.shiftreg(SHIFT=7,DATA=1)
+Compiling module xil_defaultlib.shiftreg(SHIFT=1)
+Compiling module xil_defaultlib.shiftreg(SHIFT=6)
+Compiling module xil_defaultlib.shiftreg(SHIFT=1,DATA=1)
+Compiling module xil_defaultlib.shiftreg(SHIFT=6,DATA=1)
+Compiling module xil_defaultlib.modadd
+Compiling module xil_defaultlib.modsub
+Compiling module xil_defaultlib.FA
+Compiling module xil_defaultlib.intmul_default
+Compiling module xil_defaultlib.wordred(I_SIZE=46,O_SIZE=47)
+Compiling module xil_defaultlib.wordred(I_SIZE=39,O_SIZE=40)
+Compiling module xil_defaultlib.wordred(I_SIZE=27,O_SIZE=33)
+Compiling module xil_defaultlib.modred
+Compiling module xil_defaultlib.shiftreg(SHIFT=4)
+Compiling module xil_defaultlib.modmul
+Compiling module xil_defaultlib.butterfly_parametric
+Compiling module xil_defaultlib.shiftreg(SHIFT=8,DATA=992)
+Compiling module xil_defaultlib.shiftreg(SHIFT=16,DATA=992)
+Compiling module xil_defaultlib.shiftreg(SHIFT=24,DATA=992)
+Compiling module xil_defaultlib.shiftreg(SHIFT=32,DATA=992)
+Compiling module xil_defaultlib.iterative_tp_param_default
+Compiling module xil_defaultlib.shiftreg(SHIFT=40,DATA=1)
+Compiling module xil_defaultlib.shiftreg(SHIFT=42,DATA=1)
+Compiling module xil_defaultlib.shiftreg(SHIFT=1,DATA=2048)
+Compiling module xil_defaultlib.shiftreg(SHIFT=12,DATA=4)
+Compiling module xil_defaultlib.iterative_ntt_first_block(N=3276...
+Compiling module xil_defaultlib.large_addr_gen_upd(N=32768,n2=16...
+Compiling module xil_defaultlib.BRAM
+Compiling module xil_defaultlib.shiftreg(SHIFT=8,DATA=480)
+Compiling module xil_defaultlib.shiftreg(SHIFT=16,DATA=480)
+Compiling module xil_defaultlib.shiftreg(SHIFT=24,DATA=480)
+Compiling module xil_defaultlib.iterative_tp_param(TP=16)
+Compiling module xil_defaultlib.shiftreg(SHIFT=34,DATA=1)
+Compiling module xil_defaultlib.shiftreg(SHIFT=36,DATA=1)
+Compiling module xil_defaultlib.shiftreg(SHIFT=516,DATA=10)
+Compiling module xil_defaultlib.iterative_ntt_second_block(N=327...
+Compiling module xil_defaultlib.shiftreg(SHIFT=8,DATA=2016)
+Compiling module xil_defaultlib.shiftreg(SHIFT=16,DATA=2016)
+Compiling module xil_defaultlib.shiftreg(SHIFT=24,DATA=2016)
+Compiling module xil_defaultlib.shiftreg(SHIFT=32,DATA=2016)
+Compiling module xil_defaultlib.shiftreg(SHIFT=40,DATA=2016)
+Compiling module xil_defaultlib.iterative_tp_param(TP=64)
+Compiling module xil_defaultlib.shiftreg(SHIFT=50,DATA=1)
+Compiling module xil_defaultlib.shiftreg(SHIFT=52,DATA=1)
+Compiling module xil_defaultlib.shiftreg(SHIFT=2,DATA=1)
+Compiling module xil_defaultlib.iterative_ntt_first_block(N=3276...
+Compiling module xil_defaultlib.shiftreg(SHIFT=550,DATA=1)
+Compiling module xil_defaultlib.shiftreg(SHIFT=55,DATA=1)
+Compiling module xil_defaultlib.iterative_tp_super_top(N=32768,n...
+Compiling module xil_defaultlib.iterative_tp_super_tb
+Compiling module xil_defaultlib.glbl
+Built simulation snapshot iterative_tp_super_tb_behav

@@ -22,6 +22,7 @@
 
 
 module iterative_ntt_first_block#(
+        parameter iter_choice   = 1,
         parameter N             = 128,
         parameter n1            = 8,
         parameter n2            = 2,
@@ -56,10 +57,13 @@ module iterative_ntt_first_block#(
     localparam depth         =  $rtoi($ceil(N/TP));
     localparam depth_log         =  $rtoi($ceil($clog2(N/TP)));
 
-    localparam reg_ctr = log_n2;
-    localparam bram_reg_size =  TP-1;
+    localparam reg_ctr = $clog2(size0_over_tp);
+    localparam bram_reg_size =  (TP/n1)*(n1-1);
 
-    localparam shift_len = no_read_write ? 2 : n2+4;
+    localparam shift_len = no_read_write ? 2 : size0_over_tp+4;
+    localparam iter_part_num_tot = iter_choice == 0 ? 2 : (iter_choice == 1 ? 3 : 4);
+
+    localparam extra_wait = (which_block == 2 || which_block == 3) ? 2 : 0;
 
 
 
@@ -67,8 +71,8 @@ module iterative_ntt_first_block#(
     reg start_addr_gen;
     wire start_addr_gen_shifted, start_addr_gen_shifted_v2, start_addr_gen_shifted_v3;
 
-    wire [(log_n2+1)*TP-1:0] read_addr_res;
-    wire [(log_n2+1)*TP-1:0] write_addr_res;
+    wire [(size0_over_tp+1)*TP-1:0] read_addr_res;
+    wire [(size0_over_tp+1)*TP-1:0] write_addr_res;
 
     localparam OP_IDLE                  = 2'd0;
     localparam OP_TWIDDLE_LOAD          = 2'd1;
@@ -119,7 +123,7 @@ module iterative_ntt_first_block#(
 
     reg [TP*LOGQ-1:0] NTT_param_in, NTT_param_out_reg;
     wire [TP*LOGQ-1:0] NTT_param_out;
-    reg [(TP-1)*LOGQ-1:0] W_param_in;
+    reg [(bram_reg_size)*LOGQ-1:0] W_param_in;
 
     wire [TP*LOGQ-1:0] NTT_param_out_shift_d2;
     
@@ -193,7 +197,7 @@ module iterative_ntt_first_block#(
                 endcase
             end 
             OP_TWIDDLE_LOAD: begin
-                next_state = (twid_ctr == 3*depth-1) ? OP_IDLE : OP_TWIDDLE_LOAD;
+                next_state = (twid_ctr == (iter_part_num_tot)*depth-1) ? OP_IDLE : OP_TWIDDLE_LOAD;
             end
             OP_STARTED: begin
                 next_state =  OP_STARTED;
@@ -325,8 +329,8 @@ module iterative_ntt_first_block#(
         end else begin
             case (curr_state)
                 OP_STARTED: begin
-                    for (j2 = 0; j2 < TP-1 ; j2 = j2 + 1 ) begin
-                        W_param_in[(TP-1-j2)*LOGQ-1-:LOGQ]      <= bo0[j2];
+                    for (j2 = 0; j2 < bram_reg_size ; j2 = j2 + 1 ) begin
+                        W_param_in[(bram_reg_size-j2)*LOGQ-1-:LOGQ]      <= bo0[j2];
                     end
                     for (j1 = 0; j1 < TP ; j1 = j1 + 1 ) begin
                         if (no_read_write) begin
@@ -373,11 +377,11 @@ module iterative_ntt_first_block#(
         // If this is last block
         if (no_read_write == 1'b0) begin
             for(c2=0; c2<TP ;c2=c2+1) begin: BRAM_GEN_BLOCK_NTT0 // BRAM for NTT
-                BRAM #(LOGQ, $rtoi($ceil(2*n2)), $rtoi($ceil($clog2(2*n2)))) bm000(clk,de00[1*c2+0],dw00[1*c2+0],di00[1*c2+0],dr00[1*c2+0],do00[1*c2+0]); // 64 BRAMs * 128 depth (2**7) * 32 bit
+                BRAM #(LOGQ, $rtoi($ceil(2*size0_over_tp)), $rtoi($ceil($clog2(2*size0_over_tp)))) bm000(clk,de00[1*c2+0],dw00[1*c2+0],di00[1*c2+0],dr00[1*c2+0],do00[1*c2+0]); // 64 BRAMs * 128 depth (2**7) * 32 bit
             end
         end 
         
-        for(b2=0; b2<TP-1 ;b2=b2+1) begin: BRAM_GEN_BLOCK_TWIDDLE // BRAM for TWIDDLE
+        for(b2=0; b2<bram_reg_size ;b2=b2+1) begin: BRAM_GEN_BLOCK_TWIDDLE // BRAM for TWIDDLE
             BRAM #(LOGQ, $rtoi($ceil(N>>log_TP)), $rtoi($ceil($clog2((N>>log_TP))))) bt000(clk,be0[1*b2+0],bw0[1*b2+0],bi0[1*b2+0],br0[1*b2+0],bo0[1*b2+0]); // 64 BRAMs * 128 depth (2**7) * 32 bit
         end
         
@@ -386,18 +390,27 @@ module iterative_ntt_first_block#(
 
 
     // NTT Calculation for this Block
+    // generate
+    //     genvar ntt_idx;
+
+    //     iterative_tp_param #(TP, LOGQ, BTF_LAT) NTT_units_pipelined(clk,rst, NTT_param_in, W_param_in, NTT_param_out);
+       
+    // endgenerate
+    
     generate
         genvar ntt_idx;
-
-        iterative_tp_param #(TP, LOGQ, BTF_LAT) NTT_units_pipelined(clk,rst, NTT_param_in, W_param_in, NTT_param_out);
+        for (ntt_idx = 0; ntt_idx < (TP>>log_n1) ; ntt_idx = ntt_idx + 1) begin
+            iterative_tp_param #(n1, LOGQ, BTF_LAT) NTT_units_pipelined(clk,rst, NTT_param_in[(TP-n1*ntt_idx)*LOGQ-1-:n1*LOGQ], W_param_in[(bram_reg_size-(n1-1)*ntt_idx)*LOGQ-1-:(n1-1)*LOGQ], NTT_param_out[(TP-n1*ntt_idx)*LOGQ-1-:n1*LOGQ]);
+        end
+        
        
     endgenerate
 
     
 
-    shiftreg #(.SHIFT(log_n1*BTF_LAT),.DATA(1)) sre100(clk,rst,start_addr_gen,start_addr_gen_shifted);
+    shiftreg #(.SHIFT(log_n1*BTF_LAT + extra_wait),.DATA(1)) sre100(clk,rst,start_addr_gen,start_addr_gen_shifted);
 
-    shiftreg #(.SHIFT(log_n1*BTF_LAT+2),.DATA(1)) sre102(clk,rst,start_addr_gen,start_addr_gen_shifted_v2);
+    shiftreg #(.SHIFT(log_n1*BTF_LAT+2 + extra_wait),.DATA(1)) sre102(clk,rst,start_addr_gen,start_addr_gen_shifted_v2);
 
     shiftreg #(.SHIFT(1),.DATA(TP*LOGQ)) sre101(clk,rst,NTT_param_out_reg,NTT_param_out_shift_d2);
 
@@ -419,7 +432,7 @@ module iterative_ntt_first_block#(
                 end else begin
                     //NTT_OUTPUT[(TP-final_int)*LOGQ-1-:LOGQ] <= do00[(final_int+(ctr_shifted&(n2-1)))&(TP-1)];
                     //NTT_OUTPUT[(TP-final_int)*LOGQ-1-:LOGQ] <= do00[(((final_int>>log_n2)<<(log_n2)) + (((final_int&(n2-1))&(1'd1))<<(log_n2-1)) + ((final_int&(n2-1))>>1) + (ctr_shifted&(n2-1)))&(TP-1)];
-                    NTT_OUTPUT[(TP-final_int)*LOGQ-1-:LOGQ] <= do00[(final_int + (ctr_shifted&(n2-1)))&(TP-1)];
+                    NTT_OUTPUT[(TP-final_int)*LOGQ-1-:LOGQ] <= do00[(final_int + (ctr_shifted&(size0_over_tp-1)))&(TP-1)];
                 end
                 
             end

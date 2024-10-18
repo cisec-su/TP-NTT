@@ -21,13 +21,15 @@
 
 
 module iterative_ntt_second_block#(
+        parameter iter_choice   = 1,
         parameter N             = 128,
         parameter n2            = 2,
         parameter size0         = 16,
         parameter size1         = 16,    
         parameter TP            = 8,
         parameter LOGQ          = 32,
-        parameter BTF_LAT       = 8
+        parameter BTF_LAT       = 8,
+        parameter no_read_write = 0
     )
     (
         input                           clk,
@@ -51,8 +53,12 @@ module iterative_ntt_second_block#(
     localparam depth         =  $rtoi($ceil(N/TP));
     localparam depth_log         =  $rtoi($ceil($clog2(N/TP)));
 
+    localparam size1_over_tp = $rtoi($ceil(size1/TP));
+
     localparam reg_ctr = depth_log;
     localparam bram_reg_size =  (TP/n2)*(n2-1);
+
+    localparam iter_part_num_tot = iter_choice == 0 ? 2 : (iter_choice == 1 ? 3 : 4);
 
 
 
@@ -186,7 +192,7 @@ module iterative_ntt_second_block#(
                 endcase
             end 
             OP_TWIDDLE_LOAD: begin
-                next_state = (twid_ctr == 3*depth-1) ? OP_IDLE : OP_TWIDDLE_LOAD;
+                next_state = (twid_ctr == (iter_part_num_tot)*depth-1) ? OP_IDLE : OP_TWIDDLE_LOAD;
             end
             OP_STARTED: begin
                 next_state =  OP_STARTED;
@@ -322,7 +328,7 @@ module iterative_ntt_second_block#(
                         W_param_in[(bram_reg_size-j2)*LOGQ-1-:LOGQ]      <= bo0[j2];
                     end
                     for (j1 = 0; j1 < TP ; j1 = j1 + 1 ) begin
-                        NTT_param_in[( TP - (((j1/n2)*n2 + (j1 & 1'd1)*(n2/2) + (j1 & (n2-1))/2)  & (TP-1)) )*LOGQ-1-:LOGQ]    <= NTT_INPUT[(TP-j1)*LOGQ-1-:LOGQ];
+                        NTT_param_in[( TP - j1 )*LOGQ-1-:LOGQ]    <= NTT_INPUT[(TP - (((j1/n2)*n2 + (j1 & 1'd1)*(n2/2) + (j1 & (n2-1))/2)  & (TP-1)))*LOGQ-1-:LOGQ];
                     end
                 end 
                 default: begin
@@ -350,15 +356,19 @@ module iterative_ntt_second_block#(
 
 
     generate
-        large_addr_gen_upd #(N, n2, size0, size1, TP, LOGQ, BTF_LAT) large_addr_gen_sm_unit (clk, rst, start_addr_gen_shifted, read_addr_res, write_addr_res);
+        if (no_read_write == 1'b0) begin
+            large_addr_gen_upd #(N, n2, size0, size1, TP, LOGQ, BTF_LAT) large_addr_gen_sm_unit (clk, rst, start_addr_gen_shifted, read_addr_res, write_addr_res);
+        end
     endgenerate
 
     generate
 
         genvar c2, b2;
 
-        for(c2=0; c2<TP ;c2=c2+1) begin: BRAM_GEN_BLOCK_NTT0 // BRAM for NTT
-            BRAM #(LOGQ, $rtoi($ceil(2*depth)), $rtoi($ceil($clog2(2*depth)))) bm000(clk,de00[1*c2+0],dw00[1*c2+0],di00[1*c2+0],dr00[1*c2+0],do00[1*c2+0]); // 64 BRAMs * 128 depth (2**7) * 32 bit
+        if (no_read_write == 1'b0) begin
+            for(c2=0; c2<TP ;c2=c2+1) begin: BRAM_GEN_BLOCK_NTT0 // BRAM for NTT
+                BRAM #(LOGQ, $rtoi($ceil(2*depth)), $rtoi($ceil($clog2(2*depth)))) bm000(clk,de00[1*c2+0],dw00[1*c2+0],di00[1*c2+0],dr00[1*c2+0],do00[1*c2+0]); // 64 BRAMs * 128 depth (2**7) * 32 bit
+            end
         end
                 
         for(b2=0; b2<bram_reg_size ;b2=b2+1) begin: BRAM_GEN_BLOCK_TWIDDLE // BRAM for TWIDDLE
@@ -399,8 +409,13 @@ module iterative_ntt_second_block#(
         else begin
             for (final_int = 0; final_int < TP ; final_int = final_int + 1 ) begin
                 //NTT_OUTPUT[(TP-final_int)*LOGQ-1-:LOGQ] <= do00[(((final_int>>log_size1)<<log_size1) + ((((final_int&(size1-1)&(1'd1)))<<log_size1)>>1) + ((final_int&(size1-1))>>1) + ((ctr_shifted&(depth-1))))&(TP-1)];
-                NTT_OUTPUT[(TP-final_int)*LOGQ-1-:LOGQ] <= do00[(final_int + ((ctr_shifted&(depth-1))))&(TP-1)];
-
+                if (no_read_write) begin
+                    NTT_OUTPUT[(TP-final_int)*LOGQ-1-:LOGQ] <= NTT_param_out[(TP-final_int)*LOGQ-1-:LOGQ];
+                end
+                else begin
+                    NTT_OUTPUT[(TP-final_int)*LOGQ-1-:LOGQ] <= do00[(final_int + (((ctr_shifted/size1_over_tp)&(depth-1))))&(TP-1)];
+                end
+                
             end
         end
         
