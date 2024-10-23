@@ -26,16 +26,16 @@ module iterative_tp_super_tb(
 
     // Parameters
     parameter iter_choice   = 1;
-    parameter N             = 1<<15;
-    parameter n1            = 1<<5;
+    parameter N             = 1<<12;
+    parameter n1            = 1<<3;
     parameter n2            = 1<<4;
-    parameter n3            = 1<<6;
+    parameter n3            = 1<<5;
     parameter n4            = 1<<0;
     parameter size0         = n1*n2;
     parameter size1         = n3*n4;
     parameter LOGQ          = 32;
     parameter BTF_LAT       = 8;
-    parameter TP            = 1<<6;
+    parameter TP            = 1<<5;
     parameter TP_twid       = TP-1;
     parameter depth         =  $rtoi($ceil(N/TP));
 

@@ -46,6 +46,7 @@ module large_addr_gen_upd#(
     localparam log_size1 = $rtoi($ceil($clog2(size1)));
 
     localparam size1_over_tp_log2 = $rtoi($ceil($clog2(size1/TP)));
+    localparam log_size0_over_tp = $rtoi($ceil($clog2(size0/TP)));
 
     localparam size0_over_tp = size0/TP;
     localparam size1_over_tp = size1/TP;
@@ -110,7 +111,10 @@ module large_addr_gen_upd#(
             case (curr_state)
                 OP_STARTED: begin
                     for (i = 0; i < TP  ; i = i+1 ) begin
-                        read_addr[((TP-((i+(ctr>>(size1_over_tp_log2)))&(TP-1)))*(log_depth+1))-1-:(log_depth+1)]       <= ((((size0_over_tp)<<(size1_over_tp_log2))*i + (size0_over_tp)*(ctr&(size1_over_tp-1)) + ((ctr&(depth-1))>>log_size1)) & (depth-1)) + ((ctr<depth)<<log_depth);
+                        //read_addr[((TP-((i+(ctr>>(size1_over_tp_log2)))&(TP-1)))*(log_depth+1))-1-:(log_depth+1)]       <= ((((size0_over_tp)<<(size1_over_tp_log2))*i + (size0_over_tp)*(ctr&(size1_over_tp-1)) + ((ctr&(depth-1))>>log_size1)) & (depth-1)) + ((ctr<depth)<<log_depth);
+                        //read_addr[((TP-((i+(ctr&(size0/TP-1)))&(TP-1)))*(log_size0_over_tp+1))-1-:(log_size0_over_tp+1)]       <= ((i&(size0_over_tp-1)) + size0_over_tp*(ctr<size0_over_tp));
+                        read_addr[((TP-((i+(ctr&(size0/TP-1)))&(TP-1)))*(log_size0_over_tp+1))-1-:(log_size0_over_tp+1)]       <= ((((size0_over_tp)<<(size1_over_tp_log2))*i + (size0_over_tp)*(ctr&(size1_over_tp-1)) + ((ctr&(depth-1))>>log_size1)) & (depth-1)) + ((ctr<depth)<<log_depth);
+
                         write_addr[((TP-i)*((log_depth+1)))-1-:(log_depth+1)]      <= ctr;
                     end
                 end 
