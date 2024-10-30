@@ -256,7 +256,7 @@ if __name__ == "__main__":
 
     TWIDDLE_tuple_map = find_twiddle_map(N, q, math.ceil(q_bit_size/width), width)
 
-    file1 = open("test_files/W_in.txt", 'w+')
+    file1 = open("test/W_in.txt", 'w+')
 
     
     choice = int(sys.argv[7])

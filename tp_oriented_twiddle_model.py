@@ -313,7 +313,7 @@ if __name__ == "__main__":
 
     q = random_prime
 
-    q_file = open("test_files/q.txt", 'w+')
+    q_file = open("test/q.txt", 'w+')
 
     q_file.write(str(hex(q)[2:]) + "\n")
 
@@ -342,7 +342,7 @@ if __name__ == "__main__":
     A = [random.randint(0, q - 1) for x in range(n)]
     #print("A: ", A)
 
-    f0 = open('test_files/NTT_inputs_hexa.txt', 'w+')
+    f0 = open('test/NTT_inputs_hexa.txt', 'w+')
     for i in range(n):
         f0.write('{}'.format(hex(A[i])[2:]))
         f0.write('\n')
@@ -420,7 +420,7 @@ if __name__ == "__main__":
     #--------------------Output NTT---------------------------------
 
 
-    f0 = open('test_files/NTT_outputs_hexa.txt','w')
+    f0 = open('test/NTT_outputs_hexa.txt','w')
 
     for i in range(n):
         f0.write('{}'.format(hex(A_NTT_merge[i])[2:]))
