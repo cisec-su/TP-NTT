@@ -27,6 +27,9 @@ module butterfly_parametric#(parameter LOGQ = 32)
 // CT:0 -> Mod Add/Sub (take input from A,B -- output from ADD/SUB)
 // CT:1 -> Mod Mult (take input from B,PSI -- output from MUL)
 
+localparam BTRFLY_CC = (LOGQ == 32) ? `BTRFLY_CC_32 : `BTRFLY_CC_64;
+localparam MODMUL_CC = (LOGQ == 32) ? `MODMUL_CC_32 : `MODMUL_CC_64;
+
 // Signals
 wire [LOGQ-1:0] Ar6;
 wire [LOGQ-1:0] w0,w1;
@@ -51,21 +54,21 @@ wire        mt_d1,mt_d6;
 
 wire        ct_d,ct_o;
 
-shiftreg #(.SHIFT(`BTRFLY_CC),.DATA(1))  sre04(clk,rst,CT,ct_d);
+shiftreg #(.SHIFT(BTRFLY_CC),.DATA(1))  sre04(clk,rst,CT,ct_d);
 
 assign ct_o = ct_d | CT;
 
 shiftreg #(.SHIFT(1),.DATA(LOGQ)) sre00(clk,rst,q,q_d1);
-shiftreg #(.SHIFT(`MODMUL_CC),.DATA(LOGQ)) sre01(clk,rst,q,q_d6);
+shiftreg #(.SHIFT(MODMUL_CC),.DATA(LOGQ)) sre01(clk,rst,q,q_d6);
 shiftreg #(.SHIFT(1),.DATA(1))  sre02(clk,rst,MT,mt_d1);
-shiftreg #(.SHIFT(`MODMUL_CC),.DATA(1))  sre03(clk,rst,MT,mt_d6);
+shiftreg #(.SHIFT(MODMUL_CC),.DATA(1))  sre03(clk,rst,MT,mt_d6);
 
 assign q_addsub = (ct_o) ? q_d6 : q   ;
 assign q_modmul = (ct_o) ? q    : q_d1;
 
 // Operations
 
-shiftreg #(.SHIFT(`MODMUL_CC),.DATA(LOGQ)) sre10(clk,rst,A,Ar6);
+shiftreg #(.SHIFT(MODMUL_CC),.DATA(LOGQ)) sre10(clk,rst,A,Ar6);
 
 assign w0 = (ct_o) ? w5_3 : B;
 assign w1 = (ct_o) ? Ar6  : A;
@@ -80,7 +83,7 @@ always @(posedge clk or posedge rst) begin
         {w2r1,w3r1} <= {w2,w3};
 end
 
-shiftreg #(.SHIFT(`MODMUL_CC),.DATA(LOGQ)) sre20(clk,rst,w2r1,w2r1d6);
+shiftreg #(.SHIFT(MODMUL_CC),.DATA(LOGQ)) sre20(clk,rst,w2r1,w2r1d6);
 
 assign w7 = (ct_o) ? w2r1 : w2r1d6;
 

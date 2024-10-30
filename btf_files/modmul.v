@@ -15,6 +15,9 @@ module modmul#
                 output[LOGQ-1:0] C_32
              );
 
+localparam MODRED_CC = (LOGQ == 32) ? `MODRED_CC_32 : `MODRED_CC_64;
+
+
 localparam K = 2*LOGQ;
 // q registers
 reg [LOGQ-1:0] qred,qint;
@@ -75,7 +78,7 @@ end
 
 
 // final LOGQ-bit
-shiftreg #(.SHIFT(`MODRED_CC),.DATA(LOGQ)) sre00(clk,rst,D2[LOGQ-1:0],C_32);
+shiftreg #(.SHIFT(MODRED_CC),.DATA(LOGQ)) sre00(clk,rst,D2[LOGQ-1:0],C_32);
 
 endmodule
 

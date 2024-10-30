@@ -5,27 +5,21 @@
 
 // Use one of them
 
-//`define BIT_32
-`define BIT_64
-
-// Use one of them
-
 `define USE_CSA
 `define USE_DFF_MODMUL
 
 
 `define INTMUL_CC 5
 
+`define MODRED_CC_32 4
+`define MODRED_CC_64 9
 
-`ifdef BIT_32
-`define MODRED_CC 4
-`define LOGQ 32
-`else
-`define MODRED_CC 9
-`define LOGQ 64
-`endif
+`define MODMUL_CC_32 (`MODRED_CC_32 + `INTMUL_CC)
+`define MODMUL_CC_64 (`MODRED_CC_64 + `INTMUL_CC)
 
-`define MODMUL_CC (`MODRED_CC + `INTMUL_CC)
-`define BTRFLY_CC (`MODMUL_CC + 1)
+`define BTRFLY_CC_32 (`MODMUL_CC_32 + 1)
+`define BTRFLY_CC_64 (`MODMUL_CC_64 + 1)
+
+
 
 
