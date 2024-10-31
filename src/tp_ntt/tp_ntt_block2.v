@@ -388,7 +388,7 @@ module tp_ntt_block2#(
 
     generate
         if (no_read_write == 1'b0) begin
-            addr_gen_large #(N, n2, size0, size1, TP, LOGQ, BTF_LAT) large_addr_gen_sm_unit (clk, rst, start_addr_gen_shifted, read_addr_res, write_addr_res);
+            addr_gen_large #(N, n2, size0, size1, TP) large_addr_gen_sm_unit (clk, rst, start_addr_gen_shifted, read_addr_res, write_addr_res);
         end
     endgenerate
 
@@ -413,7 +413,7 @@ module tp_ntt_block2#(
     generate
         genvar ntt_idx;
         for (ntt_idx = 0; ntt_idx < (TP>>log_n2) ; ntt_idx = ntt_idx + 1) begin
-            iterative_tp_param #(n2, LOGQ, BTF_LAT) NTT_units_pipelined(clk,rst, q_param_in ,NTT_param_in[(TP-n2*ntt_idx)*LOGQ-1-:n2*LOGQ], W_param_in[(bram_reg_size-(n2-1)*ntt_idx)*LOGQ-1-:(n2-1)*LOGQ], NTT_param_out[(TP-n2*ntt_idx)*LOGQ-1-:n2*LOGQ]);
+            tp_ntt_core #(n2, LOGQ, BTF_LAT) NTT_units_pipelined(clk,rst, q_param_in ,NTT_param_in[(TP-n2*ntt_idx)*LOGQ-1-:n2*LOGQ], W_param_in[(bram_reg_size-(n2-1)*ntt_idx)*LOGQ-1-:(n2-1)*LOGQ], NTT_param_out[(TP-n2*ntt_idx)*LOGQ-1-:n2*LOGQ]);
         end
         
        

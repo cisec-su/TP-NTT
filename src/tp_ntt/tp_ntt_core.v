@@ -1,4 +1,4 @@
-module iterative_tp_param #(
+module tp_ntt_core #(
     parameter TP           = 32,
     parameter LOGQ         = 32,
     parameter BTF_LAT      = 8
