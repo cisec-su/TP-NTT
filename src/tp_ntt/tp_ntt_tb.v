@@ -8,14 +8,14 @@ module tp_ntt_tb(
 
     // Parameters
     parameter TEST_DIR      = "../../../../test";
-    parameter N             = 1<<16;
-    parameter n1            = 1<<4;
-    parameter n2            = 1<<4;
-    parameter n3            = 1<<4;
-    parameter n4            = 1<<4;
+    parameter N             = 1<<15;
+    parameter n1            = 1<<5;
+    parameter n2            = 1<<5;
+    parameter n3            = 1<<5;
+    parameter n4            = 1<<0;
     parameter size0         = n1*n2;
     parameter size1         = n3*n4;
-    parameter LOGQ          = 32;
+    parameter LOGQ          = 64;
     parameter DIM   = (n4 != 1) ? 2 : ((n3 != 1) ? 1 : 0);
     parameter BTF_LAT       = (LOGQ == 32) ? `BTRFLY_CC_32 : `BTRFLY_CC_64;
     parameter TP            = 1<<5;
