@@ -1,10 +1,8 @@
 `timescale 1ns / 1ps
 
-`include "bu_def.vh"
+module tp_ntt_tb();
 
-module tp_ntt_tb(
-
-    );
+    `include "bu_def.vh"
 
     // Parameters
     parameter TEST_DIR      = "../../../../test";
@@ -12,11 +10,11 @@ module tp_ntt_tb(
     parameter n1            = 1<<5;
     parameter n2            = 1<<5;
     parameter n3            = 1<<5;
-    parameter n4            = 1<<0;
+    parameter n4            = N / (n1*n2*n3);
     parameter size0         = n1*n2;
     parameter size1         = n3*n4;
     parameter LOGQ          = 64;
-    parameter DIM   = (n4 != 1) ? 2 : ((n3 != 1) ? 1 : 0);
+    parameter DIM           = (n4 != 1) ? 2 : ((n3 != 1) ? 1 : 0);
     parameter BTF_LAT       = (LOGQ == 32) ? `BTRFLY_CC_32 : `BTRFLY_CC_64;
     parameter TP            = 1<<5;
     parameter TP_twid       = TP-1;
@@ -222,7 +220,6 @@ module tp_ntt_tb(
         .n1(n1),
         .n2(n2),
         .n3(n3),
-        .n4(n4),
         .TP(TP),
         .LOGQ(LOGQ)
     ) uut (
