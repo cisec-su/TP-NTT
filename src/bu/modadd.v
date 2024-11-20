@@ -1,7 +1,7 @@
 
 
 module modadd#(
-            parameter LOGQ                  =       64,
+            parameter LOGQ                  =       60,
             parameter Reduc_param           =       17
         )
         (

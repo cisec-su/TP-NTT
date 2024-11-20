@@ -2,12 +2,12 @@
 
 module tp_ntt_block1#(
         parameter DIM           = 1,
-        parameter N             = 128,
-        parameter n1            = 8,
-        parameter n2            = 2,
-        parameter TP            = 8,
-        parameter LOGQ          = 32,
-        parameter BTF_LAT       = 8,
+        parameter N             = 1024,
+        parameter n1            = 64,
+        parameter n2            = 16,
+        parameter TP            = 64,
+        parameter LOGQ          = 60,
+        parameter BTF_LAT       = 16,
         parameter RW_DIS        = 0,
         parameter BLOCK_ID      = 0
     )
@@ -244,7 +244,7 @@ end
 
 
 generate
-    for (genvar i = 0; i < TP; i = i + 1) begin
+    for (genvar i = 0; i < TP-1; i = i + 1) begin // DEGisecek
         always @(posedge clk or posedge rst) begin
             if (rst) begin
                 bi0[i]       <= 0;
@@ -354,7 +354,7 @@ endgenerate
 generate
     // If this is last block
     if (RW_DIS == 0) begin
-        addr_gen_small #(N, n1, n2 ,TP, LOGQ, BTF_LAT) small_addr_gen_sm_unit (clk, rst, start_addr_gen_shifted, read_addr_res, write_addr_res);
+        addr_gen_small #(.N(N), .n1(n1), .n2(n2), .TP(TP)) small_addr_gen_sm_unit (clk, rst, start_addr_gen_shifted, read_addr_res, write_addr_res);
     end 
 endgenerate
 

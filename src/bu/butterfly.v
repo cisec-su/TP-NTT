@@ -7,7 +7,9 @@
 // -- Modular mul       : 6 cc latency
 // (more features will be added later ...)
 
-module butterfly#(parameter LOGQ = 32)
+module butterfly#(parameter LOGQ = `LOGQ,
+                  parameter LOGQH = `LOGQH,
+                  parameter USE_STD = `USE_STD)
                 (
                  input clk,rst,
                  input CT,               // CT (1) or GS (0) structure
@@ -25,8 +27,8 @@ module butterfly#(parameter LOGQ = 32)
 // CT:0 -> Mod Add/Sub (take input from A,B -- output from ADD/SUB)
 // CT:1 -> Mod Mult (take input from B,PSI -- output from MUL)
 
-localparam MODMUL_CC = (LOGQ == 32) ? `MODMUL_CC_32 : `MODMUL_CC_64;
-localparam BTRFLY_CC = (LOGQ == 32) ? `BTRFLY_CC_32 : `BTRFLY_CC_64;
+localparam MODMUL_CC = (LOGQ == 32) ? `MODMUL_CC_32 : `MODMUL_CC_60;
+localparam BTRFLY_CC = (LOGQ == 32) ? `BTRFLY_CC_32 : `BTRFLY_CC_60;
 
 // Signals
 wire [LOGQ-1:0] Ar6;
@@ -66,7 +68,7 @@ assign q_modmul = (ct_o) ? q    : q_d1;
 
 // Operations
 
-shiftreg #(.SHIFT(MODMUL_CC),.DATA(LOGQ)) sre10(clk,rst,A,Ar6);
+shiftreg #(.SHIFT(MODMUL_CC+1),.DATA(LOGQ)) sre10(clk,rst,A,Ar6);
 
 assign w0 = (ct_o) ? w5_3 : B;
 assign w1 = (ct_o) ? Ar6  : A;
@@ -98,7 +100,7 @@ end
 assign PSIw = (ct_o) ? PSI : PSIr1;
 
 
-modmul#(.LOGQ(LOGQ)) mm0(clk,rst,q_modmul,w4,PSIw,w5,w5_2);
+modmul#(.LOGQ(LOGQ), .LOGQH(LOGQH), .USE_STD(USE_STD)) mm0(clk,rst,q_modmul,w4,PSIw,w5,w5_2);
 
 
 assign w6 = (ct_o) ? w3r1 : w5;

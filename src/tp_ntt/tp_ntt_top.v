@@ -3,12 +3,12 @@
 
 module tp_ntt_top
    #(
-        parameter N             = 1<<16,
-        parameter n1            = 1<<6,
-        parameter n2            = 1<<4,
-        parameter n3            = 1<<6,
-        parameter TP            = 1<<6,
-        parameter LOGQ          = 32
+        parameter N             = 1<<7,
+        parameter n1            = 1<<3,
+        parameter n2            = 1<<1,
+        parameter n3            = 1<<3,
+        parameter TP            = 1<<3,
+        parameter LOGQ          = 60
     )
     (
         input                           clk,
@@ -23,7 +23,7 @@ module tp_ntt_top
 
 
 localparam n4      = N / (n1*n2*n3);
-localparam BTF_LAT = (LOGQ == 32) ? `BTRFLY_CC_32 : `BTRFLY_CC_64;
+localparam BTF_LAT = (LOGQ == 32) ? `BTRFLY_CC_32 + 1 : `BTRFLY_CC_60 + 1;
 localparam DIM     = (n4 != 1) ? `DIM_4D : (n3 != 1) ? `DIM_3D : `DIM_2D;
 localparam log_n1  = $rtoi($ceil($clog2(n1)));
 localparam log_n2  = $rtoi($ceil($clog2(n2)));
@@ -40,20 +40,20 @@ wire [TP*LOGQ-1:0] NTT_READ_STAGE0, NTT_READ_STAGE1, NTT_READ_STAGE2, NTT_READ_S
 
 generate
     if (DIM == `DIM_2D) begin
-        tp_ntt_block1#(DIM, N, n1, n2,    TP, LOGQ, BTF_LAT, .RW_DIS(0), .BLOCK_ID(0)) tp_ntt_d1 (clk, rst, START_NTT_ALL ,OP_TYPE_INPUT, Q_in, NTT_INPUT, TWIDDLE_INPUT, NTT_READ_STAGE0);
-        tp_ntt_block2#(DIM, N, n2, n1*n2, TP, LOGQ, BTF_LAT, .RW_DIS(1)              ) tp_ntt_d2 (clk, rst, START_NTT_2 ,OP_TYPE_INPUT, Q_in, NTT_READ_STAGE0, TWIDDLE_INPUT, NTT_READ_STAGE1);
+        tp_ntt_block1#(.DIM(DIM), .N(N), .n1(n1), .n2(n2),    .TP(TP), .LOGQ(LOGQ), .BTF_LAT(BTF_LAT), .RW_DIS(0), .BLOCK_ID(0)) tp_ntt_d1 (clk, rst, START_NTT_ALL ,OP_TYPE_INPUT, Q_in, NTT_INPUT, TWIDDLE_INPUT, NTT_READ_STAGE0);
+        tp_ntt_block2#(.DIM(DIM), .N(N), .n2(n2), .size0(n1*n2), .TP(TP), .LOGQ(LOGQ), .BTF_LAT(BTF_LAT), .RW_DIS(1)              ) tp_ntt_d2 (clk, rst, START_NTT_2 ,OP_TYPE_INPUT, Q_in, NTT_READ_STAGE0, TWIDDLE_INPUT, NTT_READ_STAGE1);
     end
     else if (DIM == `DIM_3D) begin
-        tp_ntt_block1#(DIM, N, n1, n2,    TP, LOGQ, BTF_LAT, .RW_DIS(0), .BLOCK_ID(0)) tp_ntt_d1 (clk, rst, START_NTT_ALL ,OP_TYPE_INPUT, Q_in, NTT_INPUT, TWIDDLE_INPUT, NTT_READ_STAGE0);
-        tp_ntt_block2#(DIM, N, n2, n1*n2, TP, LOGQ, BTF_LAT, .RW_DIS(0)              ) tp_ntt_d2 (clk, rst, START_NTT_2 ,OP_TYPE_INPUT, Q_in, NTT_READ_STAGE0, TWIDDLE_INPUT, NTT_READ_STAGE1);
-        tp_ntt_block1#(DIM, N, n3, 1 ,    TP, LOGQ, BTF_LAT, .RW_DIS(1), .BLOCK_ID(2)) tp_ntt_d3 (clk, rst, START_NTT_3 ,OP_TYPE_INPUT, Q_in, NTT_READ_STAGE1, TWIDDLE_INPUT, NTT_READ_STAGE2);
+        tp_ntt_block1#(.DIM(DIM), .N(N), .n1(n1), .n2(n2),    .TP(TP), .LOGQ(LOGQ), .BTF_LAT(BTF_LAT), .RW_DIS(0), .BLOCK_ID(0)) tp_ntt_d1 (clk, rst, START_NTT_ALL ,OP_TYPE_INPUT, Q_in, NTT_INPUT, TWIDDLE_INPUT, NTT_READ_STAGE0);
+        tp_ntt_block2#(.DIM(DIM), .N(N), .n2(n2), .size0(n1*n2), .TP(TP), .LOGQ(LOGQ), .BTF_LAT(BTF_LAT), .RW_DIS(0)              ) tp_ntt_d2 (clk, rst, START_NTT_2 ,OP_TYPE_INPUT, Q_in, NTT_READ_STAGE0, TWIDDLE_INPUT, NTT_READ_STAGE1);
+        tp_ntt_block1#(.DIM(DIM), .N(N), .n1(n3), .n2(1),    .TP(TP), .LOGQ(LOGQ), .BTF_LAT(BTF_LAT), .RW_DIS(1), .BLOCK_ID(2)) tp_ntt_d3 (clk, rst, START_NTT_3 ,OP_TYPE_INPUT, Q_in, NTT_READ_STAGE1, TWIDDLE_INPUT, NTT_READ_STAGE2);
 
     end
     else if (DIM == `DIM_4D) begin
-        tp_ntt_block1#(DIM, N, n1, n2,    TP, LOGQ, BTF_LAT, .RW_DIS(0), .BLOCK_ID(0)) tp_ntt_d1 (clk, rst, START_NTT_ALL ,OP_TYPE_INPUT, Q_in, NTT_INPUT, TWIDDLE_INPUT, NTT_READ_STAGE0);
-        tp_ntt_block2#(DIM, N, n2, n1*n2, TP, LOGQ, BTF_LAT, .RW_DIS(0)              ) tp_ntt_d2 (clk, rst, START_NTT_2 ,OP_TYPE_INPUT, Q_in, NTT_READ_STAGE0, TWIDDLE_INPUT, NTT_READ_STAGE1);
-        tp_ntt_block1#(DIM, N, n3, n4,    TP, LOGQ, BTF_LAT, .RW_DIS(0), .BLOCK_ID(2)) tp_ntt_d3 (clk, rst, START_NTT_3 ,OP_TYPE_INPUT, Q_in, NTT_READ_STAGE1, TWIDDLE_INPUT, NTT_READ_STAGE2);
-        tp_ntt_block1#(DIM, N, n4, n3,    TP, LOGQ, BTF_LAT, .RW_DIS(1), .BLOCK_ID(3)) tp_ntt_d4 (clk, rst, START_NTT_4 ,OP_TYPE_INPUT, Q_in, NTT_READ_STAGE2, TWIDDLE_INPUT, NTT_READ_STAGE3);
+        tp_ntt_block1#(.DIM(DIM), .N(N), .n1(n1), .n2(n2),    .TP(TP), .LOGQ(LOGQ), .BTF_LAT(BTF_LAT), .RW_DIS(0), .BLOCK_ID(0)) tp_ntt_d1 (clk, rst, START_NTT_ALL ,OP_TYPE_INPUT, Q_in, NTT_INPUT, TWIDDLE_INPUT, NTT_READ_STAGE0);
+        tp_ntt_block2#(.DIM(DIM), .N(N), .n2(n2), .size0(n1*n2), .TP(TP), .LOGQ(LOGQ), .BTF_LAT(BTF_LAT), .RW_DIS(0)              ) tp_ntt_d2 (clk, rst, START_NTT_2 ,OP_TYPE_INPUT, Q_in, NTT_READ_STAGE0, TWIDDLE_INPUT, NTT_READ_STAGE1);
+        tp_ntt_block1#(.DIM(DIM), .N(N), .n1(n3), .n2(n4),    .TP(TP), .LOGQ(LOGQ), .BTF_LAT(BTF_LAT), .RW_DIS(0), .BLOCK_ID(2)) tp_ntt_d3 (clk, rst, START_NTT_3 ,OP_TYPE_INPUT, Q_in, NTT_READ_STAGE1, TWIDDLE_INPUT, NTT_READ_STAGE2);
+        tp_ntt_block1#(.DIM(DIM), .N(N), .n1(n4), .n2(n3),    .TP(TP), .LOGQ(LOGQ), .BTF_LAT(BTF_LAT), .RW_DIS(1), .BLOCK_ID(3)) tp_ntt_d4 (clk, rst, START_NTT_4 ,OP_TYPE_INPUT, Q_in, NTT_READ_STAGE2, TWIDDLE_INPUT, NTT_READ_STAGE3);
     end
 endgenerate
 

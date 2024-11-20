@@ -209,6 +209,38 @@ def iterative_second_block(iter0_read, TP, n2, size0, size1, bram_skip):
     
     return iter1_read
 
+MAX_TRIAL = 100000000
+
+def ntt_friendly_prime_gen(logq, logqh, num_primes=None, debug=False, random=None):
+
+    primes = []
+
+    def core(qH):
+        q = (1 << (logq - 1)) + 1 + (qH << (logq - logqh))
+        if sympy.isprime(q) and q < (1 << logq) and q > (1 << (logq - 1)):
+            if debug:
+                print(q, hex(q), len(bin(q)[2:]), hex(q % (1 << (logq - logqh))), len(primes))
+            primes.append(q)
+
+    if random is None:
+        for qH in range(1, pow(2, (logqh - 1))):
+            core(qH)
+            if num_primes is not None and len(primes) >= num_primes:
+                return primes
+
+    else:
+        l = pow(2, (logqh - 1)) + 1
+        for _ in range(MAX_TRIAL):
+            qH = random.randint(1, l)
+            core(qH)
+            if num_primes is not None and len(primes) >= num_primes:
+                return primes
+
+    if debug:
+        print(len(primes))
+
+    return primes
+
 
 if __name__ == "__main__":
     
@@ -219,7 +251,7 @@ if __name__ == "__main__":
    
     q_bit_size =  int(sys.argv[8])
 
-    if q_bit_size == 64:
+    if q_bit_size == 60:
         width = 17
     else:
         width = 13
@@ -227,19 +259,26 @@ if __name__ == "__main__":
 
     k = q_bit_size # bit size
 
-    prime_num_try = pow(2,k-1) + 1
+    LOGQ = q_bit_size
+
+    if q_bit_size == 60:
+        LOGQH = 17
+    else:
+        LOGQH = 15
+
+    # prime_num_try = pow(2,k-1) + 1
     
 
 
-    for i in range(1,pow(2,20)):
-        try1 = prime_num_try + (i<<18)
-        if sympy.isprime(try1):
-            print(try1, bin(try1)[2:], hex(try1)[2:], len(bin(try1)[2:]))
-            break
+    # for i in range(1,pow(2,20)):
+    #     try1 = prime_num_try + (i<<18)
+    #     if sympy.isprime(try1):
+    #         print(try1, bin(try1)[2:], hex(try1)[2:], len(bin(try1)[2:]))
+    #         break
 
-    random_prime = try1
+    # random_prime = try1
 
-    q = random_prime
+    q = ntt_friendly_prime_gen(LOGQ, LOGQH, 1)[0]
 
     
 

@@ -2,8 +2,8 @@
 
 module intmul_standard
    #(  
-        parameter W_A     = 64,
-        parameter W_B     = 64,
+        parameter W_A     = 60,
+        parameter W_B     = 60,
         parameter FF_IN   = 1 ,
         parameter FF_MUL  = 1 ,
         parameter FF_OUT  = 1 ,

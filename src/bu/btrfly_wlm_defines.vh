@@ -1,7 +1,26 @@
-`ifndef BU_DEF
-`define BU_DEF
+`ifndef BTRFLY_DEFINES
+`define BTRFLY_DEFINES
+
 
 `include "wlm_mixed.svh"
+`include "bu_def.vh"
+
+typedef enum int {
+    NONE = -1,
+    WLM_MIXED = 1
+} reduction_mode_t;
+
+
+
+// Function to convert a string to the corresponding enum value
+function automatic reduction_mode_t get_reduction_mode(string mode_str);
+    if (mode_str == "wlm_mixed")
+        return WLM_MIXED;
+    else begin
+        $error("Invalid mode string: %s", mode_str);
+        return NONE; // Default return in case of an invalid string
+    end
+endfunction
 
 function [31:0] set_logqh(input int LOGQ, input int mode, input int LOGN);
     case (mode)
@@ -16,13 +35,23 @@ function [31:0] set_logqh(input int LOGQ, input int mode, input int LOGN);
     endcase
 endfunction
 
+// Variable to hold the selected mode
+reduction_mode_t mode;
 
 `define LOGN 12
-`define MODE 1  // 0--> normal_wlm, 1--> wlm_mixed, 2--> mont_shift
+`define MODE get_reduction_mode("wlm_mixed")  // 0--> normal_wlm, 1--> wlm_mixed, 2--> mont_shift
 `define LOGQ    60                              // 32 OR 64
 //`define SPEED_OPT 0                             // Only valid for k2red_shift
 
+
 `define LOGQH   set_logqh(`LOGQ, `MODE, `LOGN)
+`define W       `LOGQ - `LOGQH
+`define M       `LOGQ - `LOGQH          // Only Valid for k2red_shift
+
+
+
+
+
 
 // Function to get latency based on mode
 function [31:0] set_modred_lat(input int mode, input int LOGN);
@@ -39,7 +68,7 @@ function [31:0] set_intmul_lat(input int mode, input int LOGN, input int STD);
             if (STD) begin
                 set_intmul_lat = 4;
             end else begin
-                set_intmul_lat = 3;
+                set_intmul_lat = 4;
             end
         end 
         
@@ -54,24 +83,10 @@ endfunction
 
 
 
-`define USE_STD_MULT 0
+`define  MODRED_LAT  set_modred_lat(`MODE, `LOGN);
+`define  INTMUL_LAT  set_intmul_lat(`MODE, `LOGN, `USE_STD);
+`define CT_LAT  set_ct_lat(`MODE, `LOGN,`LOGQ, `USE_STD  ) + 1
+`define BTRFLY_CC  `CT_LAT
 
-`define USE_STD (`USE_STD_MULT ? 1 : 0)
-
-`define USE_CSA
-`define USE_DFF_MODMUL
-
-//`define INTMUL_CC 5
-`define INTMUL_CC set_intmul_lat(`MODE, `LOGN, `USE_STD)
-
-`define MODRED_CC_32 4
-//`define MODRED_CC_60 9
-`define MODRED_CC_60 set_modred_lat(`MODE, `LOGN)
-
-`define MODMUL_CC_32 (`MODRED_CC_32 + `INTMUL_CC)
-`define MODMUL_CC_60 (`MODRED_CC_60 + `INTMUL_CC)
-
-`define BTRFLY_CC_32 (`MODMUL_CC_32 + 2)
-`define BTRFLY_CC_60 (`MODMUL_CC_60 + 2)
 
 `endif
