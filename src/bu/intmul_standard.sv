@@ -7,8 +7,8 @@ module intmul_standard
         parameter FF_IN   = 1 ,
         parameter FF_MUL  = 1 ,
         parameter FF_OUT  = 1 ,
-        parameter USE_CSA = 1 ,
-        parameter FF_CSA  = 1
+        parameter USE_CSA = 0 ,
+        parameter FF_CSA  = 0
     )
     (
         input                      clk,

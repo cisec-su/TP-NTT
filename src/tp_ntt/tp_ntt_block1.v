@@ -2,10 +2,10 @@
 
 module tp_ntt_block1#(
         parameter DIM           = 1,
-        parameter N             = 1024,
-        parameter n1            = 64,
-        parameter n2            = 16,
-        parameter TP            = 64,
+        parameter N             = 128,
+        parameter n1            = 8,
+        parameter n2            = 2,
+        parameter TP            = 8,
         parameter LOGQ          = 60,
         parameter BTF_LAT       = 16,
         parameter RW_DIS        = 0,
@@ -341,14 +341,15 @@ generate
     end
 endgenerate
 
-
 generate
-    for (genvar rot = 0; rot < TP; rot = rot + 1) begin
-        always @(posedge clk) begin
-            NTT_core_out_reg[(TP-((rot/(TP/n2) + (rot&(TP/n2-1))*n2 + (ctr&(size0/TP-1)) )&(TP-1)))*LOGQ-1-:LOGQ] <= NTT_core_out[(TP-rot)*LOGQ-1-:LOGQ];
+    for ( genvar rot = 0; rot < TP; rot = rot + 1) begin
+    always @(posedge clk) 
+        begin
+            NTT_core_out_reg[(TP-((rot/(TP/n2) + (rot&(TP/n2-1))*n2  )&(TP-1)))*LOGQ-1-:LOGQ] <= NTT_core_out[(TP-((rot - (ctr&(size0/TP-1)))&(TP-1)))*LOGQ-1-:LOGQ];
         end
     end
 endgenerate
+
 
 
 generate

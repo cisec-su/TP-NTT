@@ -1,10 +1,10 @@
 // top_module.v
 
 module iterative_tp_cons_file #(
-        parameter N             = 1<<16,
+        parameter N             = 1<<12,
         parameter n1            = 1<<6,
-        parameter n2            = 1<<4,
-        parameter n3            = 1<<6,
+        parameter n2            = 1<<6,
+        parameter n3            = 1<<0,
         parameter n4            = 1<<0,     
         parameter TP            = 1<<6,
         parameter LOGQ          = 60

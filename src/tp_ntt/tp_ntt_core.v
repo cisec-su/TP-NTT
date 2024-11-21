@@ -10,7 +10,7 @@ module tp_ntt_core
         input wire  [LOGQ       -1:0] q_in  ,
         input wire  [LOGQ*TP    -1:0] NTT_in,
         input wire  [LOGQ*(TP-1)-1:0] W_in  ,
-        output wire [LOGQ*TP    -1:0] NTT_out
+        output reg [LOGQ*TP    -1:0] NTT_out
     );
 
 localparam stage_nums =  $rtoi($ceil($clog2(TP)));
@@ -98,7 +98,9 @@ endgenerate
 
 generate
     for (genvar i = 0; i < TP; i = i + 1) begin // For every stage
-        assign NTT_out[(TP-(i))*LOGQ-1-:LOGQ] = {NTT_results[stage_nums-1][i]};
+        always @(posedge clk) begin
+            NTT_out[(TP-(i))*LOGQ-1-:LOGQ] = {NTT_results[stage_nums-1][i]};
+        end
     end
 endgenerate
 

@@ -37,7 +37,7 @@ function [31:0] set_intmul_lat(input int mode, input int LOGN, input int STD);
     case (mode)
         1: begin 
             if (STD) begin
-                set_intmul_lat = 4;
+                set_intmul_lat = 3;
             end else begin
                 set_intmul_lat = 3;
             end
