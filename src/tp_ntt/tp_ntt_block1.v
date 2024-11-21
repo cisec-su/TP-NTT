@@ -333,7 +333,7 @@ generate
     for (genvar i = 0; i < TP; i = i + 1) begin
         always @(posedge clk) begin
             if (RW_DIS) begin
-                NTT_core_in[( TP - (((i & (n1/2-1))*2 + (i & (n1-1))/(n1/2) + (i/n1)*n1) & (TP-1)) )*LOGQ-1-             :LOGQ]    <= NTT_INPUT[(TP-i)*LOGQ-1-:LOGQ];
+                NTT_core_in[( TP - (((i & (n1/2-1))*2 + (i & (n1-1))/(n1/2) + (i/n1)*n1) & (TP-1)) )*LOGQ-1             -:LOGQ]    <= NTT_INPUT[(TP-i)*LOGQ-1-:LOGQ];
             end else begin
                 NTT_core_in[( TP - ((((i & (n2-1))*n1) + (i/(TP>>1)) + ((i & ((TP>>1)-1))/(TP/n1))*2) & (TP-1)) )*LOGQ-1-:LOGQ]    <= NTT_INPUT[(TP-i)*LOGQ-1-:LOGQ];
             end
@@ -345,7 +345,7 @@ endgenerate
 generate
     for (genvar rot = 0; rot < TP; rot = rot + 1) begin
         always @(posedge clk) begin
-            NTT_core_out_reg[(TP-((rot/(TP/n2) + (rot&(TP/n2-1))*n2 + (ctr&(size0/TP-1)) )&(TP-1)))*LOGQ-1-:LOGQ] <= NTT_core_out[(TP-rot)*LOGQ-1-:LOGQ];
+            NTT_core_out_reg[(TP-((rot/(TP/n2) + (rot&(TP/n2-1))*n2  )&(TP-1)))*LOGQ-1 -: LOGQ] <= NTT_core_out[(TP - (((rot - (ctr&(size0/TP-1))))&(TP-1)))*LOGQ-1 -: LOGQ];
         end
     end
 endgenerate
