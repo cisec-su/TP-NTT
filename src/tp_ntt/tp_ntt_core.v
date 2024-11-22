@@ -99,7 +99,7 @@ endgenerate
 generate
     for (genvar i = 0; i < TP; i = i + 1) begin // For every stage
         always @(posedge clk) begin
-            NTT_out[(TP-(i))*LOGQ-1-:LOGQ] = {NTT_results[stage_nums-1][i]};
+            NTT_out[(TP-(i))*LOGQ-1-:LOGQ] <= {NTT_results[stage_nums-1][i]};
         end
     end
 endgenerate
