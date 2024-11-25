@@ -90,7 +90,7 @@ endgenerate
 generate
     for (genvar k = 0; k < stage_nums ; k = k + 1) begin
         for (genvar m = 0; m < (TP>>1); m = m + 1) begin: BTF_GEN_BLOCK
-            butterfly #(.LOGQ(LOGQ)) btfu00(clk,rst,CT00[k][m],MT00[k][m],A00[k][m],B00[k][m],PSI00[k][m],Q00[k][m],E00[k][m],O00[k][m],MUL00[k][m],M3200[k][m],ADD00[k][m],SUB00[k][m]);
+            butterfly_new #(.LOGQ(LOGQ)) btfu00(clk,rst,CT00[k][m],MT00[k][m],A00[k][m],B00[k][m],PSI00[k][m],Q00[k][m],E00[k][m],O00[k][m],MUL00[k][m],M3200[k][m],ADD00[k][m],SUB00[k][m]);
         end
     end
 endgenerate

@@ -46,9 +46,10 @@ module btf_tb();
 
 
     // Instantiate the module under test
-    butterfly #(
+    butterfly_new #(
         .LOGQ(`LOGQ),
-        .LOGQH(`LOGQH)
+        .LOGQH(`LOGQH),
+        .USE_STD(`USE_STD)
     ) 
     dut (
         .clk(clk),
