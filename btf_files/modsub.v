@@ -1,7 +1,7 @@
 
 
-module modsub_parametric#(
-            parameter LOGQ                  =       64,
+module modsub#(
+            parameter LOGQ                  =       60,
             parameter Reduc_param           =       17
         )
         (

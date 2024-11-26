@@ -135,7 +135,8 @@ def NTT(A, Psi_table, q, only_1, L, w):
                 
 
                 
-                SS = S * pow(2,L*w,q) % q
+                #SS = S * pow(2,L*w,q) % q
+                SS = S * pow(2, math.ceil(log2(q)), q) % q
                 #if SS not in twids and only_1:
                     #twids.append((j, j+t, SS))
                 
@@ -273,7 +274,8 @@ def find_twiddle_map(N, q, w, L):
                 #B[j + t] = (U - V) % q
 
             
-                SS = S * pow(2,w*L,q) % q
+                #SS = S * pow(2,w*L,q) % q
+                SS = S * pow(2, math.ceil(log2(q)), q) % q
                 twiddle_map[(B[j], B[j+t])] = SS
 
             
@@ -281,6 +283,38 @@ def find_twiddle_map(N, q, w, L):
         m = 2 * m
     #print(counterr)
     return twiddle_map
+
+MAX_TRIAL = 100000000
+
+def ntt_friendly_prime_gen(logq, logqh, num_primes=None, debug=False, random=None):
+
+    primes = []
+
+    def core(qH):
+        q = (1 << (logq - 1)) + 1 + (qH << (logq - logqh))
+        if sympy.isprime(q) and q < (1 << logq) and q > (1 << (logq - 1)):
+            if debug:
+                print(q, hex(q), len(bin(q)[2:]), hex(q % (1 << (logq - logqh))), len(primes))
+            primes.append(q)
+
+    if random is None:
+        for qH in range(1, pow(2, (logqh - 1))):
+            core(qH)
+            if num_primes is not None and len(primes) >= num_primes:
+                return primes
+
+    else:
+        l = pow(2, (logqh - 1)) + 1
+        for _ in range(MAX_TRIAL):
+            qH = random.randint(1, l)
+            core(qH)
+            if num_primes is not None and len(primes) >= num_primes:
+                return primes
+
+    if debug:
+        print(len(primes))
+
+    return primes
 
 
 
@@ -299,25 +333,34 @@ if __name__ == "__main__":
 
     k = q_bit_size # bit size
 
-    prime_num_try = pow(2,k-1) + 1
+    # prime_num_try = pow(2,k-1) + 1
     
 
 
-    for i in range(1,pow(2,20)):
-        try1 = prime_num_try + (i<<18)
-        if sympy.isprime(try1):
-            print(try1, bin(try1)[2:], hex(try1)[2:], len(bin(try1)[2:]))
-            break
+    # for i in range(1,pow(2,20)):
+    #     try1 = prime_num_try + (i<<18)
+    #     if sympy.isprime(try1):
+    #         print(try1, bin(try1)[2:], hex(try1)[2:], len(bin(try1)[2:]))
+    #         break
 
-    random_prime = try1
+    # random_prime = try1
 
-    q = random_prime
+    LOGQ    = q_bit_size
+    if q_bit_size == 60:
+        LOGQH = 17
+    else:
+        LOGQH = 15
 
-    q_file = open("test_files/q.txt", 'w+')
+    q = ntt_friendly_prime_gen(LOGQ, LOGQH, 1)[0]
+
+    q_file = open("test/q.txt", 'w+')
 
     q_file.write(str(hex(q)[2:]) + "\n")
 
-    fd1_R = pow(2, 17*3, q)
+    print("log: ", math.ceil(log2(q)))
+
+    #fd1_R = pow(2, 17*3, q)
+    fd1_R = pow(2, math.ceil(log2(q)), q)
 
     WLMONT = False
 
@@ -342,7 +385,7 @@ if __name__ == "__main__":
     A = [random.randint(0, q - 1) for x in range(n)]
     #print("A: ", A)
 
-    f0 = open('test_files/NTT_inputs_hexa.txt', 'w+')
+    f0 = open('test/NTT_inputs_hexa.txt', 'w+')
     for i in range(n):
         f0.write('{}'.format(hex(A[i])[2:]))
         f0.write('\n')
@@ -356,7 +399,7 @@ if __name__ == "__main__":
     print("nth root 2: ", psi)    
     
 
-    if q_bit_size == 64:
+    if q_bit_size == 60:
         width = 17
     else:
         width = 13
@@ -420,7 +463,7 @@ if __name__ == "__main__":
     #--------------------Output NTT---------------------------------
 
 
-    f0 = open('test_files/NTT_outputs_hexa.txt','w')
+    f0 = open('test/NTT_outputs_hexa.txt','w')
 
     for i in range(n):
         f0.write('{}'.format(hex(A_NTT_merge[i])[2:]))

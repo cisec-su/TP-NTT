@@ -1,5 +1,4 @@
 
-`include "defines.v"
 
 module modred(input clk,rst,
               input [31:0] q,

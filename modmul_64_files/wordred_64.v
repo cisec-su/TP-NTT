@@ -1,5 +1,5 @@
 
-`include "defines.v"
+
 
 module wordred_64 #(parameter I_SIZE=0, O_SIZE=0)
                 (input clk,rst,

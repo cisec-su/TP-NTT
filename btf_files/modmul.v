@@ -1,10 +1,12 @@
 
 
-`include "defines.v"
+`include "bu_def.vh"
 
 module modmul#
             (
-                parameter LOGQ = 32
+                parameter LOGQ = 32,
+                parameter LOGQH   = 15,
+                parameter USE_STD = 1
             )
             (
                 input        clk,rst,
@@ -15,10 +17,8 @@ module modmul#
                 output[LOGQ-1:0] C_32
              );
 
-localparam MODRED_CC = (LOGQ == 32) ? `MODRED_CC_32 : `MODRED_CC_64;
-
-
 localparam K = 2*LOGQ;
+localparam MODRED_CC = (LOGQ == 32) ? `MODRED_CC_32 : `MODRED_CC_60;
 // q registers
 reg [LOGQ-1:0] qred,qint;
 
@@ -50,9 +50,24 @@ end
 wire [K-1:0] D;
 reg  [K-1:0] D2;
 
-// integer mult
-//intmul im(clk,rst,A,B,D);
-intmul_standard#(.W_A(LOGQ), .W_B(LOGQ)) im(clk, rst, A, B, D);
+
+if (USE_STD) begin
+    intmul_standard#(.W_A(LOGQ), .W_B(LOGQ)) im(clk, rst, A, B, D);
+end else begin
+    intmul_nonstd#(
+        .W_A(LOGQ),       
+        .W_B(LOGQ)
+    )
+    im_nstd
+    (
+        .clk(clk),
+        .rst(rst), 
+        .A(A),
+        .B(B),
+        .C(D)
+    );
+end
+
 
 // connection
 `ifdef USE_DFF_MODMUL
@@ -69,16 +84,35 @@ end
 `endif
 
 // modular reduction
-if (LOGQ == 32) begin
-    modred mr(clk,rst,qred,D2,C);
-end else begin
-    modred_64 mr(clk,rst,qred,D2,C);
-end
+//if (LOGQ == 32) begin
+//    modred_32 mr(clk,rst,qred,D2,C);
+//end else begin
+//    modred_64 mr(clk,rst,qred,D2,C);
+//end
 
 
+ wlm_mixed
+    #(
+        .LOGQ   (LOGQ   ),
+        .LOGQH  (LOGQH  ),
+        .CORRECT(1),
+        .FF_IN  (1  ),
+        .FF_SUM (0 ),
+        .FF_SUB (0 ),
+        .FF_MUL (1 ),
+        .FF_OUT (1 )
+    ) 
+    wlm_inst 
+    (
+        .clk(clk),
+        .qH (qred[LOGQ-1-:LOGQH] ),
+        .C  (D2  ),
+        .T  (C  )
+    );
+    
 
 // final LOGQ-bit
-shiftreg #(.SHIFT(MODRED_CC),.DATA(LOGQ)) sre00(clk,rst,D2[LOGQ-1:0],C_32);
+//shiftreg #(.SHIFT(MODRED_CC),.DATA(LOGQ)) sre00(clk,rst,D2[LOGQ-1:0],C_32);
 
 endmodule
 

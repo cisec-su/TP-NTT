@@ -1,5 +1,5 @@
 
-`include "defines.v"
+
 
 // read latency is 1 cc
 

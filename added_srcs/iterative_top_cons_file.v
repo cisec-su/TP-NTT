@@ -6,8 +6,8 @@ module iterative_tp_cons_file #(
         parameter n2            = 1<<6,
         parameter n3            = 1<<0,
         parameter n4            = 1<<0,     
-        parameter TP            = 1<<7,
-        parameter LOGQ          = 32
+        parameter TP            = 1<<6,
+        parameter LOGQ          = 60
     )
     (
         input                           clk,

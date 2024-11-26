@@ -18,17 +18,17 @@
 // Additional Comments:
 // 
 //////////////////////////////////////////////////////////////////////////////////
-`include "defines.v"
+`include "bu_def.vh"
 
 
 module iterative_tp_super_top#(
-        parameter N             = 1<<16,
-        parameter n1            = 1<<6,
+        parameter N             = 1<<12,
+        parameter n1            = 1<<4,
         parameter n2            = 1<<4,
-        parameter n3            = 1<<6,
+        parameter n3            = 1<<4,
         parameter n4            = 1<<0,
-        parameter TP            = 1<<6,
-        parameter LOGQ          = 32
+        parameter TP            = 1<<4,
+        parameter LOGQ          = 60
     )
     (
         input                           clk,
@@ -42,7 +42,7 @@ module iterative_tp_super_top#(
     );
 
     localparam MODE = (n4 != 1) ? 2 : (n3 != 1) ? 1 : 0;
-    localparam BTF_LAT = (LOGQ == 32) ? `BTRFLY_CC_32 : `BTRFLY_CC_64;
+    localparam BTF_LAT = (LOGQ == 32) ? `BTRFLY_CC_32 + 1 : `BTRFLY_CC_60 + 1;
 
 
     localparam log_n1 = $rtoi($ceil($clog2(n1)));

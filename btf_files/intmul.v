@@ -1,6 +1,6 @@
 
 
-`include "defines.v"
+
 
 module intmul(input clk,rst,
               input [31:0] A,B,

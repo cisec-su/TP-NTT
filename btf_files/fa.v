@@ -1,5 +1,5 @@
 
-`include "defines.v"
+
 
 module FA(input  x,y,z,
           output c,s);

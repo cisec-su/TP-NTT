@@ -1,5 +1,5 @@
 
-`include "defines.v"
+
 
 module shiftreg #(parameter SHIFT = 0, DATA=32)
    (input             clk,reset,
