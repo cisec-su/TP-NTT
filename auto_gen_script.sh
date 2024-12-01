@@ -12,5 +12,6 @@ q_size=$8
 
 multiplier_type="word_level_mont"
 
-python3 "tp_oriented_twiddle_model.py" "$N" 8 "$multiplier_type" "$q_size"
 python3 "iterative_moduled_version.py" "$N" "$n1" "$n2" "$n3" "$n4" "$TP" "$7" "$q_size"
+python3 "tp_oriented_twiddle_model.py" "$N" 8 "$multiplier_type" "$q_size"
+

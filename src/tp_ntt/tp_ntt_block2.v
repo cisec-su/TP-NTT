@@ -349,7 +349,7 @@ end
 
 generate
     if (RW_DIS == 0) begin
-        addr_gen_large #(N, n2, size0, size1, TP) large_addr_gen_sm_unit(clk, rst, start_addr_gen_shifted, read_addr_res, write_addr_res);
+        addr_gen #(.large_addr(1),.N(N), .n2(n2), .size0(size0), .size1(size1), .TP(TP)) large_addr_gen_sm_unit(clk, rst, start_addr_gen_shifted, read_addr_res, write_addr_res);
     end
 endgenerate
 
@@ -375,6 +375,7 @@ endgenerate
 
 
 shiftreg #(.SHIFT(log_n2*BTF_LAT+2),.DATA(1)) sre100(clk,rst,start_addr_gen,start_addr_gen_shifted);
+
 
 shiftreg #(.SHIFT(log_n2*BTF_LAT+4),.DATA(1)) sre102(clk,rst,start_addr_gen,start_addr_gen_shifted_v2);
 
