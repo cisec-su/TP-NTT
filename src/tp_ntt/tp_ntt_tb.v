@@ -6,9 +6,9 @@ module tp_ntt_tb();
 
     // Parameters
     parameter TEST_DIR      = "../../../../test";
-    parameter N             = 1<<8;
+    parameter N             = 1<<9;
     parameter n1            = 1<<3;
-    parameter n2            = 1<<2;
+    parameter n2            = 1<<3;
     parameter n3            = 1<<3;
     parameter n4            = N / (n1*n2*n3);
     parameter size0         = n1*n2;

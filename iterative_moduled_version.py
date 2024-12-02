@@ -5,6 +5,19 @@ import sympy
 import math
 
 
+def bitreverse(value, width):
+    """
+    Reverse the bits of a number within a specified bit width.
+
+    :param value: The integer value to reverse.
+    :param width: The bit width (number of bits to reverse).
+    :return: The bit-reversed integer.
+    """
+    reversed_value = 0
+    for i in range(width):
+        bit = (value >> i) & 1  # Extract the i-th bit
+        reversed_value |= (bit << (width - 1 - i))  # Set the reversed position
+    return reversed_value
 
 def small_stage_model(N, TP, start1, TWIDDLE_file, TWIDDLE_tuple_map, cont_write): ##### AIM: to produce MERGED-NTT module with TP output
     input1 = []
@@ -70,20 +83,17 @@ def iterative_first_block1(input1, TP, n1, n2, size0, bram_skip):
         
         for ntt_num in range(TP//n1):
             in_poly = arr1[ntt_num*n1:(ntt_num+1)*n1]
-            #print("in1: ", in_poly)
-            print(ntt_num)
             if ntt_num == TP//n1-1:
                 cont_write = False
             else:
                 cont_write = True
-            print("cont ? ", cont_write)
             calc_ntt = small_stage_model(N, n1, in_poly, file1, TWIDDLE_tuple_map, cont_write)
             calc_res_poly[ntt_num*n1:(ntt_num+1)*n1] = calc_ntt
 
         
         calc_res = calc_res_poly
 
-        #print("ca: ", calc_res)
+        print("ca: ", calc_res)
 
         #print("ss: ", calc_res)
 
@@ -95,14 +105,14 @@ def iterative_first_block1(input1, TP, n1, n2, size0, bram_skip):
             else:
                 arr_new[i] = calc_res[i]
             a = 0
-        #print("rot: ", arr_new)
+        print("rot: ", arr_new)
         
         
         iter0_out[ctr] = arr_new
 
     print("\n\nITERATION 0 OUT and ITERATION 1 IN: ")
-    # for a in iter0_out:
-    #     print(a)
+    for a in iter0_out:
+        print(a)
     print("ITERATION 0 OUT and ITERATION 1 IN: \n\n")
 
     iter0_read = []
@@ -119,7 +129,7 @@ def iterative_first_block1(input1, TP, n1, n2, size0, bram_skip):
                 new_arr.append(iter0_out[bram_start+(i%(size0//TP))][(i + (ctr%(size0//TP))) % TP])
             else:
                 new_arr.append(iter0_out[ctr][i])
-        #print("read: ", new_arr)
+        print("read: ", new_arr)
         iter0_read.append(new_arr)
          ##### READ FROM BRAM
 
@@ -204,7 +214,7 @@ def iterative_second_block(iter0_read, TP, n2, size0, size1, bram_skip):
                 read_arr[i] = iter1_out[ (((size0//TP)*(size1//TP))*i + (size0//TP)*(ctr%(size1//TP)) + (ctr//size1)  ) % depth][(i + (ctr//(size1//TP)) )%TP]
             else:
                 read_arr[i] = iter1_out[ctr][i]
-        #print("rr: ", read_arr)
+        print("read_stage2: ", read_arr)
         iter1_read.append(read_arr)
     
     return iter1_read

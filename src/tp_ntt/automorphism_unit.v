@@ -150,8 +150,11 @@ endgenerate
 
 generate
     if (large_automorphism) begin
-        always @(posedge clk) begin
-            input_data_shift <= (input_data >> (((ctr_shifted)>>size0_over_tp_mult_size1_over_tp_log2)*LOGQ)) | (input_data << (LOGQ*TP - ((ctr_shifted)>>size0_over_tp_mult_size1_over_tp_log2)*LOGQ));
+        for (genvar rot = 0; rot < TP; rot = rot + 1 ) begin
+                always @(posedge clk) begin
+                input_data_shift[(TP-((rot + (ctr_shifted>>size0_over_tp_mult_size1_over_tp_log2))&(TP-1)))*LOGQ-1-:LOGQ] <= input_data[(TP-rot)*LOGQ-1-:LOGQ];
+            end
+            //input_data_shift <= (input_data >> (((ctr_shifted)>>size0_over_tp_mult_size1_over_tp_log2)*LOGQ)) | (input_data << (LOGQ*TP - ((ctr_shifted)>>size0_over_tp_mult_size1_over_tp_log2)*LOGQ));
         end
     end else begin
         for (genvar rot = 0; rot < TP; rot = rot + 1) begin

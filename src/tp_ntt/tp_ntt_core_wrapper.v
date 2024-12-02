@@ -298,7 +298,9 @@ generate
     end else begin
         for (genvar i = 0; i < TP; i = i + 1) begin
             always @(posedge clk) begin
-                NTT_core_in[( TP - (((i & (n1/2-1))*2 + (i & (n1-1))/(n1/2) + (i/n1)*n1) & (TP-1)) )*LOGQ-1             -:LOGQ]    <= NTT_INPUT[(TP-i)*LOGQ-1-:LOGQ];
+                //NTT_core_in[( TP - (((i & (n1/2-1))*2 + (i & (n1-1))/(n1/2) + (i/n1)*n1) & (TP-1)) )*LOGQ-1             -:LOGQ]    <= NTT_INPUT[(TP-i)*LOGQ-1-:LOGQ];
+                //Buraya bir bakalim
+                NTT_core_in[( TP - ((((i & (n2-1))*n1) + (i/(TP>>1)) + ((i & ((TP>>1)-1))/(TP/n1))*2) & (TP-1)) )*LOGQ-1-:LOGQ]     <= NTT_INPUT[(TP-i)*LOGQ-1-:LOGQ];
             end
         end
     end
@@ -306,13 +308,13 @@ generate
 endgenerate
 
 
-generate
-    for (genvar rot = 0; rot < TP; rot = rot + 1) begin
-        always @(posedge clk) begin
-            NTT_core_out_reg[(TP-((rot/(TP/n1) + (rot&(TP/n1-1))*n1  )&(TP-1)))*LOGQ-1 -: LOGQ] <= NTT_core_out[(TP - (((rot - (ctr&(size0/TP-1))))&(TP-1)))*LOGQ-1 -: LOGQ];
-        end
-    end
-endgenerate
+// generate
+//     for (genvar rot = 0; rot < TP; rot = rot + 1) begin
+//         always @(posedge clk) begin
+//             NTT_core_out_reg[(TP-((rot/(TP/n1) + (rot&(TP/n1-1))*n1  )&(TP-1)))*LOGQ-1 -: LOGQ] <= NTT_core_out[(TP - (((rot - (ctr&(size0/TP-1))))&(TP-1)))*LOGQ-1 -: LOGQ];
+//         end
+//     end
+// endgenerate
 
 generate  
     for (genvar b2 = 0; b2 < bram_reg_size; b2 = b2 + 1) begin: BRAM_GEN_BLOCK_TWIDDLE // BRAM for TWIDDLE
@@ -328,6 +330,7 @@ endgenerate
 
 // Output Rotaion for Next Block
 generate
+    
     for (genvar i = 0; i < TP; i = i + 1) begin
         always @(posedge clk) begin
             NTT_OUTPUT[(TP-i)*LOGQ-1 -: LOGQ] <= NTT_core_out[(TP-i)*LOGQ-1-:LOGQ];
