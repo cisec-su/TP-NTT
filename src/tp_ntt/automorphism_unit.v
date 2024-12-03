@@ -2,6 +2,7 @@ module automorphism_unit
    #(
         parameter  large_automorphism   = 0  ,  // 0 --> SMALL_ADDRESS_GENERATOR , 1 --> LARGE_ADDRESS_GENERATOR
         parameter  N            = 128,
+        parameter  n1           = 8  ,
         parameter  n2           = 2  ,
         parameter  size0        = 16 ,
         parameter  size1        = 16 ,    
@@ -21,7 +22,7 @@ module automorphism_unit
 
     
     
-    localparam depth  = large_automorphism ? $rtoi($ceil(N/TP)) : $rtoi($ceil(size0/n2)) ;
+    localparam depth  = large_automorphism ? $rtoi($ceil(N/TP)) : $rtoi($ceil(size0/n1)) ;
     localparam size1_over_tp = size1/TP;
     localparam size1_over_tp_log2 = $rtoi($ceil($clog2(size1_over_tp)));
     localparam size0_over_tp = size0/TP;
@@ -145,13 +146,13 @@ endgenerate
 
 
 generate
-    addr_gen #(.large_addr(large_automorphism),.N(N), .n2(n2), .size0(size0), .size1(size1), .TP(TP)) small_addr_gen_sm_unit (clk, rst, start_addr_sig, read_addr_res, write_addr_res);
+    addr_gen #(.large_addr(large_automorphism),.N(N), .n1(n1), .size0(size0), .size1(size1), .TP(TP)) small_addr_gen_sm_unit (clk, rst, start_addr_sig, read_addr_res, write_addr_res);
 endgenerate
 
 generate
     if (large_automorphism) begin
         for (genvar rot = 0; rot < TP; rot = rot + 1 ) begin
-                always @(posedge clk) begin
+            always @(posedge clk) begin
                 input_data_shift[(TP-((rot + (ctr_shifted>>size0_over_tp_mult_size1_over_tp_log2))&(TP-1)))*LOGQ-1-:LOGQ] <= input_data[(TP-rot)*LOGQ-1-:LOGQ];
             end
             //input_data_shift <= (input_data >> (((ctr_shifted)>>size0_over_tp_mult_size1_over_tp_log2)*LOGQ)) | (input_data << (LOGQ*TP - ((ctr_shifted)>>size0_over_tp_mult_size1_over_tp_log2)*LOGQ));
@@ -159,7 +160,9 @@ generate
     end else begin
         for (genvar rot = 0; rot < TP; rot = rot + 1) begin
             always @(posedge clk) begin
-                input_data_shift[(TP-((rot/(TP/n2) + (rot&(TP/n2-1))*n2  )&(TP-1)))*LOGQ-1 -: LOGQ] <= input_data[(TP - (((rot - (ctr_shifted&(size0/TP-1))))&(TP-1)))*LOGQ-1 -: LOGQ];
+                input_data_shift[(TP-((rot/(TP/n2) + (rot&(TP/n2-1))*n2 + ((ctr_shifted&(size0/TP-1))) )&(TP-1)))*LOGQ-1 -: LOGQ] <= input_data[(TP-((rot   )&(TP-1)))*LOGQ-1 -: LOGQ];
+                //NTT_core_out_reg[(TP-((rot/(TP/n2) + (rot&(TP/n2-1))*n2  )&(TP-1)))*LOGQ-1 -: LOGQ] <= NTT_core_out[(TP - (((rot - (ctr&(size0/TP-1))))&(TP-1)))*LOGQ-1 -: LOGQ];
+                
             end
         end
     end

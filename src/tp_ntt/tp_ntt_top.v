@@ -57,7 +57,8 @@ generate
          .LOGQ(LOGQ),         
          .BTF_LAT(BTF_LAT),       
          .BLOCK_ID(0),       
-         .IS_LARGE(0))
+         .IS_LARGE(0),
+         .RW_DIS(0))
          tp_ntt_d1 
          (
           .clk(clk), 
@@ -72,7 +73,8 @@ generate
           automorphism_unit#(
             .large_automorphism(0),
             .N(N),            
-            .n2(n1),           
+            .n1(n1),
+            .n2(n2),           
             .size0(n1*n2),        
             .size1(n3*n4),        
             .TP(TP),           
@@ -98,7 +100,8 @@ generate
          .LOGQ(LOGQ),         
          .BTF_LAT(BTF_LAT),       
          .BLOCK_ID(1),       
-         .IS_LARGE(1))
+         .IS_LARGE(1),
+         .RW_DIS(0))
          tp_ntt_d2 
          (
           .clk(clk), 
@@ -113,8 +116,9 @@ generate
           automorphism_unit#(
             .large_automorphism(1),
             .N(N),            
-            .n2(n2),           
-            .size0(n3*n2),        
+            .n1(n2),
+            .n2(n1),           
+            .size0(n1*n2),        
             .size1(n3*n4),        
             .TP(TP),           
             .LOGQ(LOGQ),
@@ -139,7 +143,8 @@ generate
          .LOGQ(LOGQ),         
          .BTF_LAT(BTF_LAT),       
          .BLOCK_ID(2),       
-         .IS_LARGE(0))
+         .IS_LARGE(0),
+         .RW_DIS(1))
          tp_ntt_d3 
          (
           .clk(clk), 

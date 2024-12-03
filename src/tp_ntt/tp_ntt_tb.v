@@ -6,17 +6,17 @@ module tp_ntt_tb();
 
     // Parameters
     parameter TEST_DIR      = "../../../../test";
-    parameter N             = 1<<9;
-    parameter n1            = 1<<3;
-    parameter n2            = 1<<3;
-    parameter n3            = 1<<3;
+    parameter N             = 1<<16;
+    parameter n1            = 1<<6;
+    parameter n2            = 1<<4;
+    parameter n3            = 1<<6;
     parameter n4            = N / (n1*n2*n3);
     parameter size0         = n1*n2;
     parameter size1         = n3*n4;
     parameter LOGQ          = 60;
     parameter DIM           = (n4 != 1) ? 2 : ((n3 != 1) ? 1 : 0);
     parameter BTF_LAT       = (LOGQ == 32) ? `BTRFLY_CC_32 + 1 : `BTRFLY_CC_60 + 1;
-    parameter TP            = 1<<3;
+    parameter TP            = 1<<6;
     parameter TP_twid       = TP-1;
     parameter depth         =  $rtoi($ceil(N/TP));
 

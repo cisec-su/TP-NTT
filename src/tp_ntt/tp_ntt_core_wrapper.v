@@ -9,7 +9,8 @@ module tp_ntt_core_wrapper#(
         parameter LOGQ          = 60,
         parameter BTF_LAT       = 16,
         parameter BLOCK_ID      = 0,
-        parameter IS_LARGE      = 0
+        parameter IS_LARGE      = 0,
+        parameter RW_DIS        = 0
     )
     (
         input                           clk,
@@ -300,7 +301,12 @@ generate
             always @(posedge clk) begin
                 //NTT_core_in[( TP - (((i & (n1/2-1))*2 + (i & (n1-1))/(n1/2) + (i/n1)*n1) & (TP-1)) )*LOGQ-1             -:LOGQ]    <= NTT_INPUT[(TP-i)*LOGQ-1-:LOGQ];
                 //Buraya bir bakalim
-                NTT_core_in[( TP - ((((i & (n2-1))*n1) + (i/(TP>>1)) + ((i & ((TP>>1)-1))/(TP/n1))*2) & (TP-1)) )*LOGQ-1-:LOGQ]     <= NTT_INPUT[(TP-i)*LOGQ-1-:LOGQ];
+                //NTT_core_in[( TP - ((((i & (n2-1))*n1) + (i/(TP>>1)) + ((i & ((TP>>1)-1))/(TP/n1))*2) & (TP-1)) )*LOGQ-1-:LOGQ]     <= NTT_INPUT[(TP-i)*LOGQ-1-:LOGQ];
+                if (RW_DIS) begin
+                    NTT_core_in[( TP - (((i & (n1/2-1))*2 + (i & (n1-1))/(n1/2) + (i/n1)*n1) & (TP-1)) )*LOGQ-1             -:LOGQ]    <= NTT_INPUT[(TP-i)*LOGQ-1-:LOGQ];
+                end else begin
+                    NTT_core_in[( TP - ((((i & (n2-1))*n1) + (i/(TP>>1)) + ((i & ((TP>>1)-1))/(TP/n1))*2) & (TP-1)) )*LOGQ-1-:LOGQ]    <= NTT_INPUT[(TP-i)*LOGQ-1-:LOGQ];
+                end
             end
         end
     end
