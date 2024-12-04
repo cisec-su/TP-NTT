@@ -153,17 +153,13 @@ generate
     if (large_automorphism) begin
         for (genvar rot = 0; rot < TP; rot = rot + 1 ) begin
             always @(posedge clk) begin
-                input_data_shift[(TP-((rot + (ctr_shifted>>size0_over_tp_mult_size1_over_tp_log2))&(TP-1)))*LOGQ-1-:LOGQ] <= input_data[(TP-rot)*LOGQ-1-:LOGQ];
+                input_data_shift[rot*LOGQ +: LOGQ] <= input_data[(((rot + (ctr_shifted>>size0_over_tp_mult_size1_over_tp_log2))&(TP-1)))*LOGQ +: LOGQ];
             end
-            //input_data_shift <= (input_data >> (((ctr_shifted)>>size0_over_tp_mult_size1_over_tp_log2)*LOGQ)) | (input_data << (LOGQ*TP - ((ctr_shifted)>>size0_over_tp_mult_size1_over_tp_log2)*LOGQ));
         end
     end else begin
         for (genvar rot = 0; rot < TP; rot = rot + 1) begin
             always @(posedge clk) begin
-                //input_data_shift[(TP-((rot/(TP/n2) + (rot&(TP/n2-1))*n2 + ((ctr_shifted&(size0/TP-1))) )&(TP-1)))*LOGQ-1 -: LOGQ] <= input_data[(TP-((rot   )&(TP-1)))*LOGQ-1 -: LOGQ];
                 input_data_shift[(TP-rot)*LOGQ-1 -: LOGQ] <= input_data[(TP-((   ((((rot - (ctr_shifted&(size0/TP-1)))&(TP-1)))/n2) + (((rot - (ctr_shifted&(size0/TP-1)))&(n2-1))*(TP/n2)))&(TP-1)))*LOGQ-1 -: LOGQ];
-                //NTT_core_out_reg[(TP-((rot/(TP/n2) + (rot&(TP/n2-1))*n2  )&(TP-1)))*LOGQ-1 -: LOGQ] <= NTT_core_out[(TP - (((rot - (ctr&(size0/TP-1))))&(TP-1)))*LOGQ-1 -: LOGQ];
-                
             end
         end
     end
