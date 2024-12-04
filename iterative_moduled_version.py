@@ -89,7 +89,11 @@ def iterative_first_block1(input1, TP, n1, n2, size0, bram_skip, IDX):
 
         for i in range(TP):
             if not bram_skip:
-                arr_new[((i//(TP//n2) + (i%(TP//n2))*n2)%TP+(ctr%(size0//TP)))%TP] = calc_res[i]
+                #arr_new[i] = calc_res[((((i-(ctr%(size0//TP)))%TP)//(TP//n2) + (((i-(ctr%(size0//TP)))%TP)%(TP//n2))*n2)%TP)%TP]
+                arr_new[i] = calc_res[(((i - (ctr%(size0//TP)))%TP)//n2 + ((i - (ctr%(size0//TP)))%n2)*(TP//n2))%TP]
+                #print("new: ", ((i - (ctr%(size0//TP)))//n2 + (((i - (ctr%(size0//TP))))%n2)*2)%TP, i)
+                #print("prev: ", i, ((i//(TP//n2) + (i%(TP//n2))*n2)%TP+(ctr%(size0//TP)))%TP)
+                #arr_new[((i//(TP//n2) + (i%(TP//n2))*n2)%TP+(ctr%(size0//TP)))%TP] = calc_res[i]
             else:
                 arr_new[i] = calc_res[i]
             a = 0

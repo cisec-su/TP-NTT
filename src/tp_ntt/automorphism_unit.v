@@ -160,7 +160,8 @@ generate
     end else begin
         for (genvar rot = 0; rot < TP; rot = rot + 1) begin
             always @(posedge clk) begin
-                input_data_shift[(TP-((rot/(TP/n2) + (rot&(TP/n2-1))*n2 + ((ctr_shifted&(size0/TP-1))) )&(TP-1)))*LOGQ-1 -: LOGQ] <= input_data[(TP-((rot   )&(TP-1)))*LOGQ-1 -: LOGQ];
+                //input_data_shift[(TP-((rot/(TP/n2) + (rot&(TP/n2-1))*n2 + ((ctr_shifted&(size0/TP-1))) )&(TP-1)))*LOGQ-1 -: LOGQ] <= input_data[(TP-((rot   )&(TP-1)))*LOGQ-1 -: LOGQ];
+                input_data_shift[(TP-rot)*LOGQ-1 -: LOGQ] <= input_data[(TP-((   ((((rot - (ctr_shifted&(size0/TP-1)))&(TP-1)))/n2) + (((rot - (ctr_shifted&(size0/TP-1)))&(n2-1))*(TP/n2)))&(TP-1)))*LOGQ-1 -: LOGQ];
                 //NTT_core_out_reg[(TP-((rot/(TP/n2) + (rot&(TP/n2-1))*n2  )&(TP-1)))*LOGQ-1 -: LOGQ] <= NTT_core_out[(TP - (((rot - (ctr&(size0/TP-1))))&(TP-1)))*LOGQ-1 -: LOGQ];
                 
             end
