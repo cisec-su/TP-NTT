@@ -22,7 +22,7 @@ module automorphism_unit
 
     
     
-    localparam depth  = large_automorphism ? $rtoi($ceil(N/TP)) : $rtoi($ceil(size0/n1)) ;
+    localparam depth  = large_automorphism ? $rtoi($ceil(N/TP)) : $rtoi($ceil(size0/TP)) ;
     localparam size1_over_tp = size1/TP;
     localparam size1_over_tp_log2 = $rtoi($ceil($clog2(size1_over_tp)));
     localparam size0_over_tp = size0/TP;

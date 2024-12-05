@@ -3,11 +3,11 @@
 
 module tp_ntt_top
    #(
-        parameter N             = 1<<7,
-        parameter n1            = 1<<3,
-        parameter n2            = 1<<1,
-        parameter n3            = 1<<3,
-        parameter TP            = 1<<3,
+        parameter N             = 1<<16,
+        parameter n1            = 1<<6,
+        parameter n2            = 1<<4,
+        parameter n3            = 1<<6,
+        parameter TP            = 1<<6,
         parameter LOGQ          = 60
     )
     (
@@ -34,12 +34,74 @@ localparam size0_over_tp =  $rtoi($ceil(n1*n2/TP));
 localparam size1_over_tp =  $rtoi($ceil(n3*n4/TP));
 
 
-wire START_NTT_2, START_NTT_3, START_NTT_4, START_NTT_AU1, START_NTT_AU2;
-wire [TP*LOGQ-1:0] NTT_READ_STAGE0, NTT_READ_STAGE1, NTT_READ_STAGE2, NTT_READ_STAGE3, NTT_READ_AU1, NTT_READ_AU2;
+wire START_NTT_2, START_NTT_3, START_NTT_4, START_NTT_AU1, START_NTT_AU2, START_NTT_AU3;
+wire [TP*LOGQ-1:0] NTT_READ_STAGE0, NTT_READ_STAGE1, NTT_READ_STAGE2, NTT_READ_STAGE3, NTT_READ_AU1, NTT_READ_AU2, NTT_READ_AU3;
 
 
 generate
     if (DIM == `DIM_2D) begin
+        tp_ntt_core_wrapper#(
+         .DIM(DIM),
+         .N(N),
+         .n1(n1),
+         .n2(n2),
+         .TP(TP),
+         .LOGQ(LOGQ),         
+         .BTF_LAT(BTF_LAT),       
+         .BLOCK_ID(0),       
+         .IS_LARGE(0),
+         .RW_DIS(0))
+         tp_ntt_d1 
+         (
+          .clk(clk), 
+          .rst(rst), 
+          .START_NTT(START_NTT_ALL),
+          .OP_TYPE_INPUT(OP_TYPE_INPUT), 
+          .Q_in(Q_in), 
+          .NTT_INPUT(NTT_INPUT), 
+          .TWIDDLE_INPUT(TWIDDLE_INPUT), 
+          .NTT_OUTPUT(NTT_READ_STAGE0));
+        automorphism_unit#(
+            .large_automorphism(0),
+            .N(N),            
+            .n1(n1),
+            .n2(n2),           
+            .size0(n1*n2),        
+            .size1(n3*n4),        
+            .TP(TP),           
+            .LOGQ(LOGQ),
+            .BTF_LAT(BTF_LAT),
+            .AU_ID(0)         
+          )
+          AU1
+          (
+            .clk(clk),         
+            .rst(rst),         
+            .start(START_NTT_AU1),
+            .input_data(NTT_READ_STAGE0),  
+            .output_data(NTT_READ_AU1)    
+          );
+          tp_ntt_core_wrapper#(
+         .DIM(DIM),
+         .N(N),
+         .n1(n2),
+         .n2(n1),
+         .TP(TP),
+         .LOGQ(LOGQ),         
+         .BTF_LAT(BTF_LAT),       
+         .BLOCK_ID(1),       
+         .IS_LARGE(1),
+         .RW_DIS(1))
+         tp_ntt_d2 
+         (
+          .clk(clk), 
+          .rst(rst), 
+          .START_NTT(START_NTT_2),
+          .OP_TYPE_INPUT(OP_TYPE_INPUT), 
+          .Q_in(Q_in), 
+          .NTT_INPUT(NTT_READ_AU1), 
+          .TWIDDLE_INPUT(TWIDDLE_INPUT), 
+          .NTT_OUTPUT(NTT_READ_STAGE1));
         //tp_ntt_block1#(.DIM(DIM), .N(N), .n1(n1), .n2(n2),    .TP(TP), .LOGQ(LOGQ), .BTF_LAT(BTF_LAT), .RW_DIS(0), .BLOCK_ID(0)) tp_ntt_d1 (clk, rst, START_NTT_ALL ,OP_TYPE_INPUT, Q_in, NTT_INPUT, TWIDDLE_INPUT, NTT_READ_STAGE0);
         //tp_ntt_block2#(.DIM(DIM), .N(N), .n2(n2), .size0(n1*n2), .TP(TP), .LOGQ(LOGQ), .BTF_LAT(BTF_LAT), .RW_DIS(1)              ) tp_ntt_d2 (clk, rst, START_NTT_2 ,OP_TYPE_INPUT, Q_in, NTT_READ_STAGE0, TWIDDLE_INPUT, NTT_READ_STAGE1);
     end
@@ -164,15 +226,166 @@ generate
         //tp_ntt_block2#(.DIM(DIM), .N(N), .n2(n2), .size0(n1*n2), .TP(TP), .LOGQ(LOGQ), .BTF_LAT(BTF_LAT), .RW_DIS(0)              ) tp_ntt_d2 (clk, rst, START_NTT_2 ,OP_TYPE_INPUT, Q_in, NTT_READ_STAGE0, TWIDDLE_INPUT, NTT_READ_STAGE1);
         //tp_ntt_block1#(.DIM(DIM), .N(N), .n1(n3), .n2(n4),    .TP(TP), .LOGQ(LOGQ), .BTF_LAT(BTF_LAT), .RW_DIS(0), .BLOCK_ID(2)) tp_ntt_d3 (clk, rst, START_NTT_3 ,OP_TYPE_INPUT, Q_in, NTT_READ_STAGE1, TWIDDLE_INPUT, NTT_READ_STAGE2);
         //tp_ntt_block1#(.DIM(DIM), .N(N), .n1(n4), .n2(n3),    .TP(TP), .LOGQ(LOGQ), .BTF_LAT(BTF_LAT), .RW_DIS(1), .BLOCK_ID(3)) tp_ntt_d4 (clk, rst, START_NTT_4 ,OP_TYPE_INPUT, Q_in, NTT_READ_STAGE2, TWIDDLE_INPUT, NTT_READ_STAGE3);
+        tp_ntt_core_wrapper#(
+         .DIM(DIM),
+         .N(N),
+         .n1(n1),
+         .n2(n2),
+         .TP(TP),
+         .LOGQ(LOGQ),         
+         .BTF_LAT(BTF_LAT),       
+         .BLOCK_ID(0),       
+         .IS_LARGE(0),
+         .RW_DIS(0))
+         tp_ntt_d1 
+         (
+          .clk(clk), 
+          .rst(rst), 
+          .START_NTT(START_NTT_ALL),
+          .OP_TYPE_INPUT(OP_TYPE_INPUT), 
+          .Q_in(Q_in), 
+          .NTT_INPUT(NTT_INPUT), 
+          .TWIDDLE_INPUT(TWIDDLE_INPUT), 
+          .NTT_OUTPUT(NTT_READ_STAGE0));
+
+          automorphism_unit#(
+            .large_automorphism(0),
+            .N(N),            
+            .n1(n1),
+            .n2(n2),           
+            .size0(n1*n2),        
+            .size1(n3*n4),        
+            .TP(TP),           
+            .LOGQ(LOGQ),
+            .BTF_LAT(BTF_LAT),
+            .AU_ID(0)         
+          )
+          AU1
+          (
+            .clk(clk),         
+            .rst(rst),         
+            .start(START_NTT_AU1),
+            .input_data(NTT_READ_STAGE0),  
+            .output_data(NTT_READ_AU1)    
+          );
+
+          tp_ntt_core_wrapper#(
+         .DIM(DIM),
+         .N(N),
+         .n1(n2),
+         .n2(n1),
+         .TP(TP),
+         .LOGQ(LOGQ),         
+         .BTF_LAT(BTF_LAT),       
+         .BLOCK_ID(1),       
+         .IS_LARGE(1),
+         .RW_DIS(0))
+         tp_ntt_d2 
+         (
+          .clk(clk), 
+          .rst(rst), 
+          .START_NTT(START_NTT_2),
+          .OP_TYPE_INPUT(OP_TYPE_INPUT), 
+          .Q_in(Q_in), 
+          .NTT_INPUT(NTT_READ_AU1), 
+          .TWIDDLE_INPUT(TWIDDLE_INPUT), 
+          .NTT_OUTPUT(NTT_READ_STAGE1));
+
+          automorphism_unit#(
+            .large_automorphism(1),
+            .N(N),            
+            .n1(n2),
+            .n2(n1),           
+            .size0(n1*n2),        
+            .size1(n3*n4),        
+            .TP(TP),           
+            .LOGQ(LOGQ),
+            .BTF_LAT(BTF_LAT),
+            .AU_ID(1)         
+          )
+          AU2
+          (
+            .clk(clk),         
+            .rst(rst),         
+            .start(START_NTT_AU2),
+            .input_data(NTT_READ_STAGE1),  
+            .output_data(NTT_READ_AU2)    
+          );
+
+          tp_ntt_core_wrapper#(
+         .DIM(DIM),
+         .N(N),
+         .n1(n3),
+         .n2(n4),
+         .TP(TP),
+         .LOGQ(LOGQ),         
+         .BTF_LAT(BTF_LAT),       
+         .BLOCK_ID(2),       
+         .IS_LARGE(0),
+         .RW_DIS(0))
+         tp_ntt_d3 
+         (
+          .clk(clk), 
+          .rst(rst), 
+          .START_NTT(START_NTT_3),
+          .OP_TYPE_INPUT(OP_TYPE_INPUT), 
+          .Q_in(Q_in), 
+          .NTT_INPUT(NTT_READ_AU2), 
+          .TWIDDLE_INPUT(TWIDDLE_INPUT), 
+          .NTT_OUTPUT(NTT_READ_STAGE2));
+        automorphism_unit#(
+            .large_automorphism(0),
+            .N(N),
+            .n1(n3),
+            .n2(n4),
+            .size0(n3*n4),
+            .size1(n1*n2),
+            .TP(TP),
+            .LOGQ(LOGQ),
+            .BTF_LAT(BTF_LAT),
+            .AU_ID(2)
+          )
+          AU3
+          (
+            .clk(clk),         
+            .rst(rst),         
+            .start(START_NTT_AU3),
+            .input_data(NTT_READ_STAGE2),  
+            .output_data(NTT_READ_AU3)    
+          );
+          tp_ntt_core_wrapper#(
+         .DIM(DIM),
+         .N(N),
+         .n1(n4),
+         .n2(n3),
+         .TP(TP),
+         .LOGQ(LOGQ),         
+         .BTF_LAT(BTF_LAT),       
+         .BLOCK_ID(3),       
+         .IS_LARGE(0),
+         .RW_DIS(1))
+         tp_ntt_d4 
+         (
+          .clk(clk), 
+          .rst(rst), 
+          .START_NTT(START_NTT_4),
+          .OP_TYPE_INPUT(OP_TYPE_INPUT), 
+          .Q_in(Q_in), 
+          .NTT_INPUT(NTT_READ_AU3), 
+          .TWIDDLE_INPUT(TWIDDLE_INPUT), 
+          .NTT_OUTPUT(NTT_READ_STAGE3));
     end
 endgenerate
 
 
 shiftreg #(.SHIFT(BTF_LAT*log_n1),                      .DATA(1))   sre101(clk, rst, START_NTT_ALL, START_NTT_AU1);
-shiftreg #(.SHIFT(size0_over_tp + 4),                   .DATA(1))   sre104(clk, rst, START_NTT_AU1, START_NTT_2);
-shiftreg #(.SHIFT(BTF_LAT*log_n2),                      .DATA(1))   sre105(clk, rst, START_NTT_2,   START_NTT_AU2);
-shiftreg #(.SHIFT(depth + 6),                           .DATA(1))   sre102(clk, rst, START_NTT_AU2, START_NTT_3);
-shiftreg #(.SHIFT(BTF_LAT*log_n3+size1_over_tp+6),      .DATA(1))   sre103(clk, rst, START_NTT_3,   START_NTT_4);
+shiftreg #(.SHIFT(size0_over_tp + 4),                   .DATA(1))   sre102(clk, rst, START_NTT_AU1, START_NTT_2);
+shiftreg #(.SHIFT(BTF_LAT*log_n2),                      .DATA(1))   sre103(clk, rst, START_NTT_2,   START_NTT_AU2);
+shiftreg #(.SHIFT(depth + 6),                           .DATA(1))   sre104(clk, rst, START_NTT_AU2, START_NTT_3);
+
+shiftreg #(.SHIFT(BTF_LAT*log_n3),                      .DATA(1))   sre105(clk, rst, START_NTT_3,   START_NTT_AU3);
+
+shiftreg #(.SHIFT(size1_over_tp+6),                     .DATA(1))   sre106(clk, rst, START_NTT_AU3,   START_NTT_4);
 
 
 always @(posedge clk or posedge rst) begin

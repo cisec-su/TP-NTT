@@ -58,6 +58,7 @@ def iterative_first_block1(input1, TP, n1, n2, size0, bram_skip, IDX):
 
     for ctr in range(depth):
         arr1 = [0 for i in range(TP)]
+        print("AAAA: ", input1[ctr])
         for i in range(TP):
             if not bram_skip:
                 arr1[((i%(n2))*n1 + (i//(TP//2)) + ((i%(TP//2))//(TP//n1))*2)%TP] = input1[ctr][i]
