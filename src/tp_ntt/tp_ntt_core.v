@@ -2,12 +2,13 @@ module tp_ntt_core
    #(
         parameter TP           = 32,
         parameter LOGQ         = 32,
+        parameter LOGQH        = 17,
         parameter BTF_LAT      = 8
     )
     (
         input                         clk   , 
         input                         rst   ,
-        input wire  [LOGQ       -1:0] q_in  ,
+        input wire  [LOGQH      -1:0] q_in  ,
         input wire  [LOGQ*TP    -1:0] NTT_in,
         input wire  [LOGQ*(TP-1)-1:0] W_in  ,
         output wire [LOGQ*TP    -1:0] NTT_out
@@ -23,7 +24,7 @@ reg            MT00 [stage_nums-1:0][(TP>>1)-1:0];
 reg [LOGQ-1:0] A00  [stage_nums-1:0][(TP>>1)-1:0];
 reg [LOGQ-1:0] B00  [stage_nums-1:0][(TP>>1)-1:0];
 reg [LOGQ-1:0] PSI00[stage_nums-1:0][(TP>>1)-1:0];
-reg [LOGQ-1:0] Q00  [stage_nums-1:0][(TP>>1)-1:0];
+reg [LOGQH-1:0] Q00  [stage_nums-1:0][(TP>>1)-1:0];
 wire[LOGQ-1:0] E00  [stage_nums-1:0][(TP>>1)-1:0];
 wire[LOGQ-1:0] O00  [stage_nums-1:0][(TP>>1)-1:0];
 wire[LOGQ-1:0] MUL00[stage_nums-1:0][(TP>>1)-1:0];

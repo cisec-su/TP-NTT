@@ -7,7 +7,8 @@ module iterative_tp_cons_file #(
         parameter n3            = 1<<6,
         parameter n4            = 1<<0,     
         parameter TP            = 1<<6,
-        parameter LOGQ          = 60
+        parameter LOGQ          = 60,
+        parameter LOGQH         = 17
     )
     (
         input                           clk,
@@ -86,8 +87,9 @@ module iterative_tp_cons_file #(
         .n2(n2),
         .n3(n3),
         .TP(TP),
-        .LOGQ(LOGQ)
-    ) unit(clk,rst, START_NTT_reg, OP_TYPE_reg, Q_in_reg,
+        .LOGQ(LOGQ),
+        .LOGQH(LOGQH)
+    ) unit(clk,rst, START_NTT_reg, OP_TYPE_reg, Q_in_reg[LOGQ-1 -:LOGQH],
             {TP*{din_R[i_cntr]}},
             {(TP-1)*{din_R[i_cntr]}},
             dout_total

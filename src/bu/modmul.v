@@ -10,7 +10,7 @@ module modmul#
             )
             (
                 input        clk,rst,
-                input [LOGQ-1:0] q,
+                input [LOGQH-1:0] q,
                 input [LOGQ-1:0] A,
                 input [LOGQ-1:0] B,
                 output[LOGQ-1:0] C,
@@ -20,7 +20,7 @@ module modmul#
 localparam K = 2*LOGQ;
 localparam MODRED_CC = (LOGQ == 32) ? `MODRED_CC_32 : `MODRED_CC_60;
 // q registers
-reg [LOGQ-1:0] qred,qint;
+reg [LOGQH-1:0] qred,qint;
 
 `ifdef USE_DFF_MODMUL
 always @(posedge clk or posedge rst) begin
@@ -105,7 +105,7 @@ end
     wlm_inst 
     (
         .clk(clk),
-        .qH (qred[LOGQ-1-:LOGQH] ),
+        .qH (qred),
         .C  (D2  ),
         .T  (C  )
     );

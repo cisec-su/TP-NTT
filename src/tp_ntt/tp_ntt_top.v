@@ -8,14 +8,15 @@ module tp_ntt_top
         parameter n2            = 1<<4,
         parameter n3            = 1<<6,
         parameter TP            = 1<<6,
-        parameter LOGQ          = 60
+        parameter LOGQ          = 60  ,
+        parameter LOGQH         = 17
     )
     (
         input                           clk,
         input                           rst,
         input                           START_NTT_ALL,
         input       [            1:0]   OP_TYPE_INPUT,
-        input       [LOGQ       -1:0]   Q_in,
+        input       [LOGQH      -1:0]   Q_in,
         input       [TP*LOGQ    -1:0]   NTT_INPUT,
         input       [(TP-1)*LOGQ-1:0]   TWIDDLE_INPUT,
         output reg  [TP*LOGQ    -1:0]   NTT_OUTPUT
@@ -46,7 +47,8 @@ generate
          .n1(n1),
          .n2(n2),
          .TP(TP),
-         .LOGQ(LOGQ),         
+         .LOGQ(LOGQ),
+         .LOGQH(LOGQH),
          .BTF_LAT(BTF_LAT),       
          .BLOCK_ID(0),       
          .IS_LARGE(0),
@@ -87,7 +89,8 @@ generate
          .n1(n2),
          .n2(n1),
          .TP(TP),
-         .LOGQ(LOGQ),         
+         .LOGQ(LOGQ),
+         .LOGQH(LOGQH),
          .BTF_LAT(BTF_LAT),       
          .BLOCK_ID(1),       
          .IS_LARGE(1),
@@ -102,21 +105,16 @@ generate
           .NTT_INPUT(NTT_READ_AU1), 
           .TWIDDLE_INPUT(TWIDDLE_INPUT), 
           .NTT_OUTPUT(NTT_READ_STAGE1));
-        //tp_ntt_block1#(.DIM(DIM), .N(N), .n1(n1), .n2(n2),    .TP(TP), .LOGQ(LOGQ), .BTF_LAT(BTF_LAT), .RW_DIS(0), .BLOCK_ID(0)) tp_ntt_d1 (clk, rst, START_NTT_ALL ,OP_TYPE_INPUT, Q_in, NTT_INPUT, TWIDDLE_INPUT, NTT_READ_STAGE0);
-        //tp_ntt_block2#(.DIM(DIM), .N(N), .n2(n2), .size0(n1*n2), .TP(TP), .LOGQ(LOGQ), .BTF_LAT(BTF_LAT), .RW_DIS(1)              ) tp_ntt_d2 (clk, rst, START_NTT_2 ,OP_TYPE_INPUT, Q_in, NTT_READ_STAGE0, TWIDDLE_INPUT, NTT_READ_STAGE1);
     end
-    else if (DIM == `DIM_3D) begin
-        //tp_ntt_block1#(.DIM(DIM), .N(N), .n1(n1), .n2(n2),    .TP(TP), .LOGQ(LOGQ), .BTF_LAT(BTF_LAT), .RW_DIS(0), .BLOCK_ID(0)) tp_ntt_d1 (clk, rst, START_NTT_ALL ,OP_TYPE_INPUT, Q_in, NTT_INPUT, TWIDDLE_INPUT, NTT_READ_STAGE0);
-        //tp_ntt_block2#(.DIM(DIM), .N(N), .n2(n2), .size0(n1*n2), .TP(TP), .LOGQ(LOGQ), .BTF_LAT(BTF_LAT), .RW_DIS(0)              ) tp_ntt_d2 (clk, rst, START_NTT_2 ,OP_TYPE_INPUT, Q_in, NTT_READ_STAGE0, TWIDDLE_INPUT, NTT_READ_STAGE1);
-        //tp_ntt_block1#(.DIM(DIM), .N(N), .n1(n3), .n2(1),    .TP(TP), .LOGQ(LOGQ), .BTF_LAT(BTF_LAT), .RW_DIS(1), .BLOCK_ID(2)) tp_ntt_d3 (clk, rst, START_NTT_3 ,OP_TYPE_INPUT, Q_in, NTT_READ_STAGE1, TWIDDLE_INPUT, NTT_READ_STAGE2);
-        
+    else if (DIM == `DIM_3D) begin        
         tp_ntt_core_wrapper#(
          .DIM(DIM),
          .N(N),
          .n1(n1),
          .n2(n2),
          .TP(TP),
-         .LOGQ(LOGQ),         
+         .LOGQ(LOGQ),
+         .LOGQH(LOGQH),
          .BTF_LAT(BTF_LAT),       
          .BLOCK_ID(0),       
          .IS_LARGE(0),
@@ -160,6 +158,7 @@ generate
          .n2(n1),
          .TP(TP),
          .LOGQ(LOGQ),         
+         .LOGQH(LOGQH),
          .BTF_LAT(BTF_LAT),       
          .BLOCK_ID(1),       
          .IS_LARGE(1),
@@ -203,6 +202,7 @@ generate
          .n2(n4),
          .TP(TP),
          .LOGQ(LOGQ),         
+         .LOGQH(LOGQH),
          .BTF_LAT(BTF_LAT),       
          .BLOCK_ID(2),       
          .IS_LARGE(0),
@@ -217,15 +217,8 @@ generate
           .NTT_INPUT(NTT_READ_AU2), 
           .TWIDDLE_INPUT(TWIDDLE_INPUT), 
           .NTT_OUTPUT(NTT_READ_STAGE2));
-
-
-
     end
     else if (DIM == `DIM_4D) begin
-        //tp_ntt_block1#(.DIM(DIM), .N(N), .n1(n1), .n2(n2),    .TP(TP), .LOGQ(LOGQ), .BTF_LAT(BTF_LAT), .RW_DIS(0), .BLOCK_ID(0)) tp_ntt_d1 (clk, rst, START_NTT_ALL ,OP_TYPE_INPUT, Q_in, NTT_INPUT, TWIDDLE_INPUT, NTT_READ_STAGE0);
-        //tp_ntt_block2#(.DIM(DIM), .N(N), .n2(n2), .size0(n1*n2), .TP(TP), .LOGQ(LOGQ), .BTF_LAT(BTF_LAT), .RW_DIS(0)              ) tp_ntt_d2 (clk, rst, START_NTT_2 ,OP_TYPE_INPUT, Q_in, NTT_READ_STAGE0, TWIDDLE_INPUT, NTT_READ_STAGE1);
-        //tp_ntt_block1#(.DIM(DIM), .N(N), .n1(n3), .n2(n4),    .TP(TP), .LOGQ(LOGQ), .BTF_LAT(BTF_LAT), .RW_DIS(0), .BLOCK_ID(2)) tp_ntt_d3 (clk, rst, START_NTT_3 ,OP_TYPE_INPUT, Q_in, NTT_READ_STAGE1, TWIDDLE_INPUT, NTT_READ_STAGE2);
-        //tp_ntt_block1#(.DIM(DIM), .N(N), .n1(n4), .n2(n3),    .TP(TP), .LOGQ(LOGQ), .BTF_LAT(BTF_LAT), .RW_DIS(1), .BLOCK_ID(3)) tp_ntt_d4 (clk, rst, START_NTT_4 ,OP_TYPE_INPUT, Q_in, NTT_READ_STAGE2, TWIDDLE_INPUT, NTT_READ_STAGE3);
         tp_ntt_core_wrapper#(
          .DIM(DIM),
          .N(N),
@@ -233,6 +226,7 @@ generate
          .n2(n2),
          .TP(TP),
          .LOGQ(LOGQ),         
+         .LOGQH(LOGQH),
          .BTF_LAT(BTF_LAT),       
          .BLOCK_ID(0),       
          .IS_LARGE(0),
@@ -276,6 +270,7 @@ generate
          .n2(n1),
          .TP(TP),
          .LOGQ(LOGQ),         
+         .LOGQH(LOGQH),
          .BTF_LAT(BTF_LAT),       
          .BLOCK_ID(1),       
          .IS_LARGE(1),
@@ -319,6 +314,7 @@ generate
          .n2(n4),
          .TP(TP),
          .LOGQ(LOGQ),         
+         .LOGQH(LOGQH),
          .BTF_LAT(BTF_LAT),       
          .BLOCK_ID(2),       
          .IS_LARGE(0),
@@ -360,6 +356,7 @@ generate
          .n2(n3),
          .TP(TP),
          .LOGQ(LOGQ),         
+         .LOGQH(LOGQH),
          .BTF_LAT(BTF_LAT),       
          .BLOCK_ID(3),       
          .IS_LARGE(0),

@@ -7,6 +7,7 @@ module tp_ntt_core_wrapper#(
         parameter n2            = 16,
         parameter TP            = 64,
         parameter LOGQ          = 60,
+        parameter LOGQH         = 17,
         parameter BTF_LAT       = 16,
         parameter BLOCK_ID      = 0,
         parameter IS_LARGE      = 0,
@@ -17,7 +18,7 @@ module tp_ntt_core_wrapper#(
         input                           rst,
         input                           START_NTT,
         input   [1:0]                   OP_TYPE_INPUT,
-        input   [LOGQ-1:0]              Q_in,
+        input   [LOGQH-1:0]             Q_in,
         input   [TP*LOGQ-1:0]           NTT_INPUT,
         input   [(TP-1)*LOGQ-1:0]       TWIDDLE_INPUT,
         output reg [TP*LOGQ-1:0]        NTT_OUTPUT
@@ -74,7 +75,7 @@ wire [reg_ctr:0] ctr_shifted;
 reg [TP*LOGQ-1:0] NTT_core_in, NTT_core_out_reg;
 wire [TP*LOGQ-1:0] NTT_core_out;
 reg [(bram_reg_size)*LOGQ-1:0] W_core_in;
-reg [LOGQ-1:0] q_core_in;
+reg [LOGQH-1:0] q_core_in;
 
 wire [TP*LOGQ-1:0] NTT_core_out_shift_d2;
 
@@ -330,7 +331,7 @@ endgenerate
 
 generate
     for (genvar ntt_idx = 0; ntt_idx < (TP>>log_n1) ; ntt_idx = ntt_idx + 1) begin
-        tp_ntt_core #(n1, LOGQ, BTF_LAT) NTT_units_pipelined(clk,rst, q_core_in ,NTT_core_in[(TP-n1*ntt_idx)*LOGQ-1-:n1*LOGQ], W_core_in[(bram_reg_size-(n1-1)*ntt_idx)*LOGQ-1-:(n1-1)*LOGQ], NTT_core_out[(TP-n1*ntt_idx)*LOGQ-1-:n1*LOGQ]);
+        tp_ntt_core #(n1, LOGQ, LOGQH, BTF_LAT) NTT_units_pipelined(clk,rst, q_core_in ,NTT_core_in[(TP-n1*ntt_idx)*LOGQ-1-:n1*LOGQ], W_core_in[(bram_reg_size-(n1-1)*ntt_idx)*LOGQ-1-:(n1-1)*LOGQ], NTT_core_out[(TP-n1*ntt_idx)*LOGQ-1-:n1*LOGQ]);
     end 
 endgenerate
 

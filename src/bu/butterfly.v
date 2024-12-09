@@ -16,7 +16,7 @@ module butterfly#(parameter LOGQ = `LOGQ,
                  input MT,               // CT:0+MT:1--> a+b and (a+b)Psi
                  input [LOGQ-1:0] A,B,
                  input [LOGQ-1:0] PSI,
-                 input [LOGQ-1:0] q,
+                 input [LOGQH-1:0] qH,
                  output[LOGQ-1:0] E,O,       // butterfly outputs
                  output[LOGQ-1:0] MUL,       // modular mult output
                  output[LOGQ-1:0] M32,       // modular mult output (for m_tilde)
@@ -32,7 +32,7 @@ localparam BTRFLY_CC = (LOGQ == 32) ? `BTRFLY_CC_32 : `BTRFLY_CC_60;
 
 
 reg [LOGQ-1:0] A_in, B_in, PSI_in;
-reg [LOGQ-1:0] q_add, q_sub, q_modmul;
+reg [LOGQH-1:0] q_add, q_sub, q_modmul;
 
 wire [LOGQ-1:0] A_shift;
 wire [LOGQ-1:0] modadd_res, modsub_res, modmul_res, temp_res;
@@ -46,13 +46,13 @@ end
 
 // Define q's to registers
 always @(posedge clk ) begin
-    q_add <= q;
-    q_sub <= q;
-    q_modmul <= q;
+    q_add <= qH;
+    q_sub <= qH;
+    q_modmul <= qH;
 end
 
-modadd#(.LOGQ(LOGQ), .Reduc_param(17)) ma0(A_shift,modmul_res,q_add,modadd_res);
-modsub#(.LOGQ(LOGQ), .Reduc_param(17)) ms0(A_shift,modmul_res,q_sub,modsub_res);
+modadd#(.LOGQ(LOGQ), .LOGQH(LOGQH)) ma0(A_shift,modmul_res,q_add,modadd_res);
+modsub#(.LOGQ(LOGQ), .LOGQH(LOGQH)) ms0(A_shift,modmul_res,q_sub,modsub_res);
 
 shiftreg #(.SHIFT(MODMUL_CC+2),.DATA(LOGQ)) sre10(clk,rst,A,A_shift);
 

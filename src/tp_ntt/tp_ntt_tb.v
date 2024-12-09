@@ -6,17 +6,18 @@ module tp_ntt_tb();
 
     // Parameters
     parameter TEST_DIR      = "../../../../test";
-    parameter N             = 1<<14;
-    parameter n1            = 1<<4;
+    parameter N             = 1<<15;
+    parameter n1            = 1<<6;
     parameter n2            = 1<<3;
-    parameter n3            = 1<<4;
+    parameter n3            = 1<<6;
     parameter n4            = N / (n1*n2*n3);
     parameter size0         = n1*n2;
     parameter size1         = n3*n4;
     parameter LOGQ          = 60;
+    parameter LOGQH         = 17;
     parameter DIM           = (n4 != 1) ? 2 : ((n3 != 1) ? 1 : 0);
     parameter BTF_LAT       = (LOGQ == 32) ? `BTRFLY_CC_32 + 1 : `BTRFLY_CC_60 + 1;
-    parameter TP            = 1<<4;
+    parameter TP            = 1<<6;
     parameter TP_twid       = TP-1;
     parameter depth         =  $rtoi($ceil(N/TP));
 
@@ -63,7 +64,7 @@ module tp_ntt_tb();
 
     reg [TP_log:0] ctr1;
     
-    reg[LOGQ-1:0] q_tb;
+    reg[LOGQH-1:0] q_tb;
     
 
     parameter HP = 5;
@@ -105,7 +106,7 @@ module tp_ntt_tb();
         OP_TYPE = 2'd3;
         #5;
         // Q-LOAD
-        q_tb = q[0];
+        q_tb = q[0][LOGQ-1 -: LOGQH];
 
         #10;
         OP_TYPE = 2'd0;
@@ -221,7 +222,8 @@ module tp_ntt_tb();
         .n2(n2),
         .n3(n3),
         .TP(TP),
-        .LOGQ(LOGQ)
+        .LOGQ(LOGQ),
+        .LOGQH(LOGQH)
     ) uut (
         .clk(clk),
         .rst(rst),
