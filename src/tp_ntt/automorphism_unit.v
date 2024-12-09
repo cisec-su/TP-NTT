@@ -1,12 +1,12 @@
 module automorphism_unit
    #(
         parameter  large_automorphism   = 0  ,  // 0 --> SMALL_ADDRESS_GENERATOR , 1 --> LARGE_ADDRESS_GENERATOR
-        parameter  N            = 128,
-        parameter  n1           = 8  ,
-        parameter  n2           = 2  ,
-        parameter  size0        = 16 ,
-        parameter  size1        = 16 ,    
-        parameter  TP           = 8  ,
+        parameter  N            = 32768,
+        parameter  n1           = 64  ,
+        parameter  n2           = 8  ,
+        parameter  size0        = 512 ,
+        parameter  size1        = 64 ,    
+        parameter  TP           = 64 ,
         parameter  LOGQ         = 60 ,
         parameter  BTF_LAT      = 10 ,
         parameter  AU_ID        = 0
@@ -28,7 +28,7 @@ module automorphism_unit
     localparam size0_over_tp = size0/TP;
     localparam log_size0_over_tp = $rtoi($ceil($clog2((size0)/TP)));
     localparam size0_over_tp_mult_size1_over_tp_log2 = $rtoi($ceil($clog2((size0/TP)*(size1_over_tp))));
-
+    localparam logn2 = $clog2(n2);
     localparam reg_ctr = $clog2(size0_over_tp);
 
     localparam BRAM_size        = large_automorphism ? 2*depth : 2*size0_over_tp;
@@ -62,6 +62,8 @@ module automorphism_unit
 
     reg [TP*LOGQ-1:0] input_data_shift;
 
+    wire [LOGQ-1:0] input_data_int [TP-1:0];
+    wire [LOGQ-1:0] input_data_shift_int [TP-1:0];
 
 
     always @(posedge clk) 
@@ -149,23 +151,35 @@ generate
     addr_gen #(.large_addr(large_automorphism),.N(N), .n1(n1), .size0(size0), .size1(size1), .TP(TP)) small_addr_gen_sm_unit (clk, rst, start_addr_sig, read_addr_res, write_addr_res);
 endgenerate
 
+
+generate
+    for (genvar rot = 0; rot < TP; rot = rot + 1) begin
+        assign input_data_int[rot] = input_data[rot*LOGQ +: LOGQ];
+    end
+endgenerate
+
 generate
     if (large_automorphism) begin
         for (genvar rot = 0; rot < TP; rot = rot + 1 ) begin
             always @(posedge clk) begin
-                input_data_shift[rot*LOGQ +: LOGQ] <= input_data[(((rot + (ctr_shifted>>size0_over_tp_mult_size1_over_tp_log2))&(TP-1)))*LOGQ +: LOGQ];
+                input_data_shift[rot*LOGQ +: LOGQ] <= input_data_int[(((rot + (ctr_shifted>>size0_over_tp_mult_size1_over_tp_log2))&(TP-1)))];
             end
         end
     end else begin
         for (genvar rot = 0; rot < TP; rot = rot + 1) begin
             always @(posedge clk) begin
-                input_data_shift[(TP-rot)*LOGQ-1 -: LOGQ] <= input_data[(TP-((   ((((rot - (ctr_shifted&(size0/TP-1)))&(TP-1)))/n2) + (((rot - (ctr_shifted&(size0/TP-1)))&(n2-1))*(TP/n2)))&(TP-1)))*LOGQ-1 -: LOGQ];
+                input_data_shift[(TP-rot)*LOGQ-1 -: LOGQ] <= input_data_int[TP-((   ((((rot - (ctr_shifted&(size0_over_tp-1)))&(TP-1))) >> logn2) + (((rot - (ctr_shifted&(size0/TP-1)))&(n2-1))*(TP/n2)))&(TP-1))-1];
             end
         end
     end
-    
 endgenerate
+    for (genvar rot = 0; rot < TP; rot = rot + 1) begin
+        assign input_data_shift_int[rot] = input_data_shift[rot*LOGQ +: LOGQ];
+    end
+generate
 
+
+endgenerate
 
 
 generate
@@ -180,7 +194,7 @@ generate
                 case (curr_state)
                     OP_STARTED: begin
                         if(start_take_input) begin
-                            di00[k]       <= input_data_shift[(TP-k)*LOGQ-1-:LOGQ];
+                            di00[k]       <= input_data_shift_int[(TP-k-1)];
                             dr00[k]       <= read_addr_res[(TP-k)*(log_depth+1)-1-:log_depth+1];
                             dw00[k]       <= write_addr_res[(TP-k)*(log_depth+1)-1-:log_depth+1];
                             de00[k]       <= 1'b1;
