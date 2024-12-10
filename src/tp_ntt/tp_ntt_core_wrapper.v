@@ -2,15 +2,15 @@
 
 module tp_ntt_core_wrapper#(
         parameter DIM           = 1,
-        parameter N             = 1024,
-        parameter n1            = 64,
-        parameter n2            = 16,
-        parameter TP            = 64,
+        parameter LOGN          = 10,
+        parameter LOGN1         = 6,
+        parameter LOGN2         = 4,
+        parameter LOGTP         = 6,
         parameter LOGQ          = 60,
         parameter LOGQH         = 17,
         parameter BTF_LAT       = 16,
         parameter BLOCK_ID      = 0,
-        parameter IS_LARGE      = 0,
+        parameter LARGE         = 0,
         parameter RW_DIS        = 0
     )
     (
@@ -24,17 +24,18 @@ module tp_ntt_core_wrapper#(
         output reg [TP*LOGQ-1:0]        NTT_OUTPUT
     );
 
-
-localparam log_n1 = $rtoi($ceil($clog2(n1)));
-localparam log_TP = $rtoi($ceil($clog2(TP)));
-localparam size0 = n1*n2;
+localparam N  = 1 << LOGN;
+localparam N1 = 1 << LOGN1;
+localparam N2 = 1 << LOGN2;
+localparam TP = 1 << LOGTP;
+localparam size0 = N1*N2;
 localparam size0_over_tp = $rtoi($ceil((size0/TP)));
 localparam N_over_TP_log2 = $rtoi($ceil($clog2(N/TP)));
 localparam depth         =  $rtoi($ceil(N/TP));
 localparam depth_log         =  $rtoi($ceil($clog2(N/TP)));
 
 localparam reg_ctr = $clog2(size0_over_tp);
-localparam bram_reg_size =  (TP/n1)*(n1-1);
+localparam bram_reg_size =  (TP/N1)*(N1-1);
 
 localparam iter_part_num_tot = DIM == `DIM_2D ? 2 : (DIM == `DIM_3D ? 3 : 4);
 
@@ -201,7 +202,7 @@ end
 
 
 generate
-    if (IS_LARGE) begin
+    if (LARGE) begin
         for (genvar i = 0; i < bram_reg_size; i = i + 1) begin
             always @(posedge clk or posedge rst) begin
                 if (rst) begin
@@ -291,22 +292,22 @@ endgenerate
 
 
 generate
-    if (IS_LARGE) begin
+    if (LARGE) begin
         for (genvar i = 0; i < TP; i = i + 1) begin
             always @(posedge clk) begin
-                NTT_core_in[(TP-i)*LOGQ-1-:LOGQ] <= NTT_INPUT[(TP - (((i/n1)*n1 + (i & 1'd1)*(n1/2) + (i & (n1-1))/2)  & (TP-1)))*LOGQ-1-:LOGQ] ;
+                NTT_core_in[(TP-i)*LOGQ-1-:LOGQ] <= NTT_INPUT[(TP - (((i/N1)*N1 + (i & 1'd1)*(N1/2) + (i & (N1-1))/2)  & (TP-1)))*LOGQ-1-:LOGQ] ;
             end
         end
     end else begin
         for (genvar i = 0; i < TP; i = i + 1) begin
             always @(posedge clk) begin
-                //NTT_core_in[( TP - (((i & (n1/2-1))*2 + (i & (n1-1))/(n1/2) + (i/n1)*n1) & (TP-1)) )*LOGQ-1             -:LOGQ]    <= NTT_INPUT[(TP-i)*LOGQ-1-:LOGQ];
+                //NTT_core_in[( TP - (((i & (N1/2-1))*2 + (i & (N1-1))/(N1/2) + (i/N1)*N1) & (TP-1)) )*LOGQ-1             -:LOGQ]    <= NTT_INPUT[(TP-i)*LOGQ-1-:LOGQ];
                 //Buraya bir bakalim
-                //NTT_core_in[( TP - ((((i & (n2-1))*n1) + (i/(TP>>1)) + ((i & ((TP>>1)-1))/(TP/n1))*2) & (TP-1)) )*LOGQ-1-:LOGQ]     <= NTT_INPUT[(TP-i)*LOGQ-1-:LOGQ];
+                //NTT_core_in[( TP - ((((i & (N2-1))*N1) + (i/(TP>>1)) + ((i & ((TP>>1)-1))/(TP/N1))*2) & (TP-1)) )*LOGQ-1-:LOGQ]     <= NTT_INPUT[(TP-i)*LOGQ-1-:LOGQ];
                 if (RW_DIS) begin
-                    NTT_core_in[( TP - (((i & (n1/2-1))*2 + (i & (n1-1))/(n1/2) + (i/n1)*n1) & (TP-1)) )*LOGQ-1             -:LOGQ]    <= NTT_INPUT[(TP-i)*LOGQ-1-:LOGQ];
+                    NTT_core_in[( TP - (((i & (N1/2-1))*2 + (i & (N1-1))/(N1/2) + (i/N1)*N1) & (TP-1)) )*LOGQ-1             -:LOGQ]    <= NTT_INPUT[(TP-i)*LOGQ-1-:LOGQ];
                 end else begin
-                    NTT_core_in[( TP - ((((i & (n2-1))*n1) + (i/(TP>>1)) + ((i & ((TP>>1)-1))/(TP/n1))*2) & (TP-1)) )*LOGQ-1-:LOGQ]    <= NTT_INPUT[(TP-i)*LOGQ-1-:LOGQ];
+                    NTT_core_in[( TP - ((((i & (N2-1))*N1) + (i/(TP>>1)) + ((i & ((TP>>1)-1))/(TP/N1))*2) & (TP-1)) )*LOGQ-1-:LOGQ]    <= NTT_INPUT[(TP-i)*LOGQ-1-:LOGQ];
                 end
             end
         end
@@ -318,20 +319,20 @@ endgenerate
 // generate
 //     for (genvar rot = 0; rot < TP; rot = rot + 1) begin
 //         always @(posedge clk) begin
-//             NTT_core_out_reg[(TP-((rot/(TP/n1) + (rot&(TP/n1-1))*n1  )&(TP-1)))*LOGQ-1 -: LOGQ] <= NTT_core_out[(TP - (((rot - (ctr&(size0/TP-1))))&(TP-1)))*LOGQ-1 -: LOGQ];
+//             NTT_core_out_reg[(TP-((rot/(TP/N1) + (rot&(TP/N1-1))*N1  )&(TP-1)))*LOGQ-1 -: LOGQ] <= NTT_core_out[(TP - (((rot - (ctr&(size0/TP-1))))&(TP-1)))*LOGQ-1 -: LOGQ];
 //         end
 //     end
 // endgenerate
 
 generate  
     for (genvar b2 = 0; b2 < bram_reg_size; b2 = b2 + 1) begin: BRAM_GEN_BLOCK_TWIDDLE // BRAM for TWIDDLE
-        BRAM #(LOGQ, $rtoi($ceil(N>>log_TP)), $rtoi($ceil($clog2((N>>log_TP))))) bt000(clk,be0[1*b2+0],bw0[1*b2+0],bi0[1*b2+0],br0[1*b2+0],bo0[1*b2+0]); // 64 BRAMs * 128 depth (2**7) * 32 bit
+        BRAM #(LOGQ, $rtoi($ceil(N>>LOGTP)), $rtoi($ceil($clog2((N>>LOGTP))))) bt000(clk,be0[1*b2+0],bw0[1*b2+0],bi0[1*b2+0],br0[1*b2+0],bo0[1*b2+0]); // 64 BRAMs * 128 depth (2**7) * 32 bit
     end
 endgenerate
 
 generate
-    for (genvar ntt_idx = 0; ntt_idx < (TP>>log_n1) ; ntt_idx = ntt_idx + 1) begin
-        tp_ntt_core #(n1, LOGQ, LOGQH, BTF_LAT) NTT_units_pipelined(clk,rst, q_core_in ,NTT_core_in[(TP-n1*ntt_idx)*LOGQ-1-:n1*LOGQ], W_core_in[(bram_reg_size-(n1-1)*ntt_idx)*LOGQ-1-:(n1-1)*LOGQ], NTT_core_out[(TP-n1*ntt_idx)*LOGQ-1-:n1*LOGQ]);
+    for (genvar ntt_idx = 0; ntt_idx < (TP>>LOGN1) ; ntt_idx = ntt_idx + 1) begin
+        tp_ntt_core #(N1, LOGQ, LOGQH, BTF_LAT) NTT_units_pipelined(clk,rst, q_core_in ,NTT_core_in[(TP-N1*ntt_idx)*LOGQ-1-:N1*LOGQ], W_core_in[(bram_reg_size-(N1-1)*ntt_idx)*LOGQ-1-:(N1-1)*LOGQ], NTT_core_out[(TP-N1*ntt_idx)*LOGQ-1-:N1*LOGQ]);
     end 
 endgenerate
 

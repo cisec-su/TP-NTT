@@ -3,12 +3,12 @@
 
 module tp_ntt_top
    #(
-        parameter N             = 1<<16,
-        parameter n1            = 1<<6,
-        parameter n2            = 1<<4,
-        parameter n3            = 1<<6,
-        parameter TP            = 1<<6,
-        parameter LOGQ          = 60  ,
+        parameter LOGN          = 16,
+        parameter LOGN1         = 6 ,
+        parameter LOGN2         = 4 ,
+        parameter LOGN3         = 6 ,
+        parameter LOGTP         = 6 ,
+        parameter LOGQ          = 60,
         parameter LOGQH         = 17
     )
     (
@@ -22,17 +22,18 @@ module tp_ntt_top
         output reg  [TP*LOGQ    -1:0]   NTT_OUTPUT
     );
 
-
-localparam n4      = N / (n1*n2*n3);
+localparam N  = 1 << LOGN;
+localparam N1 = 1 << LOGN1;
+localparam N2 = 1 << LOGN2;
+localparam N3 = 1 << LOGN3;
+localparam TP = 1 << LOGTP;
+localparam LOGN4 = LOGN - LOGN1 - LOGN2 - LOGN3;
+localparam N4 = 1 << LOGN4;
 localparam BTF_LAT = (LOGQ == 32) ? `BTRFLY_CC_32 + 1 : `BTRFLY_CC_60 + 1;
-localparam DIM     = (n4 != 1) ? `DIM_4D : (n3 != 1) ? `DIM_3D : `DIM_2D;
-localparam log_n1  = $rtoi($ceil($clog2(n1)));
-localparam log_n2  = $rtoi($ceil($clog2(n2)));
-localparam log_n3  = $rtoi($ceil($clog2(n3)));
-localparam log_n4  = $rtoi($ceil($clog2(n4)));
-localparam depth         =  $rtoi($ceil(N/TP));
-localparam size0_over_tp =  $rtoi($ceil(n1*n2/TP));
-localparam size1_over_tp =  $rtoi($ceil(n3*n4/TP));
+localparam DIM     = (N4 != 1) ? `DIM_4D : (N3 != 1) ? `DIM_3D : `DIM_2D;
+localparam D  =  N / TP;
+localparam D1 =  (N1 * N2) / TP;
+localparam D2 =  (N3 * N4) / TP;
 
 
 wire START_NTT_2, START_NTT_3, START_NTT_4, START_NTT_AU1, START_NTT_AU2, START_NTT_AU3;
@@ -43,15 +44,15 @@ generate
     if (DIM == `DIM_2D) begin
         tp_ntt_core_wrapper#(
          .DIM(DIM),
-         .N(N),
-         .n1(n1),
-         .n2(n2),
-         .TP(TP),
+         .LOGN(LOGN),
+         .LOGN1(LOGN1),
+         .LOGN2(LOGN2),
+         .LOGTP(LOGTP),
          .LOGQ(LOGQ),
          .LOGQH(LOGQH),
          .BTF_LAT(BTF_LAT),       
          .BLOCK_ID(0),       
-         .IS_LARGE(0),
+         .LARGE(0),
          .RW_DIS(0))
          tp_ntt_d1 
          (
@@ -64,13 +65,11 @@ generate
           .TWIDDLE_INPUT(TWIDDLE_INPUT), 
           .NTT_OUTPUT(NTT_READ_STAGE0));
         automorphism_unit#(
-            .large_automorphism(0),
-            .N(N),            
-            .n1(n1),
-            .n2(n2),           
-            .size0(n1*n2),        
-            .size1(n3*n4),        
-            .TP(TP),           
+            .LARGE(0),
+            .LOGN(LOGN),            
+            .LOGN1(LOGN1),
+            .LOGN2(LOGN2),   
+            .LOGTP(LOGTP),           
             .LOGQ(LOGQ),
             .BTF_LAT(BTF_LAT),
             .AU_ID(0)         
@@ -85,15 +84,15 @@ generate
           );
           tp_ntt_core_wrapper#(
          .DIM(DIM),
-         .N(N),
-         .n1(n2),
-         .n2(n1),
-         .TP(TP),
+         .LOGN(LOGN),
+         .LOGN1(LOGN2),
+         .LOGN2(LOGN1),
+         .LOGTP(LOGTP),
          .LOGQ(LOGQ),
          .LOGQH(LOGQH),
          .BTF_LAT(BTF_LAT),       
          .BLOCK_ID(1),       
-         .IS_LARGE(1),
+         .LARGE(1),
          .RW_DIS(1))
          tp_ntt_d2 
          (
@@ -109,15 +108,15 @@ generate
     else if (DIM == `DIM_3D) begin        
         tp_ntt_core_wrapper#(
          .DIM(DIM),
-         .N(N),
-         .n1(n1),
-         .n2(n2),
-         .TP(TP),
+         .LOGN(LOGN),
+         .LOGN1(LOGN1),
+         .LOGN2(LOGN2),
+         .LOGTP(LOGTP),
          .LOGQ(LOGQ),
          .LOGQH(LOGQH),
          .BTF_LAT(BTF_LAT),       
          .BLOCK_ID(0),       
-         .IS_LARGE(0),
+         .LARGE(0),
          .RW_DIS(0))
          tp_ntt_d1 
          (
@@ -131,13 +130,11 @@ generate
           .NTT_OUTPUT(NTT_READ_STAGE0));
 
           automorphism_unit#(
-            .large_automorphism(0),
-            .N(N),            
-            .n1(n1),
-            .n2(n2),           
-            .size0(n1*n2),        
-            .size1(n3*n4),        
-            .TP(TP),           
+            .LARGE(0),
+            .LOGN(LOGN),            
+            .LOGN1(LOGN1),
+            .LOGN2(LOGN2),           
+            .LOGTP(LOGTP),           
             .LOGQ(LOGQ),
             .BTF_LAT(BTF_LAT),
             .AU_ID(0)         
@@ -153,15 +150,15 @@ generate
 
           tp_ntt_core_wrapper#(
          .DIM(DIM),
-         .N(N),
-         .n1(n2),
-         .n2(n1),
-         .TP(TP),
+         .LOGN(LOGN),
+         .LOGN1(LOGN2),
+         .LOGN2(LOGN1),
+         .LOGTP(LOGTP),
          .LOGQ(LOGQ),         
          .LOGQH(LOGQH),
          .BTF_LAT(BTF_LAT),       
          .BLOCK_ID(1),       
-         .IS_LARGE(1),
+         .LARGE(1),
          .RW_DIS(0))
          tp_ntt_d2 
          (
@@ -175,13 +172,11 @@ generate
           .NTT_OUTPUT(NTT_READ_STAGE1));
 
           automorphism_unit#(
-            .large_automorphism(1),
-            .N(N),            
-            .n1(n2),
-            .n2(n1),           
-            .size0(n1*n2),        
-            .size1(n3*n4),        
-            .TP(TP),           
+            .LARGE(1),
+            .LOGN(LOGN),            
+            .LOGN1(LOGN2),
+            .LOGN2(LOGN1),           
+            .LOGTP(LOGTP),           
             .LOGQ(LOGQ),
             .BTF_LAT(BTF_LAT),
             .AU_ID(1)         
@@ -197,15 +192,15 @@ generate
 
           tp_ntt_core_wrapper#(
          .DIM(DIM),
-         .N(N),
-         .n1(n3),
-         .n2(n4),
-         .TP(TP),
+         .LOGN(LOGN),
+         .LOGN1(LOGN3),
+         .LOGN2(LOGN4),
+         .LOGTP(LOGTP),
          .LOGQ(LOGQ),         
          .LOGQH(LOGQH),
          .BTF_LAT(BTF_LAT),       
          .BLOCK_ID(2),       
-         .IS_LARGE(0),
+         .LARGE(0),
          .RW_DIS(1))
          tp_ntt_d3 
          (
@@ -221,15 +216,15 @@ generate
     else if (DIM == `DIM_4D) begin
         tp_ntt_core_wrapper#(
          .DIM(DIM),
-         .N(N),
-         .n1(n1),
-         .n2(n2),
-         .TP(TP),
+         .LOGN(LOGN),
+         .LOGN1(LOGN1),
+         .LOGN2(LOGN2),
+         .LOGTP(LOGTP),
          .LOGQ(LOGQ),         
          .LOGQH(LOGQH),
          .BTF_LAT(BTF_LAT),       
          .BLOCK_ID(0),       
-         .IS_LARGE(0),
+         .LARGE(0),
          .RW_DIS(0))
          tp_ntt_d1 
          (
@@ -243,13 +238,11 @@ generate
           .NTT_OUTPUT(NTT_READ_STAGE0));
 
           automorphism_unit#(
-            .large_automorphism(0),
-            .N(N),            
-            .n1(n1),
-            .n2(n2),           
-            .size0(n1*n2),        
-            .size1(n3*n4),        
-            .TP(TP),           
+            .LARGE(0),
+            .LOGN(LOGN),            
+            .LOGN1(LOGN1),
+            .LOGN2(LOGN2),           
+            .LOGTP(LOGTP),           
             .LOGQ(LOGQ),
             .BTF_LAT(BTF_LAT),
             .AU_ID(0)         
@@ -265,15 +258,15 @@ generate
 
           tp_ntt_core_wrapper#(
          .DIM(DIM),
-         .N(N),
-         .n1(n2),
-         .n2(n1),
-         .TP(TP),
+         .LOGN(LOGN),
+         .LOGN1(LOGN2),
+         .LOGN2(LOGN1),
+         .LOGTP(LOGTP),
          .LOGQ(LOGQ),         
          .LOGQH(LOGQH),
          .BTF_LAT(BTF_LAT),       
          .BLOCK_ID(1),       
-         .IS_LARGE(1),
+         .LARGE(1),
          .RW_DIS(0))
          tp_ntt_d2 
          (
@@ -287,13 +280,11 @@ generate
           .NTT_OUTPUT(NTT_READ_STAGE1));
 
           automorphism_unit#(
-            .large_automorphism(1),
-            .N(N),            
-            .n1(n2),
-            .n2(n1),           
-            .size0(n1*n2),        
-            .size1(n3*n4),        
-            .TP(TP),           
+            .LARGE(1),
+            .LOGN(LOGN),            
+            .LOGN1(LOGN2),
+            .LOGN2(LOGN1),        
+            .LOGTP(LOGTP),           
             .LOGQ(LOGQ),
             .BTF_LAT(BTF_LAT),
             .AU_ID(1)         
@@ -309,15 +300,15 @@ generate
 
           tp_ntt_core_wrapper#(
          .DIM(DIM),
-         .N(N),
-         .n1(n3),
-         .n2(n4),
-         .TP(TP),
+         .LOGN(LOGN),
+         .LOGN1(LOGN3),
+         .LOGN2(LOGN4),
+         .LOGTP(LOGTP),
          .LOGQ(LOGQ),         
          .LOGQH(LOGQH),
          .BTF_LAT(BTF_LAT),       
          .BLOCK_ID(2),       
-         .IS_LARGE(0),
+         .LARGE(0),
          .RW_DIS(0))
          tp_ntt_d3 
          (
@@ -330,13 +321,11 @@ generate
           .TWIDDLE_INPUT(TWIDDLE_INPUT), 
           .NTT_OUTPUT(NTT_READ_STAGE2));
         automorphism_unit#(
-            .large_automorphism(0),
-            .N(N),
-            .n1(n3),
-            .n2(n4),
-            .size0(n3*n4),
-            .size1(n1*n2),
-            .TP(TP),
+            .LARGE(0),
+            .LOGN(LOGN),
+            .LOGN1(LOGN3),
+            .LOGN2(LOGN4),
+            .LOGTP(LOGTP),
             .LOGQ(LOGQ),
             .BTF_LAT(BTF_LAT),
             .AU_ID(2)
@@ -351,15 +340,15 @@ generate
           );
           tp_ntt_core_wrapper#(
          .DIM(DIM),
-         .N(N),
-         .n1(n4),
-         .n2(n3),
-         .TP(TP),
+         .LOGN(LOGN),
+         .LOGN1(LOGN4),
+         .LOGN2(LOGN3),
+         .LOGTP(LOGTP),
          .LOGQ(LOGQ),         
          .LOGQH(LOGQH),
          .BTF_LAT(BTF_LAT),       
          .BLOCK_ID(3),       
-         .IS_LARGE(0),
+         .LARGE(0),
          .RW_DIS(1))
          tp_ntt_d4 
          (
@@ -375,14 +364,14 @@ generate
 endgenerate
 
 
-shiftreg #(.SHIFT(BTF_LAT*log_n1),                      .DATA(1))   sre101(clk, rst, START_NTT_ALL, START_NTT_AU1);
-shiftreg #(.SHIFT(size0_over_tp + 4),                   .DATA(1))   sre102(clk, rst, START_NTT_AU1, START_NTT_2);
-shiftreg #(.SHIFT(BTF_LAT*log_n2),                      .DATA(1))   sre103(clk, rst, START_NTT_2,   START_NTT_AU2);
-shiftreg #(.SHIFT(depth + 6),                           .DATA(1))   sre104(clk, rst, START_NTT_AU2, START_NTT_3);
+shiftreg #(.SHIFT(BTF_LAT*LOGN1),                      .DATA(1))   sre101(clk, rst, START_NTT_ALL, START_NTT_AU1);
+shiftreg #(.SHIFT(D1 + 4),                   .DATA(1))   sre102(clk, rst, START_NTT_AU1, START_NTT_2);
+shiftreg #(.SHIFT(BTF_LAT*LOGN2),                      .DATA(1))   sre103(clk, rst, START_NTT_2,   START_NTT_AU2);
+shiftreg #(.SHIFT(D + 6),                           .DATA(1))   sre104(clk, rst, START_NTT_AU2, START_NTT_3);
 
-shiftreg #(.SHIFT(BTF_LAT*log_n3),                      .DATA(1))   sre105(clk, rst, START_NTT_3,   START_NTT_AU3);
+shiftreg #(.SHIFT(BTF_LAT*LOGN3),                      .DATA(1))   sre105(clk, rst, START_NTT_3,   START_NTT_AU3);
 
-shiftreg #(.SHIFT(size1_over_tp+6),                     .DATA(1))   sre106(clk, rst, START_NTT_AU3,   START_NTT_4);
+shiftreg #(.SHIFT(D2 + 6),                     .DATA(1))   sre106(clk, rst, START_NTT_AU3,   START_NTT_4);
 
 
 always @(posedge clk or posedge rst) begin

@@ -21,11 +21,12 @@ module tp_ntt_tb();
     parameter TP_twid       = TP-1;
     parameter depth         =  $rtoi($ceil(N/TP));
 
-    localparam log_N    = $rtoi($ceil($clog2(N)));
-    localparam log_n1   = $rtoi($ceil($clog2(n1)));
-    localparam log_n2   = $rtoi($ceil($clog2(n2)));
-    localparam log_n3   = $rtoi($ceil($clog2(n3)));
-    localparam log_n4   = $rtoi($ceil($clog2(n4)));
+    localparam LOGN    = $rtoi($ceil($clog2(N)));
+    localparam LOGN1   = $rtoi($ceil($clog2(n1)));
+    localparam LOGN2   = $rtoi($ceil($clog2(n2)));
+    localparam LOGN3   = $rtoi($ceil($clog2(n3)));
+    localparam LOGN4   = $rtoi($ceil($clog2(n4)));
+    localparam LOGTP   = $rtoi($ceil($clog2(TP)));
 
     parameter input_bits = LOGQ*TP;
 
@@ -43,8 +44,8 @@ module tp_ntt_tb();
 
     parameter is_last_problem = (last_elmnt_log == 0) ? 0 : 1;
     parameter total_step_numbers_real =  DIM == 0 ? 2 : (DIM == 1 ? 3 : 4); 
-    parameter clock_cycles = ((DIM == 0) ? (BTF_LAT * log_N + 9) : ((DIM == 1) ? BTF_LAT * log_N + (size0/TP) + 15 :  BTF_LAT * log_N + (size0/TP) + (size1/TP) + 21 )) * 10;
-    parameter psi_count = (N_over_TP)*((1<<log_n1)-1)*(1<<(log_n1)) + (N_over_TP)*((1<<log_n2)-1)*(1<<(log_n2)) + (N_over_TP)*((1<<log_n3)-1)*(1<<(log_n3)) + (N_over_TP)*((1<<log_n4)-1)*(1<<(log_n4));
+    parameter clock_cycles = ((DIM == 0) ? (BTF_LAT * LOGN + 9) : ((DIM == 1) ? BTF_LAT * LOGN + (size0/TP) + 15 :  BTF_LAT * LOGN + (size0/TP) + (size1/TP) + 21 )) * 10;
+    parameter psi_count = (N_over_TP)*((1<<LOGN1)-1)*(1<<(LOGN1)) + (N_over_TP)*((1<<LOGN2)-1)*(1<<(LOGN2)) + (N_over_TP)*((1<<LOGN3)-1)*(1<<(LOGN3)) + (N_over_TP)*((1<<LOGN4)-1)*(1<<(LOGN4));
 
     // Testbench variables
     reg clk;
@@ -118,7 +119,7 @@ module tp_ntt_tb();
 
         for (i = 0 ; i < total_step_numbers_real ; i = i+1) begin
             if(is_last_problem && i == 1) begin
-                ctr1 = ((1<<log_n2)-1)*(TP>>log_n2);
+                ctr1 = ((1<<LOGN2)-1)*(TP>>LOGN2);
             end
             else begin
                 ctr1 = TP-4'b1;
@@ -128,8 +129,8 @@ module tp_ntt_tb();
                 if (i == 0) begin
                     for (j = 0; j < TP-1 ; j = j + 1 ) begin
                         //id11 = 0 + k * (TP-1) + j;
-                        if(j<((1<<log_n1)-1)*(TP>>log_n1)) begin
-                            id11 = 0 + k * ((1<<log_n1)-1)*(TP>>log_n1) + j;
+                        if(j<((1<<LOGN1)-1)*(TP>>LOGN1)) begin
+                            id11 = 0 + k * ((1<<LOGN1)-1)*(TP>>LOGN1) + j;
                             W_in[(TP-1-j)*LOGQ-1-:LOGQ] = psi0[id11];
                         end
                         else begin
@@ -141,8 +142,8 @@ module tp_ntt_tb();
                 end
                 else if (i == 1) begin
                     for (j = 0; j < TP-1 ; j = j + 1 ) begin
-                        if(j<((1<<log_n2)-1)*(TP>>log_n2)) begin
-                            id11 = N_over_TP*((1<<log_n1)-1)*(TP>>log_n1) + k * ((1<<log_n2)-1)*(TP>>log_n2) + j;
+                        if(j<((1<<LOGN2)-1)*(TP>>LOGN2)) begin
+                            id11 = N_over_TP*((1<<LOGN1)-1)*(TP>>LOGN1) + k * ((1<<LOGN2)-1)*(TP>>LOGN2) + j;
                             W_in[(TP-1-j)*LOGQ-1-:LOGQ] = psi0[id11];
                         end
                         else begin
@@ -154,8 +155,8 @@ module tp_ntt_tb();
                 end else if (i == 2) begin
                     for (j = 0; j < TP-1 ; j = j + 1 ) begin
 
-                        if(j<((1<<log_n3)-1)*(TP>>log_n3)) begin
-                            id11 = N_over_TP*(((1<<log_n1)-1)*(TP>>log_n1) + ((1<<log_n2)-1)*(TP>>log_n2)) + k * ((1<<log_n3)-1)*(TP>>log_n3) + j;
+                        if(j<((1<<LOGN3)-1)*(TP>>LOGN3)) begin
+                            id11 = N_over_TP*(((1<<LOGN1)-1)*(TP>>LOGN1) + ((1<<LOGN2)-1)*(TP>>LOGN2)) + k * ((1<<LOGN3)-1)*(TP>>LOGN3) + j;
                             W_in[(TP-1-j)*LOGQ-1-:LOGQ] = psi0[id11];
                         end
                         else begin
@@ -167,8 +168,8 @@ module tp_ntt_tb();
                 else if (i == 3) begin
                     for (j = 0; j < TP-1 ; j = j + 1 ) begin
 
-                        if(j<((1<<log_n4)-1)*(TP>>log_n4)) begin
-                            id11 = N_over_TP*(((1<<log_n1)-1)*(TP>>log_n1) + ((1<<log_n2)-1)*(TP>>log_n2) + ((1<<log_n3)-1)*(TP>>log_n3)) + k * ((1<<log_n4)-1)*(TP>>log_n4) + j;
+                        if(j<((1<<LOGN4)-1)*(TP>>LOGN4)) begin
+                            id11 = N_over_TP*(((1<<LOGN1)-1)*(TP>>LOGN1) + ((1<<LOGN2)-1)*(TP>>LOGN2) + ((1<<LOGN3)-1)*(TP>>LOGN3)) + k * ((1<<LOGN4)-1)*(TP>>LOGN4) + j;
                             W_in[(TP-1-j)*LOGQ-1-:LOGQ] = psi0[id11];
                         end
                         else begin
@@ -217,12 +218,12 @@ module tp_ntt_tb();
     end
 
      tp_ntt_top #(
-        .N(N),
-        .n1(n1),
-        .n2(n2),
-        .n3(n3),
-        .TP(TP),
-        .LOGQ(LOGQ),
+        .LOGN(LOGN),
+        .LOGN1(LOGN1),
+        .LOGN2(LOGN2),
+        .LOGN3(LOGN3),
+        .LOGTP(LOGTP),
+        .LOGQ (LOGQ),
         .LOGQH(LOGQH)
     ) uut (
         .clk(clk),

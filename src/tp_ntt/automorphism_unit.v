@@ -1,12 +1,10 @@
 module automorphism_unit
    #(
-        parameter  large_automorphism   = 0  ,  // 0 --> SMALL_ADDRESS_GENERATOR , 1 --> LARGE_ADDRESS_GENERATOR
-        parameter  N            = 32768,
-        parameter  n1           = 64  ,
-        parameter  n2           = 8  ,
-        parameter  size0        = 512 ,
-        parameter  size1        = 64 ,    
-        parameter  TP           = 64 ,
+        parameter  LARGE        = 0  ,  // 0 --> SMALL_ADDRESS_GENERATOR , 1 --> LARGE_ADDRESS_GENERATOR
+        parameter  LOGN         = 15,
+        parameter  LOGN1        = 6  ,
+        parameter  LOGN2        = 3  ,
+        parameter  LOGTP        = 6 ,
         parameter  LOGQ         = 60 ,
         parameter  BTF_LAT      = 10 ,
         parameter  AU_ID        = 0
@@ -21,20 +19,24 @@ module automorphism_unit
 
 
     
-    
-    localparam depth  = large_automorphism ? $rtoi($ceil(N/TP)) : $rtoi($ceil(size0/TP)) ;
+    localparam N  = 1 << LOGN;
+    localparam N1 = 1 << LOGN1;
+    localparam N2 = 1 << LOGN2;
+    localparam TP = 1 << LOGTP;
+    localparam size0 = N1 * N2;
+    localparam size1 = N / (size0);
+    localparam depth  = LARGE ? $rtoi($ceil(N/TP)) : $rtoi($ceil(size0/TP)) ;
     localparam size1_over_tp = size1/TP;
     localparam size1_over_tp_log2 = $rtoi($ceil($clog2(size1_over_tp)));
     localparam size0_over_tp = size0/TP;
     localparam log_size0_over_tp = $rtoi($ceil($clog2((size0)/TP)));
     localparam size0_over_tp_mult_size1_over_tp_log2 = $rtoi($ceil($clog2((size0/TP)*(size1_over_tp))));
-    localparam logn2 = $clog2(n2);
     localparam reg_ctr = $clog2(size0_over_tp);
 
-    localparam BRAM_size        = large_automorphism ? 2*depth : 2*size0_over_tp;
-    localparam BRAM_log_size    = large_automorphism ? $rtoi($ceil($clog2(2*depth))) : log_size0_over_tp + 1;
+    localparam BRAM_size        = LARGE ? 2*depth : 2*size0_over_tp;
+    localparam BRAM_log_size    = LARGE ? $rtoi($ceil($clog2(2*depth))) : log_size0_over_tp + 1;
 
-    localparam log_depth  = large_automorphism ? $rtoi($ceil($clog2(depth))) : log_size0_over_tp;
+    localparam log_depth  = LARGE ? $rtoi($ceil($clog2(depth))) : log_size0_over_tp;
 
     // states
     localparam OP_IDLE          = 1'd0;
@@ -148,7 +150,7 @@ endgenerate
 
 
 generate
-    addr_gen #(.large_addr(large_automorphism),.N(N), .n1(n1), .size0(size0), .size1(size1), .TP(TP)) small_addr_gen_sm_unit (clk, rst, start_addr_sig, read_addr_res, write_addr_res);
+    addr_gen #(.large_addr(LARGE),.LOGN(LOGN), .LOGN1(LOGN1), .size0(size0), .size1(size1), .LOGTP(LOGTP)) small_addr_gen_sm_unit (clk, rst, start_addr_sig, read_addr_res, write_addr_res);
 endgenerate
 
 
@@ -159,7 +161,7 @@ generate
 endgenerate
 
 generate
-    if (large_automorphism) begin
+    if (LARGE) begin
         for (genvar rot = 0; rot < TP; rot = rot + 1 ) begin
             always @(posedge clk) begin
                 input_data_shift[rot*LOGQ +: LOGQ] <= input_data_int[(((rot + (ctr_shifted>>size0_over_tp_mult_size1_over_tp_log2))&(TP-1)))];
@@ -168,7 +170,7 @@ generate
     end else begin
         for (genvar rot = 0; rot < TP; rot = rot + 1) begin
             always @(posedge clk) begin
-                input_data_shift[(TP-rot)*LOGQ-1 -: LOGQ] <= input_data_int[TP-((   ((((rot - (ctr_shifted&(size0_over_tp-1)))&(TP-1))) >> logn2) + (((rot - (ctr_shifted&(size0/TP-1)))&(n2-1))*(TP/n2)))&(TP-1))-1];
+                input_data_shift[(TP-rot)*LOGQ-1 -: LOGQ] <= input_data_int[TP-((   ((((rot - (ctr_shifted&(size0_over_tp-1)))&(TP-1))) >> LOGN2) + (((rot - (ctr_shifted&(size0/TP-1)))&(N2-1))*(TP/N2)))&(TP-1))-1];
             end
         end
     end
@@ -229,7 +231,7 @@ endgenerate
 
 generate
     
-    if (large_automorphism) begin
+    if (LARGE) begin
         for (genvar i = 0; i < TP; i = i + 1) begin
             always @(posedge clk ) begin
                 output_data[(TP-i)*LOGQ-1-:LOGQ] <= do00[(i + (((ctr_out>>size1_over_tp_log2)&(depth-1))))&(TP-1)];

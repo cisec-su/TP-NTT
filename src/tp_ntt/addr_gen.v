@@ -1,11 +1,11 @@
 module addr_gen
    #(
         parameter  large_addr   = 1  ,  // 0 --> SMALL_ADDRESS_GENERATOR , 1 --> LARGE_ADDRESS_GENERATOR
-        parameter  N            = 128,
-        parameter  n1           = 2  ,
+        parameter  LOGN         = 128,
+        parameter  LOGN1        = 2  ,
         parameter  size0        = 16 ,
         parameter  size1        = 16 ,    
-        parameter  TP           = 8  
+        parameter  LOGTP        = 8  
     )
     (
         input                             clk      ,
@@ -15,8 +15,9 @@ module addr_gen
         output reg [(log_depth+1)*TP-1:0] write_addr     
     );
 
-localparam log_n1 = $rtoi($ceil($clog2(n1)));
-localparam log_N  = $rtoi($ceil($clog2(N)));
+localparam N  = 1 << LOGN;
+localparam N1 = 1 << LOGN1;
+localparam TP = 1 << LOGTP;
 localparam depth  = $rtoi($ceil(N/TP));
 localparam log_depth  = large_addr ? $rtoi($ceil($clog2(depth))) : log_size0_over_tp;
 localparam log_size1  = $rtoi($ceil($clog2(size1)));

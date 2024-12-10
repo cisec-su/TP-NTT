@@ -1,12 +1,12 @@
 // top_module.v
 
 module iterative_tp_cons_file #(
-        parameter N             = 1<<16,
-        parameter n1            = 1<<6,
-        parameter n2            = 1<<4,
-        parameter n3            = 1<<6,
-        parameter n4            = 1<<0,     
-        parameter TP            = 1<<6,
+        parameter N             = 15,
+        parameter LOGN1         = 6,
+        parameter LOGN2         = 3,
+        parameter LOGN3         = 6,
+        parameter LOGN4         = 1,     
+        parameter LOGTP         = 6,
         parameter LOGQ          = 60,
         parameter LOGQH         = 17
     )
@@ -23,8 +23,9 @@ module iterative_tp_cons_file #(
 
 
     // Parameters for the karatsuba_parametric module
-    
-    localparam log_TP = $rtoi($ceil($clog2(TP)));
+    localparam N  = 1 << LOGN;
+    localparam TP = 1 << LOGTP;
+    localparam LOGTP = $rtoi($ceil($clog2(TP)));
 
     reg [LOGQ-1:0]      din_R      [LOGQ-1:0];
 
@@ -32,9 +33,9 @@ module iterative_tp_cons_file #(
 
     reg [LOGQ-1:0] Q_in_reg;
 
-    reg [log_TP-1:0]       i_cntr;
+    reg [LOGTP-1:0]       i_cntr;
 
-    reg [log_TP-1:0]       o_cntr;
+    reg [LOGTP-1:0]       o_cntr;
 
     reg START_NTT_reg;
 
@@ -82,11 +83,11 @@ module iterative_tp_cons_file #(
     end
 
     tp_ntt_top #(
-        .N(N),
-        .n1(n1),
-        .n2(n2),
-        .n3(n3),
-        .TP(TP),
+        .LOGN(N),
+        .LOGN1(LOGN1),
+        .LOGN2(LOGN2),
+        .LOGN3(LOGN3),
+        .LOGTP(LOGTP),
         .LOGQ(LOGQ),
         .LOGQH(LOGQH)
     ) unit(clk,rst, START_NTT_reg, OP_TYPE_reg, Q_in_reg[LOGQ-1 -:LOGQH],
