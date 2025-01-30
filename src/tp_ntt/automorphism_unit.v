@@ -26,6 +26,7 @@ module automorphism_unit
     localparam size0 = N1 * N2;
     localparam size1 = N / (size0);
     localparam depth  = LARGE ? $rtoi($ceil(N/TP)) : $rtoi($ceil(size0/TP)) ;
+    localparam depth_large = $rtoi($ceil(N/TP));
     localparam size1_over_tp = size1/TP;
     localparam size1_over_tp_log2 = $rtoi($ceil($clog2(size1_over_tp)));
     localparam size0_over_tp = size0/TP;
@@ -37,15 +38,17 @@ module automorphism_unit
     localparam BRAM_log_size    = LARGE ? $rtoi($ceil($clog2(2*depth))) : log_size0_over_tp + 1;
 
     localparam log_depth  = LARGE ? $rtoi($ceil($clog2(depth))) : log_size0_over_tp;
+    localparam log_depth_large = $rtoi($ceil($clog2(depth_large)));
 
     // states
     localparam OP_IDLE          = 1'd0;
     localparam OP_STARTED       = 1'd1;
 
-    wire [log_depth:0] read_addr_int [0:TP-1];
     reg  [log_depth:0] ctr;
     wire [log_depth:0] ctr_shifted, ctr_out;
     reg  curr_state, next_state;
+
+    reg [log_depth_large:0] ctr_state;
 
     reg start_addr_gen;
     wire start_addr_gen_shifted;
@@ -67,6 +70,7 @@ module automorphism_unit
     wire [LOGQ-1:0] input_data_int [TP-1:0];
     wire [LOGQ-1:0] input_data_shift_int [TP-1:0];
 
+    localparam TEMP = LARGE ? depth_large + 6 : depth_large + 4;
 
     always @(posedge clk) 
     begin
@@ -81,7 +85,8 @@ module automorphism_unit
         next_state = curr_state;
         if (start) begin
             next_state = OP_STARTED;
-        end else begin
+        end
+        else if ((ctr_state[log_depth_large:0]) == (depth_large-1)) begin
             next_state = OP_IDLE;
         end
     end
@@ -96,7 +101,23 @@ module automorphism_unit
                     ctr <= ctr + 1;
                 end 
                 default: begin
-                    ctr <= ctr;
+                    ctr <= 0;
+                end
+            endcase
+            
+        end
+    end
+
+    always @(posedge clk or posedge rst) begin
+        if (rst) begin
+            ctr_state <= 0;
+        end else begin
+            case (curr_state)
+                OP_STARTED: begin
+                    ctr_state <= ctr_state + 1;
+                end 
+                default: begin
+                    ctr_state <= 0;
                 end
             endcase
             
@@ -175,12 +196,12 @@ generate
         end
     end
 endgenerate
+
+
+generate
     for (genvar rot = 0; rot < TP; rot = rot + 1) begin
         assign input_data_shift_int[rot] = input_data_shift[rot*LOGQ +: LOGQ];
     end
-generate
-
-
 endgenerate
 
 
@@ -193,28 +214,10 @@ generate
                 dw00[k]       <= 0;
                 de00[k]       <= 0;
             end else begin
-                case (curr_state)
-                    OP_STARTED: begin
-                        if(start_take_input) begin
-                            di00[k]       <= input_data_shift_int[(TP-k-1)];
-                            dr00[k]       <= read_addr_res[(TP-k)*(log_depth+1)-1-:log_depth+1];
-                            dw00[k]       <= write_addr_res[(TP-k)*(log_depth+1)-1-:log_depth+1];
-                            de00[k]       <= 1'b1;
-                        end
-                        else begin
-                            di00[k]       <=    0;
-                            dr00[k]       <=    0;
-                            dw00[k]       <=    0;
-                            de00[k]       <=    0;
-                        end
-                    end
-                    default: begin
-                        di00[k]       <=    0;
-                        dr00[k]       <=    0;
-                        dw00[k]       <=    0;
-                        de00[k]       <=    0;
-                    end
-                endcase
+                di00[k]       <= input_data_shift_int[(TP-k-1)];
+                dr00[k]       <= read_addr_res[(TP-k)*(log_depth+1)-1-:log_depth+1];
+                dw00[k]       <= write_addr_res[(TP-k)*(log_depth+1)-1-:log_depth+1];
+                de00[k]       <= start_take_input;                        
             end
         end
     end

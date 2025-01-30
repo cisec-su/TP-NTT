@@ -25,6 +25,7 @@ localparam size1_over_tp = size1/TP;
 localparam size1_over_tp_log2 = $rtoi($ceil($clog2(size1_over_tp)));
 localparam size0_over_tp = size0/TP;
 localparam log_size0_over_tp = $rtoi($ceil($clog2(size0_over_tp)));
+localparam read_lat = (large_addr) ? depth : size0_over_tp;
 
 // states
 localparam OP_IDLE          = 1'd0;
@@ -33,8 +34,9 @@ localparam OP_STARTED       = 1'd1;
 
 wire [log_depth:0] read_addr_int [0:TP-1];
 reg  [log_depth:0] ctr;
+wire [log_depth:0] ctr_d;
+wire [log_depth:0] ctr_read;
 reg  curr_state, next_state;
-
 
 always @(posedge clk) 
 begin
@@ -64,7 +66,7 @@ always @(posedge clk or posedge rst) begin
                 ctr <= ctr + 1;
             end 
             default: begin
-                ctr <= ctr;
+                ctr <= 0;
             end
         endcase
         
@@ -72,14 +74,19 @@ always @(posedge clk or posedge rst) begin
 end
 
 
+shiftreg #(.SHIFT(read_lat),.DATA(log_depth+1)) srctr(clk,rst,ctr,ctr_d);
+
+assign ctr_read = ctr_d + read_lat;
+
+
 generate
     if (large_addr) begin
         for (genvar i = 0; i < TP; i = i + 1) begin
-            assign read_addr_int[i] = ((((size0_over_tp)<<(size1_over_tp_log2))*i + (size0_over_tp)*(ctr&(size1_over_tp-1)) + ((ctr&(depth-1))>>log_size1)) & (depth-1)) + ((ctr<depth)<<log_depth);
+            assign read_addr_int[i] = ((((size0_over_tp)<<(size1_over_tp_log2))*i + (size0_over_tp)*(ctr_read&(size1_over_tp-1)) + ((ctr_read&(depth-1))>>log_size1)) & (depth-1)) + ((ctr_read<depth)<<log_depth);
         end
     end else begin
         for (genvar i = 0; i < TP; i = i + 1) begin
-            assign read_addr_int[i] = (i&(size0_over_tp-1)) + size0_over_tp*(ctr<size0_over_tp);
+            assign read_addr_int[i] = (i&(size0_over_tp-1)) + size0_over_tp*(ctr_read<size0_over_tp);
         end
     end
 endgenerate
@@ -89,19 +96,19 @@ generate
     if (large_addr) begin
         for (genvar i = 0; i < TP; i = i + 1) begin
             always @(posedge clk) begin
-                read_addr [((TP-i)*(log_depth+1))-1 -: log_depth+1] <= (OP_STARTED) ? read_addr_int[((i + TP)- (ctr>>(size1_over_tp_log2))) & (TP-1)] : 0;
+                read_addr [((TP-i)*(log_depth+1))-1 -: log_depth+1] <= read_addr_int[((i + TP)- (ctr_read>>(size1_over_tp_log2))) & (TP-1)];
             end
             always @(posedge clk) begin
-                write_addr[((TP-i)*(log_depth+1))-1 -: log_depth+1] <= (OP_STARTED) ? ctr : 0;
+                write_addr[((TP-i)*(log_depth+1))-1 -: log_depth+1] <= ctr;
             end
         end
     end else begin
         for (genvar i = 0; i < TP; i = i + 1) begin
             always @(posedge clk) begin
-                read_addr [((TP-i)*(log_size0_over_tp+1))-1 -: log_size0_over_tp+1] <= (OP_STARTED) ? read_addr_int[((i + TP) - (ctr&((size0_over_tp)-1))) & (TP-1)] : 0;
+                read_addr [((TP-i)*(log_size0_over_tp+1))-1 -: log_size0_over_tp+1] <= read_addr_int[((i + TP) - (ctr_read&((size0_over_tp)-1))) & (TP-1)];
             end
             always @(posedge clk) begin
-                write_addr[((TP-i)*(log_size0_over_tp+1))-1 -: log_size0_over_tp+1] <= (OP_STARTED) ? ctr : 0;
+                write_addr[((TP-i)*(log_size0_over_tp+1))-1 -: log_size0_over_tp+1] <= ctr;
             end
         end
     end

@@ -28,24 +28,28 @@ module tp_ntt_tb();
     localparam LOGN4   = $rtoi($ceil($clog2(n4)));
     localparam LOGTP   = $rtoi($ceil($clog2(TP)));
 
-    parameter input_bits = LOGQ*TP;
+    parameter BATCH_SIZE = 10;
+    parameter BATCH_DELAY = 1;
 
-    parameter total_steps = $rtoi($ceil($clog2(N)));
-    parameter TP_log = $rtoi($ceil($clog2(TP)));
-    parameter N_over_TP =  $rtoi($ceil(N/TP));
 
-    parameter large_steps = (total_steps/TP_log);
+    localparam input_bits = LOGQ*TP;
 
-    parameter large_steps_log_num = large_steps*TP_log;
-    parameter last_step = total_steps - large_steps_log_num;
+    localparam total_steps = $rtoi($ceil($clog2(N)));
+    localparam TP_log = $rtoi($ceil($clog2(TP)));
+    localparam N_over_TP =  $rtoi($ceil(N/TP));
 
-    parameter last_elmnt_log = (last_step == 0 ) ? 0 :  total_steps- large_steps_log_num; 
-    parameter last_step_ntt_num = (last_elmnt_log == 0) ? 0 : (TP/(1<<last_elmnt_log)) ;
+    localparam large_steps = (total_steps/TP_log);
 
-    parameter is_last_problem = (last_elmnt_log == 0) ? 0 : 1;
-    parameter total_step_numbers_real =  DIM == 0 ? 2 : (DIM == 1 ? 3 : 4); 
-    parameter clock_cycles = ((DIM == 0) ? (BTF_LAT * LOGN + 9) : ((DIM == 1) ? BTF_LAT * LOGN + (size0/TP) + 15 :  BTF_LAT * LOGN + (size0/TP) + (size1/TP) + 21 )) * 10;
-    parameter psi_count = (N_over_TP)*((1<<LOGN1)-1)*(1<<(LOGN1)) + (N_over_TP)*((1<<LOGN2)-1)*(1<<(LOGN2)) + (N_over_TP)*((1<<LOGN3)-1)*(1<<(LOGN3)) + (N_over_TP)*((1<<LOGN4)-1)*(1<<(LOGN4));
+    localparam large_steps_log_num = large_steps*TP_log;
+    localparam last_step = total_steps - large_steps_log_num;
+
+    localparam last_elmnt_log = (last_step == 0 ) ? 0 :  total_steps- large_steps_log_num; 
+    localparam last_step_ntt_num = (last_elmnt_log == 0) ? 0 : (TP/(1<<last_elmnt_log)) ;
+
+    localparam is_last_problem = (last_elmnt_log == 0) ? 0 : 1;
+    localparam total_step_numbers_real =  DIM == 0 ? 2 : (DIM == 1 ? 3 : 4); 
+    localparam clock_cycles = (((DIM == 0) ? (BTF_LAT * LOGN + 9) : ((DIM == 1) ? BTF_LAT * LOGN + (size0/TP) + 15 :  BTF_LAT * LOGN + (size0/TP) + (size1/TP) + 21 )));
+    localparam psi_count = (N_over_TP)*((1<<LOGN1)-1)*(1<<(LOGN1)) + (N_over_TP)*((1<<LOGN2)-1)*(1<<(LOGN2)) + (N_over_TP)*((1<<LOGN3)-1)*(1<<(LOGN3)) + (N_over_TP)*((1<<LOGN4)-1)*(1<<(LOGN4));
 
     // Testbench variables
     reg clk;
@@ -57,6 +61,7 @@ module tp_ntt_tb();
     reg [LOGQ*(TP-1)-1:0] W_in;
     wire [LOGQ*TP-1:0] NTT_out;
 
+    reg i_valid;
 
     reg [LOGQ-1:0] a0_0 [0:N-1]; 
     reg [LOGQ-1:0] res [0:N-1]; 
@@ -73,7 +78,7 @@ module tp_ntt_tb();
 
     always #HP clk = ~clk;
 
-   
+    int flag, flag1;
     initial begin
         // ntt
         $readmemh({TEST_DIR, "/NTT_inputs_hexa.txt"  }, a0_0);
@@ -83,7 +88,7 @@ module tp_ntt_tb();
     end
 
     // Test sequence
-    integer i, j, k, id11, idx_here, idx_start;
+    integer i, j, k, id11, idx_here, idx_start, t;
     initial begin
 
         $display("Simulation started.");
@@ -91,31 +96,32 @@ module tp_ntt_tb();
         clk = 1'b0;
         rst = 1'b0;
         OP_TYPE = 2'b0;
+        START_NTT = 1'b0;
         NTT_in = 0;
         W_in = 0;
-        #10;
+        #FP;
         rst = 1'b1;
-        #10;
+        #FP;
         rst = 1'b0;
 
-        #5;
+        #HP;
         
         
-        #10;
+        #FP;
 
-        #5;
+        #HP;
         OP_TYPE = 2'd3;
-        #5;
+        #HP;
         // Q-LOAD
         q_tb = q[0][LOGQ-1 -: LOGQH];
 
-        #10;
+        #FP;
         OP_TYPE = 2'd0;
 
-        #30;
+        #(FP*3);
         
         OP_TYPE = 2'b1;
-        #10;
+        #FP;
 
         for (i = 0 ; i < total_step_numbers_real ; i = i+1) begin
             if(is_last_problem && i == 1) begin
@@ -178,27 +184,34 @@ module tp_ntt_tb();
                         end
                     end
                 end
-                #10;
+                #FP;
             end
             
             
         end
         OP_TYPE = 2'b0;
-        #50;
+        #(FP*5);
         //OP_TYPE = 3'd2;
-        START_NTT = 1'd1;
-        #10;
+        @(posedge clk);
+        @(posedge clk);
+        START_NTT = 1'b1;
+        @(posedge clk);
+        START_NTT = 1'b0;
         // Initialize inputs
         for (i = 0; i < depth ; i = i + 1) begin
             for ( j = 0; j < TP; j = j + 1) begin // For every stage
                 idx_here = ((j*N_over_TP) + ((i & (size0/TP-1)) * (N/size0)) + (i/(size0/TP))) & (N-1);
                 NTT_in[(TP-(j))*LOGQ-1-:LOGQ] = {a0_0[idx_here]};
             end
-            #10;
+            @(posedge clk);
         end
         
-        #clock_cycles;        
-
+        repeat(clock_cycles) begin
+            @(posedge clk);
+        end
+        flag = 1;
+        i = 0;
+        $display("SINGLE NTT TEST STARTING");
         for (i = 0; i < depth ; i = i + 1) begin
             for ( j = 0; j < TP; j = j + 1) begin // For every stage
                 NTT_res[(TP-(j))*LOGQ-1-:LOGQ] = {res[j+i*TP]};
@@ -207,13 +220,84 @@ module tp_ntt_tb();
                 $display("CORRECT IDX: %d ", i);
             end
             else begin
+                flag = 0;
                 $display("WRONG IDX !!!!: %d ", i);
             end
-            
-            #10;
+            @(posedge clk);
         end
-        
+        if (flag) begin
+                $display("SINGLE NTT TEST IS SUCCESSFUL. ALL COEFFICIENTS ARE CORRECT");        
+        end
+        else begin
+            $display("FAIL IN SINGLE NTT TEST");
+        end
 
+        $display("BATCH NTT TEST STARTING");
+        START_NTT = 1'b1;
+        t = depth + BATCH_DELAY;
+        @(posedge clk);
+
+        flag1 = 1;
+        for (k = 0; k < BATCH_SIZE*t + clock_cycles + depth; k = k + 1) begin
+
+            i = k % t;
+
+            if (k < BATCH_SIZE*t) begin
+                if (i == 0) begin
+                    $display("BATCH NTT IDY: %d", k / t);
+                    START_NTT = 1'b0;
+                end
+                if (i < depth) begin
+                    for (j = 0; j < TP; j = j + 1) begin
+                        idx_here = ((j*N_over_TP) + ((i & (size0/TP-1)) * (N/size0)) + (i/(size0/TP))) & (N-1);
+                        NTT_in[(TP-(j))*LOGQ-1-:LOGQ] = {a0_0[idx_here]};
+                    end
+                end
+                else if ((i == (t - 1)) && ((k / t) < (BATCH_SIZE - 1))) begin
+                    START_NTT = 1'b1;
+                end
+            end
+
+            if (k > (clock_cycles + depth)) begin
+                i = (k - clock_cycles - depth) % t;
+                if (i == 0) begin
+                    flag = 1;
+                end
+                if (i < depth) begin
+                    for ( j = 0; j < TP; j = j + 1) begin // For every stage
+                        NTT_res[(TP-(j))*LOGQ-1-:LOGQ] = {res[j+i*TP]};
+                    end
+                    if( NTT_out == NTT_res) begin
+                        $display("CORRECT IDX:%d - IDY:%d ", i, (k - clock_cycles - depth) / t);
+                    end
+                    else begin
+                        flag = 0;
+                        $display("WRONG IDX:%d -  IDY:%d ", i, (k - clock_cycles - depth) / t);
+                    end
+                end
+                if (i == (depth - 1)) begin
+                    if (flag) begin
+                        $display("BATCH: %d IS SUCCESSFUL", (k - clock_cycles - depth) / t);        
+                    end
+                    else begin
+                        flag1 = 0;
+                    end
+                    if (flag1) begin
+                        $display("PROCESSED BATCHES ARE SUCCESSFUL");
+                    end
+                end
+            end
+
+            ////////////// NEXT CYCLE //////////////////
+            @(posedge clk);
+        end
+
+        if (flag1) begin
+            $display("BATCH NTT TEST IS SUCCESSFUL. ALL BATCHESxCOEFFICIENTS ARE CORRECT");
+        end
+        else begin
+            $display("SOME BATCHES FAILED");
+        end
         $finish;
     end
 

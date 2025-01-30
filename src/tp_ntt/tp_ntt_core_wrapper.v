@@ -47,10 +47,6 @@ localparam OP_Q_LOAD                = 2'd3;
 
 
 
-
-reg start_addr_gen;
-wire start_addr_gen_shifted, start_addr_gen_shifted_v2, start_addr_gen_shifted_v3;
-
 reg [1:0] OP_TYPE;
 
 reg [1:0] curr_state, next_state;
@@ -70,10 +66,8 @@ reg                         be0     [1*(bram_reg_size)-1:0];
 
 
 reg [depth_log+1:0] twid_ctr;
-reg [reg_ctr:0] ctr;
-wire [reg_ctr:0] ctr_shifted;
 
-reg [TP*LOGQ-1:0] NTT_core_in, NTT_core_out_reg;
+reg [TP*LOGQ-1:0] NTT_core_in;
 wire [TP*LOGQ-1:0] NTT_core_out;
 reg [(bram_reg_size)*LOGQ-1:0] W_core_in;
 reg [LOGQH-1:0] q_core_in;
@@ -91,6 +85,9 @@ always @(posedge clk or posedge rst) begin
                 twid_ctr <= twid_ctr + 1;
             end 
             OP_STARTED: begin
+                twid_ctr <= twid_ctr + 1;
+            end
+            OP_Q_LOAD: begin
                 twid_ctr <= twid_ctr + 1;
             end
             default: begin
@@ -143,45 +140,17 @@ always @(*) begin
             next_state = (twid_ctr == (iter_part_num_tot)*depth-1) ? OP_IDLE : OP_TWIDDLE_LOAD;
         end
         OP_STARTED: begin
-            next_state =  OP_STARTED;
+            next_state = ((twid_ctr[depth_log-1:0]) == (depth-1)) ? OP_IDLE : OP_STARTED;
         end
         OP_Q_LOAD: begin
-            next_state = (ctr == 1) ? OP_IDLE : OP_Q_LOAD;
+            next_state = (twid_ctr == 1) ? OP_IDLE : OP_Q_LOAD;
         end
-        
         default: begin
             next_state = OP_IDLE;
         end
     endcase
 end
 
-
-always @(posedge clk or posedge rst) begin
-    if (rst) begin
-        ctr <= 0;
-    end else begin
-        case (curr_state)
-            OP_TWIDDLE_LOAD: begin
-                ctr <= ctr + 1;
-            end 
-            OP_STARTED: begin
-                if (start_addr_gen_shifted) begin
-                    ctr <= ctr + 1;
-                end else begin
-                    ctr <= ctr;
-                end
-            end
-            OP_Q_LOAD: begin
-                ctr <= ctr + 1;
-            end
-            default: begin
-                ctr <= 0;
-            end
-            
-        endcase
-        
-    end
-end
 
 
 always @(posedge clk or posedge rst) begin
@@ -301,9 +270,6 @@ generate
     end else begin
         for (genvar i = 0; i < TP; i = i + 1) begin
             always @(posedge clk) begin
-                //NTT_core_in[( TP - (((i & (N1/2-1))*2 + (i & (N1-1))/(N1/2) + (i/N1)*N1) & (TP-1)) )*LOGQ-1             -:LOGQ]    <= NTT_INPUT[(TP-i)*LOGQ-1-:LOGQ];
-                //Buraya bir bakalim
-                //NTT_core_in[( TP - ((((i & (N2-1))*N1) + (i/(TP>>1)) + ((i & ((TP>>1)-1))/(TP/N1))*2) & (TP-1)) )*LOGQ-1-:LOGQ]     <= NTT_INPUT[(TP-i)*LOGQ-1-:LOGQ];
                 if (RW_DIS) begin
                     NTT_core_in[( TP - (((i & (N1/2-1))*2 + (i & (N1-1))/(N1/2) + (i/N1)*N1) & (TP-1)) )*LOGQ-1             -:LOGQ]    <= NTT_INPUT[(TP-i)*LOGQ-1-:LOGQ];
                 end else begin
@@ -315,14 +281,6 @@ generate
     
 endgenerate
 
-
-// generate
-//     for (genvar rot = 0; rot < TP; rot = rot + 1) begin
-//         always @(posedge clk) begin
-//             NTT_core_out_reg[(TP-((rot/(TP/N1) + (rot&(TP/N1-1))*N1  )&(TP-1)))*LOGQ-1 -: LOGQ] <= NTT_core_out[(TP - (((rot - (ctr&(size0/TP-1))))&(TP-1)))*LOGQ-1 -: LOGQ];
-//         end
-//     end
-// endgenerate
 
 generate  
     for (genvar b2 = 0; b2 < bram_reg_size; b2 = b2 + 1) begin: BRAM_GEN_BLOCK_TWIDDLE // BRAM for TWIDDLE
