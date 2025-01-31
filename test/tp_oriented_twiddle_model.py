@@ -96,10 +96,10 @@ def generate_psi_table(w, n, q):
 
 twids = []
 
-def NTT(A, Psi_table, q, only_1, L, w):
+def NTT(A, Psi_table, q, debug, L, w, test_dir=None):
     print("aa: ", L, w)
-    if only_1:
-        debug_file = open("FNTT_debug.txt", 'w+')
+    if debug:
+        debug_file = open(f"{test_dir}/ntt_debug.txt", 'w+')
     N = len(A)
     B = [_ for _ in A]
 
@@ -112,7 +112,7 @@ def NTT(A, Psi_table, q, only_1, L, w):
     
     counterr = 0
     while (m < N):
-        if only_1:
+        if debug:
             debug_file.write("----------------------" + str(math.log2(m)) + "------------------------------------ \n")
         counterr += 1
         t = int(t / 2)
@@ -137,10 +137,10 @@ def NTT(A, Psi_table, q, only_1, L, w):
                 
                 #SS = S * pow(2,L*w,q) % q
                 SS = S * pow(2, math.ceil(log2(q)), q) % q
-                #if SS not in twids and only_1:
+                #if SS not in twids and debug:
                     #twids.append((j, j+t, SS))
                 
-                if only_1:
+                if debug:
                     debug_file.write("A[{}]--{} ve A[{}]--{} + W^{} --> A[{}] ve A[{}] \n".format( hex(U), j, hex(aa), j+t, hex(SS), hex(B[j]), hex(B[j + t])))
 
 
@@ -329,8 +329,7 @@ if __name__ == "__main__":
     PE = 2*PE_number
     user_input = sys.argv[3]
     q_bit_size  = int(sys.argv[4])
-    
-
+    test_dir = sys.argv[5]
     k = q_bit_size # bit size
 
     # prime_num_try = pow(2,k-1) + 1
@@ -353,7 +352,7 @@ if __name__ == "__main__":
 
     q = ntt_friendly_prime_gen(LOGQ, LOGQH, 1)[0]
 
-    q_file = open("test/q.txt", 'w+')
+    q_file = open(f'{test_dir}/q.txt', 'w+')
 
     q_file.write(str(hex(q)[2:]) + "\n")
 
@@ -385,7 +384,7 @@ if __name__ == "__main__":
     A = [random.randint(0, q - 1) for x in range(n)]
     #print("A: ", A)
 
-    f0 = open('test/NTT_inputs_hexa.txt', 'w+')
+    f0 = open(f'{test_dir}/ntt_in.txt', 'w+')
     for i in range(n):
         f0.write('{}'.format(hex(A[i])[2:]))
         f0.write('\n')
@@ -406,24 +405,17 @@ if __name__ == "__main__":
 
 
 
-    A_NTT_merge = NTT(A, psi_table, q, True, math.ceil(q_bit_size/width), width)
+    A_NTT_merge = NTT(A, psi_table, q, True, math.ceil(q_bit_size/width), width, test_dir)
     B_NTT_merge = NTT(B, psi_table, q, False, math.ceil(q_bit_size/width), width)
 
-    f1 = open('W_in.txt', 'w+')
+    # f1 = open(f'{test_dir}/psi.txt', 'w+')
 
-    for elm_idx in range(len(twids)):
-        if elm_idx == len(twids) - 1:
-            f1.write(str(hex(twids[elm_idx][2]))[2:] + "\n")
-        else:
-            f1.write(str(hex(twids[elm_idx][2]))[2:] + "\n")
-    f1.write("\n")
-
-    
-    f2 = open('W_in_tp.txt', 'w+')
-
-    
-
-    
+    # for elm_idx in range(len(twids)):
+    #     if elm_idx == len(twids) - 1:
+    #         f1.write(str(hex(twids[elm_idx][2]))[2:] + "\n")
+    #     else:
+    #         f1.write(str(hex(twids[elm_idx][2]))[2:] + "\n")
+    # f1.write("\n")
 
     res_merge = []
 
@@ -438,12 +430,12 @@ if __name__ == "__main__":
 
     print("----------------Parameters---------------\n")
 
-    print("Ring size    : ", n)
+    print("Ring size    :", n)
     print("q            :", q)
     print("w            :", w)
     print("w_inv        :", w_inv)
     print("psi          :", psi)
-    print("psiv            :", psi_inv)
+    print("psiv         :", psi_inv)
 
     print("******************************************\n")
 
@@ -463,7 +455,7 @@ if __name__ == "__main__":
     #--------------------Output NTT---------------------------------
 
 
-    f0 = open('test/NTT_outputs_hexa.txt','w')
+    f0 = open(f'{test_dir}/ntt_out.txt','w')
 
     for i in range(n):
         f0.write('{}'.format(hex(A_NTT_merge[i])[2:]))

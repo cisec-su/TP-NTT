@@ -20,6 +20,13 @@ module tp_ntt_tb();
     parameter TP            = 1<<6;
     parameter TP_twid       = TP-1;
     parameter depth         =  $rtoi($ceil(N/TP));
+    parameter BATCH_SIZE    = 10;
+    parameter BATCH_DELAY   = 1;
+    parameter HP            = 5;
+    parameter FP            = (2*HP);
+    parameter PYTHON        = "python3";
+    parameter GEN_TEST_VEC  = 1;
+
 
     localparam LOGN    = $rtoi($ceil($clog2(N)));
     localparam LOGN1   = $rtoi($ceil($clog2(n1)));
@@ -28,8 +35,6 @@ module tp_ntt_tb();
     localparam LOGN4   = $rtoi($ceil($clog2(n4)));
     localparam LOGTP   = $rtoi($ceil($clog2(TP)));
 
-    parameter BATCH_SIZE = 10;
-    parameter BATCH_DELAY = 1;
 
 
     localparam input_bits = LOGQ*TP;
@@ -61,8 +66,6 @@ module tp_ntt_tb();
     reg [LOGQ*(TP-1)-1:0] W_in;
     wire [LOGQ*TP-1:0] NTT_out;
 
-    reg i_valid;
-
     reg [LOGQ-1:0] a0_0 [0:N-1]; 
     reg [LOGQ-1:0] res [0:N-1]; 
     reg [LOGQ-1:0] q [0:6];
@@ -71,24 +74,28 @@ module tp_ntt_tb();
     reg [TP_log:0] ctr1;
     
     reg[LOGQH-1:0] q_tb;
-    
-
-    parameter HP = 5;
-    parameter FP = (2*HP);
-
-    always #HP clk = ~clk;
 
     int flag, flag1;
-    initial begin
-        // ntt
-        $readmemh({TEST_DIR, "/NTT_inputs_hexa.txt"  }, a0_0);
-        $readmemh({TEST_DIR, "/NTT_outputs_hexa.txt" }, res);      
-        $readmemh({TEST_DIR, "/W_in.txt"             }, psi0);
-        $readmemh({TEST_DIR, "/q.txt"                }, q);    
-    end
+    string cmd;
 
     // Test sequence
     integer i, j, k, id11, idx_here, idx_start, t;
+
+    always #HP clk = ~clk;
+
+    initial begin
+        // ntt
+        if (GEN_TEST_VEC) begin
+            $sformat(cmd, "sh %s/test_vector_gen.sh %0d %0d %0d %0d %0d %0d %0d %0d %s 0", TEST_DIR, N, n1, n2, n3, n4, TP, DIM, LOGQ, PYTHON);
+            $display("Executing: %s", cmd);
+            $system(cmd);
+        end
+        $readmemh({TEST_DIR, "/ntt_in.txt"  }, a0_0);
+        $readmemh({TEST_DIR, "/ntt_out.txt" }, res);      
+        $readmemh({TEST_DIR, "/psi.txt"     }, psi0);
+        $readmemh({TEST_DIR, "/q.txt"       }, q);    
+    end
+
     initial begin
 
         $display("Simulation started.");

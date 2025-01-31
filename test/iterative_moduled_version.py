@@ -51,22 +51,24 @@ def small_stage_model(N, TP, start1, TWIDDLE_file, TWIDDLE_tuple_map, cont_write
 
 
 
-def iterative_first_block1(input1, TP, n1, n2, size0, bram_skip, IDX):
+def iterative_first_block1(input1, TP, n1, n2, size0, bram_skip, IDX, verbose=True):
     iter0_out = [[] for i in range(depth)]
 
-    print("BLOCK IDX: ", IDX)
+    if verbose:
+        print("BLOCK IDX: ", IDX)
 
     for ctr in range(depth):
         arr1 = [0 for i in range(TP)]
-        print("AAAA: ", input1[ctr])
+        if verbose:
+            print("AAAA: ", input1[ctr])
         for i in range(TP):
             if not bram_skip:
                 arr1[((i%(n2))*n1 + (i//(TP//2)) + ((i%(TP//2))//(TP//n1))*2)%TP] = input1[ctr][i]
             else:
                 arr1[((i%(n1//2))*(2) + ((i%n1)//(n1//2)) + (i//(n1))*(n1))%TP] = input1[ctr][i]
 
-        
-        print("NTT_CORE INPUT: ", ctr , arr1)
+        if verbose:
+            print("NTT_CORE INPUT: ", ctr , arr1)
 
 
 
@@ -84,7 +86,8 @@ def iterative_first_block1(input1, TP, n1, n2, size0, bram_skip, IDX):
         
         calc_res = calc_res_poly
 
-        print("NTT_CORE OUTPUT and AUTOMORPHISM INPUT: ", ctr , calc_res)
+        if verbose:
+            print("NTT_CORE OUTPUT and AUTOMORPHISM INPUT: ", ctr , calc_res)
 
         arr_new = [0 for i in range(TP)]
 
@@ -98,16 +101,18 @@ def iterative_first_block1(input1, TP, n1, n2, size0, bram_skip, IDX):
             else:
                 arr_new[i] = calc_res[i]
             a = 0
-        
-        print("AUTOMORPHISM INPUT SHIFTED for di00 BRAM", ctr , arr_new)
+
+        if verbose:        
+            print("AUTOMORPHISM INPUT SHIFTED for di00 BRAM", ctr , arr_new)
         
         
         iter0_out[ctr] = arr_new
 
-    print("\n\nITERATION " + str(IDX) + " OUT and ITERATION " + str(IDX + 1) + " IN , AFTER BRAM WRITE: ")
-    for a in iter0_out:
-        print(a)
-    print("\n\nITERATION " + str(IDX) + " OUT and ITERATION " + str(IDX + 1) + " IN , AFTER BRAM WRITE:")
+    if verbose:
+        print("\n\nITERATION " + str(IDX) + " OUT and ITERATION " + str(IDX + 1) + " IN , AFTER BRAM WRITE: ")
+        for a in iter0_out:
+            print(a)
+        print("\n\nITERATION " + str(IDX) + " OUT and ITERATION " + str(IDX + 1) + " IN , AFTER BRAM WRITE:")
 
     iter0_read = []
 
@@ -122,7 +127,8 @@ def iterative_first_block1(input1, TP, n1, n2, size0, bram_skip, IDX):
                 new_arr.append(iter0_out[bram_start+(i%(size0//TP))][(i + (ctr%(size0//TP))) % TP])
             else:
                 new_arr.append(iter0_out[ctr][i])
-        print("AUTOMORPHISM BRAM READ for do000 BRAM for next NTT BLOCK", ctr , new_arr)
+        if verbose:
+            print("AUTOMORPHISM BRAM READ for do000 BRAM for next NTT BLOCK", ctr , new_arr)
         iter0_read.append(new_arr)
          ##### READ FROM BRAM
 
@@ -132,10 +138,11 @@ def iterative_first_block1(input1, TP, n1, n2, size0, bram_skip, IDX):
 
 
 
-def iterative_second_block(iter0_read, TP, n2, size0, size1, bram_skip, IDX):
+def iterative_second_block(iter0_read, TP, n2, size0, size1, bram_skip, IDX, verbose=True):
     iter1_out = [[] for i in range(depth)]
 
-    print("BLOCK IDX: ", IDX)
+    if verbose:
+        print("BLOCK IDX: ", IDX)
 
     for ctr in range(depth):
 
@@ -145,7 +152,8 @@ def iterative_second_block(iter0_read, TP, n2, size0, size1, bram_skip, IDX):
         for i in range(TP):
             in_arr[i] = new_arr[((i//n2*n2) + ((i)%2)*(n2//2) + (i%n2)//2)%TP]
 
-        print("NTT_CORE INPUT: ", ctr , in_arr)
+        if verbose:
+            print("NTT_CORE INPUT: ", ctr , in_arr)
 
         #### NTT STAGE CALCULATION 2
 
@@ -160,8 +168,8 @@ def iterative_second_block(iter0_read, TP, n2, size0, size1, bram_skip, IDX):
             calc_ntt = small_stage_model(N, n2, in_poly, file1, TWIDDLE_tuple_map, cont_write)
             calc_res_poly[ntt_num*n2:(ntt_num+1)*n2] = calc_ntt
     
-
-        print("NTT_CORE OUTPUT and AUTOMORPHISM INPUT: ", ctr , calc_res_poly)
+        if verbose:
+            print("NTT_CORE OUTPUT and AUTOMORPHISM INPUT: ", ctr , calc_res_poly)
         #### NTT STAGE CALCULATION 2
 
         #### WRITE TO BRAM
@@ -173,18 +181,20 @@ def iterative_second_block(iter0_read, TP, n2, size0, size1, bram_skip, IDX):
                 write_arr[( (i) + ctr//((size0//TP)*(size1//TP)))%TP] = calc_res_poly[i]
             else:
                 write_arr[i] = calc_res_poly[i]
-        
-        print("AUTOMORPHISM INPUT SHIFTED for di00 BRAM", ctr , write_arr)
+
+        if verbose:   
+            print("AUTOMORPHISM INPUT SHIFTED for di00 BRAM", ctr , write_arr)
 
         #### WRITE TO BRAM
 
         iter1_out[ctr] = write_arr # Output Result
 
 
-    print("\n\nITERATION " + str(IDX) + " OUT and ITERATION " + str(IDX + 1) + " IN , AFTER BRAM WRITE: ")
-    for a in iter1_out:
-        print(a)
-    print("\n\nITERATION " + str(IDX) + " OUT and ITERATION " + str(IDX + 1) + " IN , AFTER BRAM WRITE: ")
+    if verbose:
+        print("\n\nITERATION " + str(IDX) + " OUT and ITERATION " + str(IDX + 1) + " IN , AFTER BRAM WRITE: ")
+        for a in iter1_out:
+            print(a)
+        print("\n\nITERATION " + str(IDX) + " OUT and ITERATION " + str(IDX + 1) + " IN , AFTER BRAM WRITE: ")
 
     #### STAGE 1 NTT ####
 
@@ -202,7 +212,8 @@ def iterative_second_block(iter0_read, TP, n2, size0, size1, bram_skip, IDX):
                 read_arr[i] = iter1_out[ (((size0//TP)*(size1//TP))*i + (size0//TP)*(ctr%(size1//TP)) + (ctr//size1)  ) % depth][(i + (ctr//(size1//TP)) )%TP]
             else:
                 read_arr[i] = iter1_out[ctr][i]
-        print("AUTOMORPHISM BRAM READ for do000 BRAM for next NTT BLOCK", ctr , read_arr)
+        if verbose:
+            print("AUTOMORPHISM BRAM READ for do000 BRAM for next NTT BLOCK", ctr , read_arr)
         iter1_read.append(read_arr)
         #### READ FROM BRAM
     
@@ -243,7 +254,16 @@ def ntt_friendly_prime_gen(logq, logqh, num_primes=None, debug=False, random=Non
 
 if __name__ == "__main__":
     
-    q_bit_size =  int(sys.argv[8])
+    N = int(sys.argv[1])
+    n1 = int(sys.argv[2])
+    n2 = int(sys.argv[3])
+    n3 = int(sys.argv[4])
+    n4 = int(sys.argv[5])
+    TP = int(sys.argv[6])
+    choice = int(sys.argv[7])
+    q_bit_size = int(sys.argv[8])
+    test_dir = sys.argv[9]
+    verbose = int(sys.argv[10]) == 1
 
     if q_bit_size == 60:
         width = 17
@@ -262,23 +282,15 @@ if __name__ == "__main__":
 
     q = ntt_friendly_prime_gen(LOGQ, LOGQH, 1)[0]
 
-    N = int(sys.argv[1])
-    n1 = int(sys.argv[2])
-    n2 = int(sys.argv[3])
-    n3 = int(sys.argv[4])
-    n4 = int(sys.argv[5])
-
     size0 = n1*n2
     size1 = n3*n4
 
-    TP = int(sys.argv[6])
 
     TWIDDLE_tuple_map = find_twiddle_map(N, q, math.ceil(q_bit_size/width), width)
 
-    file1 = open("test/W_in.txt", 'w+')
+    file1 = open(f"{test_dir}/psi.txt", 'w+')
 
     
-    choice = int(sys.argv[7])
 
     iterative_seven = False
     iterative_six   = False
@@ -308,24 +320,23 @@ if __name__ == "__main__":
 
 
     if iterative_seven:
-        iter_0_read = iterative_first_block1(input1, TP, n1, n2, size0, False, 0)
+        iter_0_read = iterative_first_block1(input1, TP, n1, n2, size0, False, 0, verbose)
 
-        iter_1_read = iterative_second_block(iter_0_read, TP, n2, size0, size1, False, 1)
+        iter_1_read = iterative_second_block(iter_0_read, TP, n2, size0, size1, False, 1, verbose)
 
-        iter_2_read = iterative_first_block1(iter_1_read, TP, n3, n4, size1, False, 2)
+        iter_2_read = iterative_first_block1(iter_1_read, TP, n3, n4, size1, False, 2, verbose)
 
-        iter_3_read = iterative_first_block1(iter_2_read, TP, n4, n3, size1, True, 3)
+        iter_3_read = iterative_first_block1(iter_2_read, TP, n4, n3, size1, True, 3, verbose)
     elif iterative_four:
-        iter_0_read = iterative_first_block1(input1, TP, n1, n2, size0, False, 0)
+        iter_0_read = iterative_first_block1(input1, TP, n1, n2, size0, False, 0, verbose)
 
-        iter_3_read = iterative_second_block(iter_0_read, TP, n2, n1, n1*n2, True, 1)
+        iter_3_read = iterative_second_block(iter_0_read, TP, n2, n1, n1*n2, True, 1, verbose)
     elif iterative_six:
-        print("eee")
-        iter_0_read = iterative_first_block1(input1, TP, n1, n2, size0, False, 0)
+        iter_0_read = iterative_first_block1(input1, TP, n1, n2, size0, False, 0, verbose)
 
-        iter_1_read = iterative_second_block(iter_0_read, TP, n2, size0, size1, False, 1)
+        iter_1_read = iterative_second_block(iter_0_read, TP, n2, size0, size1, False, 1, verbose)
 
-        iter_3_read = iterative_first_block1(iter_1_read, TP, n3, n4, size1, True, 2)
+        iter_3_read = iterative_first_block1(iter_1_read, TP, n3, n4, size1, True, 2, verbose)
 
 
     # Check can you generate all elements in correct order, 0 to N-1

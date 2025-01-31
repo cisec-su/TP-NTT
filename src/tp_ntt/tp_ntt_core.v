@@ -103,7 +103,7 @@ generate
     end
 endgenerate
 
-
+//todo: remove redundant register usage
 generate
     for (genvar b = 1; b < stage_nums; b = b + 1) begin
         shiftreg #(.SHIFT(b*BTF_LAT),.DATA((TP-1)*LOGQ)) sre100(clk,rst,W_in,W_in_shifted[b]);

@@ -1,0 +1,3 @@
+[submodule "modmul"]
+	path = modmul
+	url = https://github.com/cisec-su/modmul-hdl.git
