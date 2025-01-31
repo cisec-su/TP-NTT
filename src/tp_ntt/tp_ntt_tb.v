@@ -5,40 +5,36 @@ module tp_ntt_tb();
     `include "bu_def.vh"
 
     // Parameters
-    parameter TEST_DIR      = "../../../../test";
-    parameter N             = 1<<15;
-    parameter n1            = 1<<6;
-    parameter n2            = 1<<3;
-    parameter n3            = 1<<6;
-    parameter n4            = N / (n1*n2*n3);
-    parameter size0         = n1*n2;
-    parameter size1         = n3*n4;
+    parameter LOGN          = 15;
+    parameter LOGN1         = 6;
+    parameter LOGN2         = 3;
+    parameter LOGN3         = 6;
+    parameter LOGTP         = 6;
     parameter LOGQ          = 60;
     parameter LOGQH         = 17;
-    parameter DIM           = (n4 != 1) ? 2 : ((n3 != 1) ? 1 : 0);
-    parameter BTF_LAT       = (LOGQ == 32) ? `BTRFLY_CC_32 + 1 : `BTRFLY_CC_60 + 1;
-    parameter TP            = 1<<6;
-    parameter TP_twid       = TP-1;
-    parameter depth         =  $rtoi($ceil(N/TP));
     parameter BATCH_SIZE    = 10;
     parameter BATCH_DELAY   = 1;
     parameter HP            = 5;
     parameter FP            = (2*HP);
+    parameter TEST_DIR      = "../../../../../test";
     parameter PYTHON        = "python3";
     parameter GEN_TEST_VEC  = 1;
 
-
-    localparam LOGN    = $rtoi($ceil($clog2(N)));
-    localparam LOGN1   = $rtoi($ceil($clog2(n1)));
-    localparam LOGN2   = $rtoi($ceil($clog2(n2)));
-    localparam LOGN3   = $rtoi($ceil($clog2(n3)));
-    localparam LOGN4   = $rtoi($ceil($clog2(n4)));
-    localparam LOGTP   = $rtoi($ceil($clog2(TP)));
-
+    localparam LOGN4        = LOGN - LOGN1 - LOGN2 - LOGN3;
+    localparam N            = 1 << LOGN;
+    localparam N1           = 1 << LOGN1;
+    localparam N2           = 1 << LOGN2;
+    localparam N3           = 1 << LOGN3;
+    localparam N4           = 1 << LOGN4;
+    localparam TP           = 1 << LOGTP;
+    localparam size0        = N1*N2;
+    localparam size1        = N3*N4;
+    localparam DIM          = (N4 != 1) ? 2 : ((N3 != 1) ? 1 : 0);
+    localparam BTF_LAT      = (LOGQ == 32) ? `BTRFLY_CC_32 + 1 : `BTRFLY_CC_60 + 1;
 
 
     localparam input_bits = LOGQ*TP;
-
+    localparam depth =  $rtoi($ceil(N/TP));
     localparam total_steps = $rtoi($ceil($clog2(N)));
     localparam TP_log = $rtoi($ceil($clog2(TP)));
     localparam N_over_TP =  $rtoi($ceil(N/TP));
@@ -86,7 +82,7 @@ module tp_ntt_tb();
     initial begin
         // ntt
         if (GEN_TEST_VEC) begin
-            $sformat(cmd, "sh %s/test_vector_gen.sh %0d %0d %0d %0d %0d %0d %0d %0d %s 0", TEST_DIR, N, n1, n2, n3, n4, TP, DIM, LOGQ, PYTHON);
+            $sformat(cmd, "sh %s/test_vector_gen.sh %0d %0d %0d %0d %0d %0d %0d %0d %s 0", TEST_DIR, N, N1, N2, N3, N4, TP, DIM, LOGQ, PYTHON);
             $display("Executing: %s", cmd);
             $system(cmd);
         end
