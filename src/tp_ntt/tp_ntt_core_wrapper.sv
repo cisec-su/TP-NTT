@@ -1,4 +1,4 @@
-`include "tp_ntt.vh"
+`include "tp_ntt.svh"
 
 module tp_ntt_core_wrapper#(
         parameter DIM           = 1,
@@ -8,7 +8,8 @@ module tp_ntt_core_wrapper#(
         parameter LOGTP         = 6,
         parameter LOGQ          = 60,
         parameter LOGQH         = 17,
-        parameter BTF_LAT       = 16,
+        parameter NON_STD       = 1 ,
+        parameter MORE_DSP      = 0 ,
         parameter BLOCK_ID      = 0,
         parameter LARGE         = 0,
         parameter RW_DIS        = 0
@@ -37,7 +38,7 @@ localparam depth_log         =  $rtoi($ceil($clog2(N/TP)));
 localparam reg_ctr = $clog2(size0_over_tp);
 localparam bram_reg_size =  (TP/N1)*(N1-1);
 
-localparam iter_part_num_tot = DIM == `DIM_2D ? 2 : (DIM == `DIM_3D ? 3 : 4);
+localparam iter_part_num_tot = (DIM == DIM_2D) ? 2 : ((DIM == DIM_3D) ? 3 : 4);
 
 // states
 localparam OP_IDLE                  = 2'd0;
@@ -290,7 +291,12 @@ endgenerate
 
 generate
     for (genvar ntt_idx = 0; ntt_idx < (TP>>LOGN1) ; ntt_idx = ntt_idx + 1) begin
-        tp_ntt_core #(N1, LOGQ, LOGQH, BTF_LAT) NTT_units_pipelined(clk,rst, q_core_in ,NTT_core_in[(TP-N1*ntt_idx)*LOGQ-1-:N1*LOGQ], W_core_in[(bram_reg_size-(N1-1)*ntt_idx)*LOGQ-1-:(N1-1)*LOGQ], NTT_core_out[(TP-N1*ntt_idx)*LOGQ-1-:N1*LOGQ]);
+        tp_ntt_core #(.N       (N1      ),
+                      .LOGQ    (LOGQ    ),
+                      .LOGQH   (LOGQH   ),
+                      .NON_STD (NON_STD ),
+                      .MORE_DSP(MORE_DSP)
+        ) NTT_units_pipelined(clk,rst, q_core_in ,NTT_core_in[(TP-N1*ntt_idx)*LOGQ-1-:N1*LOGQ], W_core_in[(bram_reg_size-(N1-1)*ntt_idx)*LOGQ-1-:(N1-1)*LOGQ], NTT_core_out[(TP-N1*ntt_idx)*LOGQ-1-:N1*LOGQ]);
     end 
 endgenerate
 

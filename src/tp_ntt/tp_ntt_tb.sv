@@ -2,22 +2,24 @@
 
 module tp_ntt_tb();
 
-    `include "bu_def.vh"
+    `include "tp_ntt.svh"
 
     // Parameters
-    parameter LOGN          = 15;
-    parameter LOGN1         = 6;
-    parameter LOGN2         = 3;
-    parameter LOGN3         = 6;
-    parameter LOGTP         = 6;
+    parameter LOGN          = 10;
+    parameter LOGN1         = 5;
+    parameter LOGN2         = 5;
+    parameter LOGN3         = 0;
+    parameter LOGTP         = 5;
     parameter LOGQ          = 60;
     parameter LOGQH         = 17;
+    parameter NON_STD       = 1;
+    parameter MORE_DSP      = 0; 
     parameter BATCH_SIZE    = 10;
     parameter BATCH_DELAY   = 1;
     parameter HP            = 5;
     parameter FP            = (2*HP);
     parameter TEST_DIR      = "../../../../../test";
-    parameter PYTHON        = "python3";
+    parameter PYTHON        = "/home/toluntosun/miniconda3/bin/python3";
     parameter GEN_TEST_VEC  = 1;
 
     localparam LOGN4        = LOGN - LOGN1 - LOGN2 - LOGN3;
@@ -30,7 +32,6 @@ module tp_ntt_tb();
     localparam size0        = N1*N2;
     localparam size1        = N3*N4;
     localparam DIM          = (N4 != 1) ? 2 : ((N3 != 1) ? 1 : 0);
-    localparam BTF_LAT      = (LOGQ == 32) ? `BTRFLY_CC_32 + 1 : `BTRFLY_CC_60 + 1;
 
 
     localparam input_bits = LOGQ*TP;
@@ -49,7 +50,6 @@ module tp_ntt_tb();
 
     localparam is_last_problem = (last_elmnt_log == 0) ? 0 : 1;
     localparam total_step_numbers_real =  DIM == 0 ? 2 : (DIM == 1 ? 3 : 4); 
-    localparam clock_cycles = (((DIM == 0) ? (BTF_LAT * LOGN + 9) : ((DIM == 1) ? BTF_LAT * LOGN + (size0/TP) + 15 :  BTF_LAT * LOGN + (size0/TP) + (size1/TP) + 21 )));
     localparam psi_count = (N_over_TP)*((1<<LOGN1)-1)*(1<<(LOGN1)) + (N_over_TP)*((1<<LOGN2)-1)*(1<<(LOGN2)) + (N_over_TP)*((1<<LOGN3)-1)*(1<<(LOGN3)) + (N_over_TP)*((1<<LOGN4)-1)*(1<<(LOGN4));
 
     // Testbench variables
@@ -209,7 +209,7 @@ module tp_ntt_tb();
             @(posedge clk);
         end
         
-        repeat(clock_cycles) begin
+        repeat(uut.LAT) begin
             @(posedge clk);
         end
         flag = 1;
@@ -241,7 +241,7 @@ module tp_ntt_tb();
         @(posedge clk);
 
         flag1 = 1;
-        for (k = 0; k < BATCH_SIZE*t + clock_cycles + depth; k = k + 1) begin
+        for (k = 0; k < BATCH_SIZE*t + uut.LAT + depth; k = k + 1) begin
 
             i = k % t;
 
@@ -261,8 +261,8 @@ module tp_ntt_tb();
                 end
             end
 
-            if (k > (clock_cycles + depth)) begin
-                i = (k - clock_cycles - depth) % t;
+            if (k > (uut.LAT + depth)) begin
+                i = (k - uut.LAT - depth) % t;
                 if (i == 0) begin
                     flag = 1;
                 end
@@ -271,16 +271,16 @@ module tp_ntt_tb();
                         NTT_res[(TP-(j))*LOGQ-1-:LOGQ] = {res[j+i*TP]};
                     end
                     if( NTT_out == NTT_res) begin
-                        $display("CORRECT IDX:%d - IDY:%d ", i, (k - clock_cycles - depth) / t);
+                        $display("CORRECT IDX:%d - IDY:%d ", i, (k - uut.LAT - depth) / t);
                     end
                     else begin
                         flag = 0;
-                        $display("WRONG IDX:%d -  IDY:%d ", i, (k - clock_cycles - depth) / t);
+                        $display("WRONG IDX:%d -  IDY:%d ", i, (k - uut.LAT - depth) / t);
                     end
                 end
                 if (i == (depth - 1)) begin
                     if (flag) begin
-                        $display("BATCH: %d IS SUCCESSFUL", (k - clock_cycles - depth) / t);        
+                        $display("BATCH: %d IS SUCCESSFUL", (k - uut.LAT - depth) / t);        
                     end
                     else begin
                         flag1 = 0;
@@ -305,13 +305,15 @@ module tp_ntt_tb();
     end
 
      tp_ntt_top #(
-        .LOGN(LOGN),
-        .LOGN1(LOGN1),
-        .LOGN2(LOGN2),
-        .LOGN3(LOGN3),
-        .LOGTP(LOGTP),
-        .LOGQ (LOGQ),
-        .LOGQH(LOGQH)
+        .LOGN    (LOGN    ),
+        .LOGN1   (LOGN1   ),
+        .LOGN2   (LOGN2   ),
+        .LOGN3   (LOGN3   ),
+        .LOGTP   (LOGTP   ),
+        .LOGQ    (LOGQ    ),
+        .LOGQH   (LOGQH   ),
+        .NON_STD (NON_STD ),
+        .MORE_DSP(MORE_DSP)
     ) uut (
         .clk(clk),
         .rst(rst),
