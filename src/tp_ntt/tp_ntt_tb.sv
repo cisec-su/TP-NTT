@@ -4,16 +4,18 @@ module tp_ntt_tb();
 
     `include "tp_ntt.svh"
 
-    // Parameters
-    parameter LOGN          = 10;
-    parameter LOGN1         = 5;
-    parameter LOGN2         = 5;
-    parameter LOGN3         = 0;
-    parameter LOGTP         = 5;
+    // TP-NTT Parameters
+    parameter LOGN          = 12;
+    parameter LOGN1         = 3;
+    parameter LOGN2         = 3;
+    parameter LOGN3         = 3;
+    parameter LOGTP         = 3;
     parameter LOGQ          = 60;
     parameter LOGQH         = 17;
     parameter NON_STD       = 1;
-    parameter MORE_DSP      = 0; 
+    parameter MORE_DSP      = 0;
+ 
+    // Test-Bench Parameters
     parameter BATCH_SIZE    = 10;
     parameter BATCH_DELAY   = 1;
     parameter HP            = 5;
@@ -304,7 +306,7 @@ module tp_ntt_tb();
         $finish;
     end
 
-     tp_ntt_top #(
+    tp_ntt_top #(
         .LOGN    (LOGN    ),
         .LOGN1   (LOGN1   ),
         .LOGN2   (LOGN2   ),
@@ -317,12 +319,12 @@ module tp_ntt_tb();
     ) uut (
         .clk(clk),
         .rst(rst),
-        .START_NTT_ALL(START_NTT),
-        .OP_TYPE_INPUT(OP_TYPE),
-        .Q_in(q_tb),
-        .NTT_INPUT(NTT_in),
-        .TWIDDLE_INPUT(W_in),
-        .NTT_OUTPUT(NTT_out)
+        .start(START_NTT),
+        .op(OP_TYPE),
+        .qH(q_tb),
+        .i_poly(NTT_in),
+        .psi(W_in),
+        .o_poly(NTT_out)
     );
 
 

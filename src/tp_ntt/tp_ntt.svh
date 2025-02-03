@@ -17,6 +17,14 @@ typedef enum int {
 } tp_ntt_dim_t;
 
 
+typedef enum logic [1:0] {
+    OP_NTT          = 2'b00,
+    OP_LOAD_TWIDDLE = 2'b01,
+    OP_RFU          = 2'b10,
+    OP_LOAD_Q       = 2'b11
+} tp_ntt_op_t;
+
+
 function int tp_ntt_logn4(input tp_ntt_params_t params);
     tp_ntt_logn4 = params.LOGN - params.LOGN1 - params.LOGN2 - params.LOGN3;
 endfunction

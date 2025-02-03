@@ -1,9 +1,9 @@
 `include "butterfly.svh"
 
-// CT:0 -> GS-based butterfly (take input from A,B,PSI -- output from E,O)
-// CT:1 -> CT-based butterfly (take input from A,B,PSI -- output from E,O)
-// CT:0 -> Mod Add/Sub (take input from A,B   -- output from ADD/SUB)
-// CT:1 -> Mod Mult    (take input from B,PSI -- output from MUL    )
+// CT:0 -> GS-based butterfly (take input from A,B,psi -- output from E,O)
+// CT:1 -> CT-based butterfly (take input from A,B,psi -- output from E,O)
+// CT:0 -> Mod Add/Sub (take input from A,B   -- output from add/sub)
+// CT:1 -> Mod Mult    (take input from B,psi -- output from mul    )
 
 module butterfly
    #(
@@ -14,18 +14,14 @@ module butterfly
     )
     (
         input               clk,
-        input               rst,
         input               CT ,
         input               MT ,
         input  [LOGQ -1:0]  A  ,
         input  [LOGQ -1:0]  B  ,
-        input  [LOGQ -1:0]  PSI,
+        input  [LOGQ -1:0]  psi,
         input  [LOGQH-1:0]  qH ,
         output [LOGQ -1:0]  E  ,
-        output [LOGQ -1:0]  O  ,
-        output [LOGQ -1:0]  MUL,
-        output [LOGQ -1:0]  ADD,
-        output [LOGQ -1:0]  SUB
+        output [LOGQ -1:0]  O
     );
 
 /////////////////////////// parameters //////////////////////////////////
@@ -43,13 +39,13 @@ localparam LAT = butterfly_lat(butterfly_params);
 
 /////////////////////////// signals /////////////////////////////////////
 
-reg [LOGQH-1:0] q_add;
-reg [LOGQH-1:0] q_sub;
-
-wire [LOGQ-1:0] A_d;
-wire [LOGQ-1:0] modadd_res;
-wire [LOGQ-1:0] modsub_res;
-wire [LOGQ-1:0] modmul_res;
+reg  [LOGQH - 1 : 0] q_add;
+reg  [LOGQH - 1 : 0] q_sub; 
+ 
+wire [LOGQ  - 1 : 0] A_q;
+wire [LOGQ  - 1 : 0] modadd_res;
+wire [LOGQ  - 1 : 0] modsub_res;
+wire [LOGQ  - 1 : 0] modmul_res;
 
 /////////////////////////////////////////////////////////////////////////
 
@@ -77,7 +73,7 @@ modadd #(
     .FF_ADD(modadd_params.FF_ADD),
     .FF_OUT(modadd_params.FF_OUT)
 ) ma0 (
-    .A  (A_d       ),
+    .A  (A_q       ),
     .B  (modmul_res),
     .qH (q_add     ),
     .C  (modadd_res)
@@ -91,7 +87,7 @@ modsub #(
     .FF_SUB(modadd_params.FF_ADD),
     .FF_OUT(modadd_params.FF_OUT)
 ) ms0 (
-    .A  (A_d   ),
+    .A  (A_q   ),
     .B  (modmul_res),
     .qH (q_sub     ),
     .C  (modsub_res)
@@ -103,9 +99,9 @@ shiftreg #(
     .DATA (LOGQ      )
 ) sre10 (
     .clk     (clk    ),
-    .reset   (rst    ),
+    .reset   (1'b0   ),
     .data_in (A      ),
-    .data_out(A_d    )
+    .data_out(A_q    )
 );
 
 
@@ -125,7 +121,7 @@ modmul_wlm #(
 ) mm0 (
         .clk(clk       ),
         .A  (B         ),
-        .B  (PSI       ),
+        .B  (psi       ),
         .qH (qH        ),
         .T  (modmul_res)
 );
@@ -139,11 +135,6 @@ modmul_wlm #(
 
 assign E = modadd_res;
 assign O = modsub_res;
-
-assign MUL = modmul_res;
-
-assign ADD = modadd_res;
-assign SUB = modsub_res;
 
 /////////////////////////////////////////////////////////////////////////
 
