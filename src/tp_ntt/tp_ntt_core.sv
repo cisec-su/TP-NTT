@@ -34,7 +34,7 @@ wire [LOGQ - 1 : 0] stage_in  [0 : LOGN - 1][0 : N - 1];
 
 wire [LOGQ * (N - 1) - 1 : 0] psi_q  [0 : LOGN - 1];
 wire [LOGQ * (N - 1) - 1 : 0] psi_mx [0 : LOGN - 1];
-wire [LOGQ           - 1 : 0] psi_st [0 : LOGN - 1][0 : (N >> 1) - 1];
+reg  [LOGQ           - 1 : 0] psi_st [0 : LOGN - 1][0 : (N >> 1) - 1];
 
 reg                  CT   [0 : LOGN - 1][0 : (N >> 1) - 1];
 reg                  MT   [0 : LOGN - 1][0 : (N >> 1) - 1];
@@ -43,6 +43,8 @@ reg  [LOGQ  - 1 : 0] B    [0 : LOGN - 1][0 : (N >> 1) - 1];
 reg  [LOGQH - 1 : 0] qH_q [0 : LOGN - 1][0 : (N >> 1) - 1];
 wire [LOGQ  - 1 : 0] E    [0 : LOGN - 1][0 : (N >> 1) - 1];
 wire [LOGQ  - 1 : 0] O    [0 : LOGN - 1][0 : (N >> 1) - 1];
+
+reg  [LOGQ*N- 1  :0] i_poly_q;
 
 /////////////////////////////////////////////////////////////////////////
 
@@ -74,7 +76,9 @@ endgenerate
 generate
     for (genvar j = 0; j < LOGN; j = j + 1) begin
         for (genvar i = 0; i < (N >> 1); i = i + 1) begin
-            assign psi_st[j][i] = psi_q[j][((N - 1 - (((1 << j) - 1) + i / (N >> (j + 1)))) * LOGQ) - 1 -: LOGQ];
+            always @(posedge clk) begin
+                psi_st[j][i] <= psi_q[j][((N - 1 - (((1 << j) - 1) + i / (N >> (j + 1)))) * LOGQ) - 1 -: LOGQ];                
+            end
         end
     end
 endgenerate
@@ -165,8 +169,8 @@ generate
      
             if (j == 0) begin
                 always @(posedge clk) begin
-                    A[0][i] <= i_poly[(N - (i << 1)    ) * LOGQ - 1 -: LOGQ];
-                    B[0][i] <= i_poly[(N - (i << 1) - 1) * LOGQ - 1 -: LOGQ];
+                    A[0][i] <= i_poly_q[(N - (i << 1)    ) * LOGQ - 1 -: LOGQ];
+                    B[0][i] <= i_poly_q[(N - (i << 1) - 1) * LOGQ - 1 -: LOGQ];
                 end   
             end
             else begin
@@ -184,4 +188,14 @@ endgenerate
 /////////////////////////////////////////////////////////////////////////
 
 
+
+
+//////////////////////////// register input /////////////////////////////
+
+always @(posedge clk) begin
+    i_poly_q <= i_poly;
+end
+
+
+/////////////////////////////////////////////////////////////////////////
 endmodule

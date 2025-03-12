@@ -174,8 +174,10 @@ generate
 
         always @(posedge clk) begin
             bi0[i]       <= psi[(TP-1-i)*LOGQ-1-:LOGQ];
-            bw0[i]       <= (ctr & (depth-1));
-            br0[i]       <= (ctr & (depth-1));
+            if (BLOCK_ID != 0) begin
+                bw0[i]       <= (ctr & (depth-1));
+                br0[i]       <= (ctr & (depth-1));                    
+            end
         end
 
         always @(posedge clk or posedge rst) begin
@@ -237,7 +239,12 @@ endgenerate
 
 generate  
     for (genvar b2 = 0; b2 < bram_reg_size; b2 = b2 + 1) begin: BRAM_GEN_BLOCK_TWIDDLE // BRAM for TWIDDLE
-        BRAM #(LOGQ, $rtoi($ceil(N>>LOGTP)), $rtoi($ceil($clog2((N>>LOGTP))))) bt000(clk,be0[1*b2+0],bw0[1*b2+0],bi0[1*b2+0],br0[1*b2+0],bo0[1*b2+0]); // 64 BRAMs * 128 depth (2**7) * 32 bit
+        if (BLOCK_ID == 0) begin : BRAM_GEN_BLOCK_0
+            BRAM #(LOGQ, 1, 1) bt000(clk,be0[1*b2+0],1'b0,bi0[1*b2+0],1'b0,bo0[1*b2+0]);
+        end
+        else begin : BRAM_GEN_BLOCK_1
+            BRAM #(LOGQ, $rtoi($ceil(N>>LOGTP)), $rtoi($ceil($clog2((N>>LOGTP))))) bt000(clk,be0[1*b2+0],bw0[1*b2+0],bi0[1*b2+0],br0[1*b2+0],bo0[1*b2+0]); // 64 BRAMs * 128 depth (2**7) * 32 bit                        
+        end
     end
 endgenerate
 

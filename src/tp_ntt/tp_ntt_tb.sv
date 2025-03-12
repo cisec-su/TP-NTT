@@ -5,13 +5,13 @@ module tp_ntt_tb();
     `include "tp_ntt.svh"
 
     // TP-NTT Parameters
-    parameter LOGN          = 12;
-    parameter LOGN1         = 3;
-    parameter LOGN2         = 3;
-    parameter LOGN3         = 3;
-    parameter LOGTP         = 3;
-    parameter LOGQ          = 60;
-    parameter LOGQH         = 17;
+    parameter LOGN          = 16;
+    parameter LOGN1         = 6;
+    parameter LOGN2         = 4;
+    parameter LOGN3         = 6;
+    parameter LOGTP         = 6;
+    parameter LOGQ          = 32;
+    parameter LOGQH         = 15;
     parameter NON_STD       = 1;
     parameter MORE_DSP      = 0;
  
@@ -236,7 +236,6 @@ module tp_ntt_tb();
         else begin
             $display("FAIL IN SINGLE NTT TEST");
         end
-
         $display("BATCH NTT TEST STARTING");
         START_NTT = 1'b1;
         t = depth + BATCH_DELAY;

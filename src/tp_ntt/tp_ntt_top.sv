@@ -346,12 +346,12 @@ generate
 endgenerate
 
 
-shiftreg #(.SHIFT((BTF_LAT + 1)*LOGN1), .DATA(1)) sre101(clk, rst, start     , start_au1 );
-shiftreg #(.SHIFT( D1 + 4            ), .DATA(1)) sre102(clk, rst, start_au1 , start_ntt2);
-shiftreg #(.SHIFT((BTF_LAT + 1)*LOGN2), .DATA(1)) sre103(clk, rst, start_ntt2, start_au2 );
-shiftreg #(.SHIFT( D + 6             ), .DATA(1)) sre104(clk, rst, start_au2 , start_ntt3);
-shiftreg #(.SHIFT((BTF_LAT + 1)*LOGN3), .DATA(1)) sre105(clk, rst, start_ntt3, start_au3 );
-shiftreg #(.SHIFT( D2 + 6            ), .DATA(1)) sre106(clk, rst, start_au3 , start_ntt4);
+shiftreg #(.SHIFT((BTF_LAT + 1)*LOGN1 + 1), .DATA(1)) sre101(clk, rst, start     , start_au1 );
+shiftreg #(.SHIFT( D1 + 4                ), .DATA(1)) sre102(clk, rst, start_au1 , start_ntt2);
+shiftreg #(.SHIFT((BTF_LAT + 1)*LOGN2 + 1), .DATA(1)) sre103(clk, rst, start_ntt2, start_au2 );
+shiftreg #(.SHIFT( D + 6                 ), .DATA(1)) sre104(clk, rst, start_au2 , start_ntt3);
+shiftreg #(.SHIFT((BTF_LAT + 1)*LOGN3 + 1), .DATA(1)) sre105(clk, rst, start_ntt3, start_au3 );
+shiftreg #(.SHIFT( D2 + 6                ), .DATA(1)) sre106(clk, rst, start_au3 , start_ntt4);
 
 
 always @(posedge clk or posedge rst) begin
