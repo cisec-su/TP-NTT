@@ -10,6 +10,7 @@ module tp_ntt_core
     )
     (
         input                        clk   , 
+        input                        intt  ,
         input wire  [LOGQH     -1:0] qH    ,
         input wire  [LOGQ*N    -1:0] i_poly,
         input wire  [LOGQ*(N-1)-1:0] psi   ,
@@ -77,7 +78,12 @@ generate
     for (genvar j = 0; j < LOGN; j = j + 1) begin
         for (genvar i = 0; i < (N >> 1); i = i + 1) begin
             always @(posedge clk) begin
-                psi_st[j][i] <= psi_q[j][((N - 1 - (((1 << j) - 1) + i / (N >> (j + 1)))) * LOGQ) - 1 -: LOGQ];                
+                if (intt) begin
+                    psi_st[j][i] <= psi_q[j][((N - 1 - ((2 * ((1 << (LOGN - 1)) - (1 << (LOGN - j - 1)))) + (i&((1<<(LOGN-(j+1)))-1)))) * LOGQ) - 1 -: LOGQ];
+                end else begin
+                    psi_st[j][i] <= psi_q[j][((N - 1 - (((1 << j) - 1) + i / (N >> (j + 1)))) * LOGQ) - 1 -: LOGQ];   
+                end
+                             
             end
         end
     end
@@ -162,7 +168,7 @@ generate
         for (genvar j = 0; j < LOGN; j = j + 1) begin
 
             always @(posedge clk) begin
-                CT  [j][i] <= 1'b1;
+                CT  [j][i] <= intt == 1'b1 ? 1'b0 : 1'b1;
                 MT  [j][i] <= 1'b0;
                 qH_q[j][i] <= (j == 0) ? qH : qH_q[j - 1][i];
             end       

@@ -151,7 +151,7 @@ def NTT(A, Psi_table, q, debug, L, w, test_dir=None):
 
 #----------------------------------Merge INTT----------------------------------------
 
-def INTT(A, Psi_table, q):
+def INTT(A, Psi_table, q, debug=True):
     counterr = 0
     N = len(A)
     B = [_ for _ in A]
@@ -180,6 +180,8 @@ def INTT(A, Psi_table, q):
                 B[j] = (U + V) % q
                 a = (U - V) * S
                 B[j + t] = a % q
+
+                SS = S * pow(2, math.ceil(log2(q)), q) % q
             j1 = j1 + 2 * t
         t = 2 * t
         m = int(m / 2)
@@ -189,6 +191,61 @@ def INTT(A, Psi_table, q):
         B[i] = (B[i] * N_inv) % q
 
     return B
+
+def INTT_wo_last(A, Psi_table, q, debug=True):
+    if debug:
+        debug_file = open(f"{test_dir}/intt_debug.txt", 'w+')
+    counterr = 0
+    N = len(A)
+    B = [_ for _ in A]
+
+    l = int(log(N, 2))
+
+    MulCnt, AddCnt, SubCnt, BtfCnt = 0, 0, 0, 0
+
+    t = 1
+    m = N
+    while (m > 1):
+        j1 = 0
+        h = int(m / 2)
+        for i in range(h):
+
+            j2 = j1 + t - 1
+            Psi_pow = intReverse(h + i, l)
+            S = Psi_table[Psi_pow] * (pow(2,-1,q)) % q
+            counterr += 1
+            #print(S)
+            for j in range(j1, j2 + 1):
+                #print(S)
+                U = B[j]
+                V = B[j + t]
+
+                add_res = (U + V) % q
+
+                if add_res % 2 == 1:
+                    add_res = ((add_res >> 1) + ((q+1)>>1)) % q
+                else:
+                    add_res = (add_res >> 1) % q
+
+                B[j] = add_res
+                a = (U - V) * S
+                B[j + t] = a % q
+
+                SS = S * pow(2, math.ceil(log2(q)), q) % q
+                
+                if debug:
+                    debug_file.write("A[{}]--{} ve A[{}]--{} + W^{} --> A[{}] ve A[{}] \n".format( hex(U), j, hex(V), j+t, hex(SS), hex(B[j]), hex(B[j + t])))
+
+            j1 = j1 + 2 * t
+        t = 2 * t
+        m = int(m / 2)
+
+    # N_inv = modinv(N, q)
+    # for i in range(N):
+    #     B[i] = (B[i] * N_inv) % q
+
+    return B
+
 
 
 
@@ -283,6 +340,60 @@ def find_twiddle_map(N, q, w, L):
         m = 2 * m
     #print(counterr)
     return twiddle_map
+
+
+def find_twiddle_map_INTT(N, q, w, L):
+
+    random.seed(0)
+
+    psi = nth_root_of_unity(2*N, q)
+
+    print("nth root: ", psi)
+
+    Psi_table_intt = generate_ntt_tables(N, q, pow(psi, -1, q))
+
+    twiddle_map = {}
+
+
+    counterr = 0
+    N = N
+    B = [i for i in range(N)]
+
+    l = int(log(N, 2))
+
+    MulCnt, AddCnt, SubCnt, BtfCnt = 0, 0, 0, 0
+
+    t = 1
+    m = N
+    while (m > 1):
+        j1 = 0
+        h = int(m / 2)
+        for i in range(h):
+
+            j2 = j1 + t - 1
+            Psi_pow = intReverse(h + i, l)
+            S = Psi_table_intt[Psi_pow]
+            counterr += 1
+            #print(S)
+            for j in range(j1, j2 + 1):
+                #print(S)
+                #U = B[j]
+                #V = B[j + t]
+
+                #B[j] = (U + V) % q
+                #a = (U - V) * S
+                #B[j + t] = a % q
+                SS = S * pow(2, math.ceil(log2(q)), q) % q
+                twiddle_map[(B[j], B[j+t])] = (SS * pow(2,-1,q)) % q
+            j1 = j1 + 2 * t
+        t = 2 * t
+        m = int(m / 2)
+    
+    
+    #print(counterr)
+    return twiddle_map
+
+
 
 MAX_TRIAL = 100000000
 
@@ -423,7 +534,9 @@ if __name__ == "__main__":
         res_merge.append((A_NTT_merge[i] * B_NTT_merge[i]) % q)
 
     psi_table_inv = generate_ntt_tables(n, q, pow(psi_inv, 1, q))
-    INTT_res_merge = INTT(res_merge,psi_table_inv, q)
+    #INTT_res_merge = INTT(A_NTT_merge,psi_table_inv, q)
+
+    INTT_res_kk = INTT_wo_last(A_NTT_merge,psi_table_inv, q)
 
     check_res_minus_1 = []
     #check_res_minus_1 = SchoolbookModPolMul_minus_1(A, B, q)
@@ -439,7 +552,7 @@ if __name__ == "__main__":
 
     print("******************************************\n")
 
-    if INTT_res_merge == check_res_minus_1:
+    if INTT_res_kk == check_res_minus_1:
 
         print("**********Correct_Merge*************")
 
@@ -459,5 +572,12 @@ if __name__ == "__main__":
 
     for i in range(n):
         f0.write('{}'.format(hex(A_NTT_merge[i])[2:]))
+        f0.write('\n')
+    f0.close()
+
+    f0 = open(f'{test_dir}/intt_out_wo_last.txt','w')
+
+    for i in range(n):
+        f0.write('{}'.format(hex(INTT_res_kk[i])[2:]))
         f0.write('\n')
     f0.close()

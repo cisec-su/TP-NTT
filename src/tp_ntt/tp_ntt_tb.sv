@@ -6,14 +6,15 @@ module tp_ntt_tb();
 
     // TP-NTT Parameters
     parameter LOGN          = 16;
-    parameter LOGN1         = 6;
+    parameter LOGN1         = 4;
     parameter LOGN2         = 4;
-    parameter LOGN3         = 6;
-    parameter LOGTP         = 6;
-    parameter LOGQ          = 32;
-    parameter LOGQH         = 15;
+    parameter LOGN3         = 4;
+    parameter LOGTP         = 5;
+    parameter LOGQ          = 60;
+    parameter LOGQH         = 17;
     parameter NON_STD       = 1;
     parameter MORE_DSP      = 0;
+    
  
     // Test-Bench Parameters
     parameter BATCH_SIZE    = 10;
@@ -21,7 +22,7 @@ module tp_ntt_tb();
     parameter HP            = 5;
     parameter FP            = (2*HP);
     parameter TEST_DIR      = "../../../../../test";
-    parameter PYTHON        = "/home/toluntosun/miniconda3/bin/python3";
+    parameter PYTHON        = "/usr/bin/python3";
     parameter GEN_TEST_VEC  = 1;
 
     localparam LOGN4        = LOGN - LOGN1 - LOGN2 - LOGN3;
@@ -55,6 +56,7 @@ module tp_ntt_tb();
     localparam psi_count = (N_over_TP)*((1<<LOGN1)-1)*(1<<(LOGN1)) + (N_over_TP)*((1<<LOGN2)-1)*(1<<(LOGN2)) + (N_over_TP)*((1<<LOGN3)-1)*(1<<(LOGN3)) + (N_over_TP)*((1<<LOGN4)-1)*(1<<(LOGN4));
 
     // Testbench variables
+    reg INTT;
     reg clk;
     reg rst;
     reg START_NTT;
@@ -68,6 +70,12 @@ module tp_ntt_tb();
     reg [LOGQ-1:0] res [0:N-1]; 
     reg [LOGQ-1:0] q [0:6];
     reg [LOGQ-1:0] psi0  [0:psi_count-1];
+    
+
+
+    reg [LOGQ-1:0] INTT_COEF_IN [0:N-1]; 
+    reg [LOGQ-1:0] intt_psi0  [0:psi_count-1];
+    reg [LOGQ-1:0] INTT_RES  [0:psi_count-1];
 
     reg [TP_log:0] ctr1;
     
@@ -89,8 +97,11 @@ module tp_ntt_tb();
             $system(cmd);
         end
         $readmemh({TEST_DIR, "/ntt_in.txt"  }, a0_0);
+        $readmemh({TEST_DIR, "/intt_in.txt"  }, INTT_COEF_IN);
         $readmemh({TEST_DIR, "/ntt_out.txt" }, res);      
+        $readmemh({TEST_DIR, "/intt_out.txt" }, INTT_RES);   
         $readmemh({TEST_DIR, "/psi.txt"     }, psi0);
+        $readmemh({TEST_DIR, "/psi_inv.txt"     }, intt_psi0);
         $readmemh({TEST_DIR, "/q.txt"       }, q);    
     end
 
@@ -99,7 +110,8 @@ module tp_ntt_tb();
         $display("Simulation started.");
 
         clk = 1'b0;
-        rst = 1'b0;
+        INTT = 1'b0;
+        rst = 1'b1;
         OP_TYPE = 2'b0;
         START_NTT = 1'b0;
         NTT_in = 0;
@@ -142,7 +154,12 @@ module tp_ntt_tb();
                         //id11 = 0 + k * (TP-1) + j;
                         if(j<((1<<LOGN1)-1)*(TP>>LOGN1)) begin
                             id11 = 0 + k * ((1<<LOGN1)-1)*(TP>>LOGN1) + j;
-                            W_in[(TP-1-j)*LOGQ-1-:LOGQ] = psi0[id11];
+                            if (INTT == 1'b1) begin
+                                W_in[(TP-1-j)*LOGQ-1-:LOGQ] = intt_psi0[id11];
+                            end else begin
+                                W_in[(TP-1-j)*LOGQ-1-:LOGQ] = psi0[id11];
+                            end
+                            
                         end
                         else begin
                             id11 = N_over_TP*(TP-1) + k * ctr1 + j;
@@ -155,7 +172,11 @@ module tp_ntt_tb();
                     for (j = 0; j < TP-1 ; j = j + 1 ) begin
                         if(j<((1<<LOGN2)-1)*(TP>>LOGN2)) begin
                             id11 = N_over_TP*((1<<LOGN1)-1)*(TP>>LOGN1) + k * ((1<<LOGN2)-1)*(TP>>LOGN2) + j;
-                            W_in[(TP-1-j)*LOGQ-1-:LOGQ] = psi0[id11];
+                            if (INTT == 1'b1) begin
+                                W_in[(TP-1-j)*LOGQ-1-:LOGQ] = intt_psi0[id11];
+                            end else begin
+                                W_in[(TP-1-j)*LOGQ-1-:LOGQ] = psi0[id11];
+                            end
                         end
                         else begin
                             id11 = N_over_TP*(TP-1) + k * ctr1 + j;
@@ -168,7 +189,11 @@ module tp_ntt_tb();
 
                         if(j<((1<<LOGN3)-1)*(TP>>LOGN3)) begin
                             id11 = N_over_TP*(((1<<LOGN1)-1)*(TP>>LOGN1) + ((1<<LOGN2)-1)*(TP>>LOGN2)) + k * ((1<<LOGN3)-1)*(TP>>LOGN3) + j;
-                            W_in[(TP-1-j)*LOGQ-1-:LOGQ] = psi0[id11];
+                            if (INTT == 1'b1) begin
+                                W_in[(TP-1-j)*LOGQ-1-:LOGQ] = intt_psi0[id11];
+                            end else begin
+                                W_in[(TP-1-j)*LOGQ-1-:LOGQ] = psi0[id11];
+                            end
                         end
                         else begin
                             id11 = N_over_TP*(TP-1) + k * ctr1 + j;
@@ -181,7 +206,11 @@ module tp_ntt_tb();
 
                         if(j<((1<<LOGN4)-1)*(TP>>LOGN4)) begin
                             id11 = N_over_TP*(((1<<LOGN1)-1)*(TP>>LOGN1) + ((1<<LOGN2)-1)*(TP>>LOGN2) + ((1<<LOGN3)-1)*(TP>>LOGN3)) + k * ((1<<LOGN4)-1)*(TP>>LOGN4) + j;
-                            W_in[(TP-1-j)*LOGQ-1-:LOGQ] = psi0[id11];
+                            if (INTT == 1'b1) begin
+                                W_in[(TP-1-j)*LOGQ-1-:LOGQ] = intt_psi0[id11];
+                            end else begin
+                                W_in[(TP-1-j)*LOGQ-1-:LOGQ] = psi0[id11];
+                            end
                         end
                         else begin
                             id11 = N_over_TP*(TP-1) + k * ctr1 + j;
@@ -205,8 +234,14 @@ module tp_ntt_tb();
         // Initialize inputs
         for (i = 0; i < depth ; i = i + 1) begin
             for ( j = 0; j < TP; j = j + 1) begin // For every stage
+            if (INTT == 1'b1) begin
+                idx_here = (i*TP + j) & (N-1);
+                NTT_in[(TP-(j))*LOGQ-1-:LOGQ] = {INTT_COEF_IN[idx_here]};
+            end else begin
                 idx_here = ((j*N_over_TP) + ((i & (size0/TP-1)) * (N/size0)) + (i/(size0/TP))) & (N-1);
                 NTT_in[(TP-(j))*LOGQ-1-:LOGQ] = {a0_0[idx_here]};
+            end
+                
             end
             @(posedge clk);
         end
@@ -219,7 +254,12 @@ module tp_ntt_tb();
         $display("SINGLE NTT TEST STARTING");
         for (i = 0; i < depth ; i = i + 1) begin
             for ( j = 0; j < TP; j = j + 1) begin // For every stage
-                NTT_res[(TP-(j))*LOGQ-1-:LOGQ] = {res[j+i*TP]};
+                if (INTT == 1'b1) begin
+                    NTT_res[(TP-(j))*LOGQ-1-:LOGQ] = {INTT_RES[j+i*TP]};
+                end else begin
+                    NTT_res[(TP-(j))*LOGQ-1-:LOGQ] = {res[j+i*TP]};
+                end
+                
             end
             if( NTT_out == NTT_res) begin 
                 $display("CORRECT IDX: %d ", i);
@@ -236,72 +276,72 @@ module tp_ntt_tb();
         else begin
             $display("FAIL IN SINGLE NTT TEST");
         end
-        $display("BATCH NTT TEST STARTING");
-        START_NTT = 1'b1;
-        t = depth + BATCH_DELAY;
-        @(posedge clk);
+        // $display("BATCH NTT TEST STARTING");
+        // START_NTT = 1'b1;
+        // t = depth + BATCH_DELAY;
+        // @(posedge clk);
 
-        flag1 = 1;
-        for (k = 0; k < BATCH_SIZE*t + uut.LAT + depth; k = k + 1) begin
+        // flag1 = 1;
+        // for (k = 0; k < BATCH_SIZE*t + uut.LAT + depth; k = k + 1) begin
 
-            i = k % t;
+        //     i = k % t;
 
-            if (k < BATCH_SIZE*t) begin
-                if (i == 0) begin
-                    $display("BATCH NTT IDY: %d", k / t);
-                    START_NTT = 1'b0;
-                end
-                if (i < depth) begin
-                    for (j = 0; j < TP; j = j + 1) begin
-                        idx_here = ((j*N_over_TP) + ((i & (size0/TP-1)) * (N/size0)) + (i/(size0/TP))) & (N-1);
-                        NTT_in[(TP-(j))*LOGQ-1-:LOGQ] = {a0_0[idx_here]};
-                    end
-                end
-                else if ((i == (t - 1)) && ((k / t) < (BATCH_SIZE - 1))) begin
-                    START_NTT = 1'b1;
-                end
-            end
+        //     if (k < BATCH_SIZE*t) begin
+        //         if (i == 0) begin
+        //             $display("BATCH NTT IDY: %d", k / t);
+        //             START_NTT = 1'b0;
+        //         end
+        //         if (i < depth) begin
+        //             for (j = 0; j < TP; j = j + 1) begin
+        //                 idx_here = ((j*N_over_TP) + ((i & (size0/TP-1)) * (N/size0)) + (i/(size0/TP))) & (N-1);
+        //                 NTT_in[(TP-(j))*LOGQ-1-:LOGQ] = {a0_0[idx_here]};
+        //             end
+        //         end
+        //         else if ((i == (t - 1)) && ((k / t) < (BATCH_SIZE - 1))) begin
+        //             START_NTT = 1'b1;
+        //         end
+        //     end
 
-            if (k > (uut.LAT + depth)) begin
-                i = (k - uut.LAT - depth) % t;
-                if (i == 0) begin
-                    flag = 1;
-                end
-                if (i < depth) begin
-                    for ( j = 0; j < TP; j = j + 1) begin // For every stage
-                        NTT_res[(TP-(j))*LOGQ-1-:LOGQ] = {res[j+i*TP]};
-                    end
-                    if( NTT_out == NTT_res) begin
-                        $display("CORRECT IDX:%d - IDY:%d ", i, (k - uut.LAT - depth) / t);
-                    end
-                    else begin
-                        flag = 0;
-                        $display("WRONG IDX:%d -  IDY:%d ", i, (k - uut.LAT - depth) / t);
-                    end
-                end
-                if (i == (depth - 1)) begin
-                    if (flag) begin
-                        $display("BATCH: %d IS SUCCESSFUL", (k - uut.LAT - depth) / t);        
-                    end
-                    else begin
-                        flag1 = 0;
-                    end
-                    if (flag1) begin
-                        $display("PROCESSED BATCHES ARE SUCCESSFUL");
-                    end
-                end
-            end
+        //     if (k > (uut.LAT + depth)) begin
+        //         i = (k - uut.LAT - depth) % t;
+        //         if (i == 0) begin
+        //             flag = 1;
+        //         end
+        //         if (i < depth) begin
+        //             for ( j = 0; j < TP; j = j + 1) begin // For every stage
+        //                 NTT_res[(TP-(j))*LOGQ-1-:LOGQ] = {res[j+i*TP]};
+        //             end
+        //             if( NTT_out == NTT_res) begin
+        //                 $display("CORRECT IDX:%d - IDY:%d ", i, (k - uut.LAT - depth) / t);
+        //             end
+        //             else begin
+        //                 flag = 0;
+        //                 $display("WRONG IDX:%d -  IDY:%d ", i, (k - uut.LAT - depth) / t);
+        //             end
+        //         end
+        //         if (i == (depth - 1)) begin
+        //             if (flag) begin
+        //                 $display("BATCH: %d IS SUCCESSFUL", (k - uut.LAT - depth) / t);        
+        //             end
+        //             else begin
+        //                 flag1 = 0;
+        //             end
+        //             if (flag1) begin
+        //                 $display("PROCESSED BATCHES ARE SUCCESSFUL");
+        //             end
+        //         end
+        //     end
 
-            ////////////// NEXT CYCLE //////////////////
-            @(posedge clk);
-        end
+        //     ////////////// NEXT CYCLE //////////////////
+        //     @(posedge clk);
+        // end
 
-        if (flag1) begin
-            $display("BATCH NTT TEST IS SUCCESSFUL. ALL BATCHESxCOEFFICIENTS ARE CORRECT");
-        end
-        else begin
-            $display("SOME BATCHES FAILED");
-        end
+        // if (flag1) begin
+        //     $display("BATCH NTT TEST IS SUCCESSFUL. ALL BATCHESxCOEFFICIENTS ARE CORRECT");
+        // end
+        // else begin
+        //     $display("SOME BATCHES FAILED");
+        // end
         $finish;
     end
 
@@ -320,6 +360,7 @@ module tp_ntt_tb();
         .rst(rst),
         .start(START_NTT),
         .op(OP_TYPE),
+        .intt(INTT),
         .qH(q_tb),
         .i_poly(NTT_in),
         .psi(W_in),

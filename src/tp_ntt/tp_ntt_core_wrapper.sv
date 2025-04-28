@@ -19,6 +19,7 @@ module tp_ntt_core_wrapper#(
         input                           rst,
         input                           start,
         input   [1:0]                   op,
+        input                           intt,
         input   [LOGQH-1:0]             qH,
         input   [TP*LOGQ-1:0]           i_poly,
         input   [(TP-1)*LOGQ-1:0]       psi,
@@ -173,11 +174,17 @@ generate
     for (genvar i = 0; i < bram_reg_size; i = i + 1) begin
 
         always @(posedge clk) begin
-            bi0[i]       <= psi[(TP-1-i)*LOGQ-1-:LOGQ];
-            if (BLOCK_ID != 0) begin
-                bw0[i]       <= (ctr & (depth-1));
-                br0[i]       <= (ctr & (depth-1));                    
+            if (curr_state == OP_STARTED) begin
+                bi0[i]       <= 0;
+                bw0[i]       <= 0;
+                br0[i]       <= (ctr & (depth-1));  
             end
+            else if (curr_state == OP_TWIDDLE_LOAD) begin
+                bi0[i]       <= psi[(TP-1-i)*LOGQ-1-:LOGQ];
+                bw0[i]       <= (ctr & (depth-1));
+                br0[i]       <= 0;  
+            end
+            
         end
 
         always @(posedge clk or posedge rst) begin
@@ -239,12 +246,13 @@ endgenerate
 
 generate  
     for (genvar b2 = 0; b2 < bram_reg_size; b2 = b2 + 1) begin: BRAM_GEN_BLOCK_TWIDDLE // BRAM for TWIDDLE
-        if (BLOCK_ID == 0) begin : BRAM_GEN_BLOCK_0
-            BRAM #(LOGQ, 1, 1) bt000(clk,be0[1*b2+0],1'b0,bi0[1*b2+0],1'b0,bo0[1*b2+0]);
-        end
-        else begin : BRAM_GEN_BLOCK_1
-            BRAM #(LOGQ, $rtoi($ceil(N>>LOGTP)), $rtoi($ceil($clog2((N>>LOGTP))))) bt000(clk,be0[1*b2+0],bw0[1*b2+0],bi0[1*b2+0],br0[1*b2+0],bo0[1*b2+0]); // 64 BRAMs * 128 depth (2**7) * 32 bit                        
-        end
+        // if (BLOCK_ID == 0) begin : BRAM_GEN_BLOCK_0
+        //     BRAM #(LOGQ, 1, 1) bt000(clk,be0[1*b2+0],1'b0,bi0[1*b2+0],1'b0,bo0[1*b2+0]);
+        // end
+        // else begin : BRAM_GEN_BLOCK_1
+        //     BRAM #(LOGQ, $rtoi($ceil(N>>LOGTP)), $rtoi($ceil($clog2((N>>LOGTP))))) bt000(clk,be0[1*b2+0],bw0[1*b2+0],bi0[1*b2+0],br0[1*b2+0],bo0[1*b2+0]); // 64 BRAMs * 128 depth (2**7) * 32 bit                        
+        // end
+        BRAM #(LOGQ, $rtoi($ceil(N>>LOGTP)), $rtoi($ceil($clog2((N>>LOGTP))))) bt000(clk,be0[1*b2+0],bw0[1*b2+0],bi0[1*b2+0],br0[1*b2+0],bo0[1*b2+0]); // 64 BRAMs * 128 depth (2**7) * 32 bit                        
     end
 endgenerate
 
@@ -257,6 +265,7 @@ generate
                       .MORE_DSP(MORE_DSP)
         ) tp_ntt_core_inst (
             .clk    (clk      ),
+            .intt   (intt)     ,
             .qH     (q_core_in),
             .i_poly (NTT_core_in[(TP-N1*ntt_idx)*LOGQ-1-:N1*LOGQ]),
             .psi    (W_core_in[(bram_reg_size-(N1-1)*ntt_idx)*LOGQ-1-:(N1-1)*LOGQ]),

@@ -17,6 +17,7 @@ module tp_ntt_top
         input                           rst,
         input                           start,
         input  tp_ntt_op_t              op,
+        input                           intt,
         input       [LOGQH      -1:0]   qH,
         input       [TP*LOGQ    -1:0]   i_poly,
         input       [(TP-1)*LOGQ-1:0]   psi,
@@ -27,7 +28,7 @@ module tp_ntt_top
 localparam tp_ntt_params_t tp_ntt_params = {LOGN, LOGN1, LOGN2, LOGN3, LOGTP, LOGQ, LOGQH, NON_STD, MORE_DSP};
 localparam tp_ntt_dim_t DIM = tp_ntt_dim(tp_ntt_params);
 localparam butterfly_params_t butterfly_params = {LOGQ, LOGQH, NON_STD, MORE_DSP};
-localparam LAT     = tp_ntt_lat(tp_ntt_params);
+localparam LAT     = tp_ntt_lat(tp_ntt_params) + 3;
 localparam BTF_LAT = butterfly_lat(butterfly_params);    
 localparam LOGN4   = tp_ntt_logn4(tp_ntt_params);
 localparam D   =  tp_ntt_d(tp_ntt_params);
@@ -43,6 +44,14 @@ localparam N4 = 1 << LOGN4;
 
 wire start_ntt2, start_ntt3, start_ntt4, start_au1, start_au2, start_au3;
 wire [TP*LOGQ-1:0] poly_ntt1, poly_ntt2, poly_ntt3, poly_ntt4, poly_au1, poly_au2, poly_au3;
+
+reg [TP*LOGQ-1:0] poly_d1, poly_d2, poly_d3;
+
+always @(posedge clk) begin
+    poly_d1 <= i_poly;
+    poly_d2 <= poly_d1;
+    poly_d3 <= poly_d2;
+end
 
 
 generate
@@ -63,8 +72,9 @@ generate
             .rst(rst), 
             .start(start),
             .op(op), 
+            .intt(intt),
             .qH(qH), 
-            .i_poly(i_poly), 
+            .i_poly(poly_d3), 
             .psi(psi), 
             .o_poly(poly_ntt1)
         );
@@ -101,6 +111,7 @@ generate
           .rst(rst), 
           .start(start_ntt2),
           .op(op), 
+          .intt(intt),
           .qH(qH), 
           .i_poly(poly_au1), 
           .psi(psi), 
@@ -124,8 +135,9 @@ generate
             .rst(rst), 
             .start(start),
             .op(op), 
+            .intt(intt),
             .qH(qH), 
-            .i_poly(i_poly), 
+            .i_poly(poly_d3), 
             .psi(psi), 
             .o_poly(poly_ntt1)
         );
@@ -162,6 +174,7 @@ generate
             .rst(rst), 
             .start(start_ntt2),
             .op(op), 
+            .intt(intt),
             .qH(qH), 
             .i_poly(poly_au1), 
             .psi(psi), 
@@ -200,6 +213,7 @@ generate
             .rst(rst), 
             .start(start_ntt3),
             .op(op), 
+            .intt(intt),
             .qH(qH), 
             .i_poly(poly_au2), 
             .psi(psi), 
@@ -223,8 +237,9 @@ generate
             .rst(rst), 
             .start(start),
             .op(op), 
+            .intt(intt),
             .qH(qH), 
-            .i_poly(i_poly), 
+            .i_poly(poly_d3), 
             .psi(psi), 
             .o_poly(poly_ntt1)
         );
@@ -261,6 +276,7 @@ generate
             .rst(rst), 
             .start(start_ntt2),
             .op(op), 
+            .intt(intt),
             .qH(qH), 
             .i_poly(poly_au1), 
             .psi(psi), 
@@ -299,6 +315,7 @@ generate
             .rst(rst), 
             .start(start_ntt3),
             .op(op), 
+            .intt(intt),
             .qH(qH), 
             .i_poly(poly_au2), 
             .psi(psi), 
@@ -337,6 +354,7 @@ generate
             .rst(rst), 
             .start(start_ntt4),
             .op(op), 
+            .intt(intt),
             .qH(qH), 
             .i_poly(poly_au3), 
             .psi(psi), 
@@ -346,7 +364,7 @@ generate
 endgenerate
 
 
-shiftreg #(.SHIFT((BTF_LAT + 1)*LOGN1 + 1), .DATA(1)) sre101(clk, rst, start     , start_au1 );
+shiftreg #(.SHIFT((BTF_LAT + 1)*LOGN1 + 4), .DATA(1)) sre101(clk, rst, start     , start_au1 );
 shiftreg #(.SHIFT( D1 + 4                ), .DATA(1)) sre102(clk, rst, start_au1 , start_ntt2);
 shiftreg #(.SHIFT((BTF_LAT + 1)*LOGN2 + 1), .DATA(1)) sre103(clk, rst, start_ntt2, start_au2 );
 shiftreg #(.SHIFT( D + 6                 ), .DATA(1)) sre104(clk, rst, start_au2 , start_ntt3);

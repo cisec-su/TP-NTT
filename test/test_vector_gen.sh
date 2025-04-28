@@ -29,7 +29,7 @@ else
     verbose="$10"
 fi
 
-
-$python_exe "$script_dir/iterative_moduled_version.py" "$N" "$n1" "$n2" "$n3" "$n4" "$TP" "$7" "$q_size" "$script_dir" "$verbose"
 $python_exe "$script_dir/tp_oriented_twiddle_model.py" "$N" 8 "$multiplier_type" "$q_size" "$script_dir"
+$python_exe "$script_dir/iterative_moduled_version.py" "$N" "$n1" "$n2" "$n3" "$n4" "$TP" "$7" "$q_size" "$script_dir" "$verbose"
+
 

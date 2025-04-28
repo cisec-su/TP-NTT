@@ -1,5 +1,5 @@
 from math import ceil, log, log2
-from tp_oriented_twiddle_model import find_twiddle_map
+from tp_oriented_twiddle_model import find_twiddle_map, find_twiddle_map_INTT
 import sys
 import sympy
 import math
@@ -51,7 +51,7 @@ def small_stage_model(N, TP, start1, TWIDDLE_file, TWIDDLE_tuple_map, cont_write
 
 
 
-def iterative_first_block1(input1, TP, n1, n2, size0, bram_skip, IDX, verbose=True):
+def iterative_first_block1(input1, TP, n1, n2, size0, bram_skip, IDX, verbose, file_in, TWIDDLE_tuple_map):
     iter0_out = [[] for i in range(depth)]
 
     if verbose:
@@ -80,7 +80,7 @@ def iterative_first_block1(input1, TP, n1, n2, size0, bram_skip, IDX, verbose=Tr
                 cont_write = False
             else:
                 cont_write = True
-            calc_ntt = small_stage_model(N, n1, in_poly, file1, TWIDDLE_tuple_map, cont_write)
+            calc_ntt = small_stage_model(N, n1, in_poly, file_in, TWIDDLE_tuple_map, cont_write)
             calc_res_poly[ntt_num*n1:(ntt_num+1)*n1] = calc_ntt
 
         
@@ -138,7 +138,7 @@ def iterative_first_block1(input1, TP, n1, n2, size0, bram_skip, IDX, verbose=Tr
 
 
 
-def iterative_second_block(iter0_read, TP, n2, size0, size1, bram_skip, IDX, verbose=True):
+def iterative_second_block(iter0_read, TP, n2, size0, size1, bram_skip, IDX, verbose, file_in, TWIDDLE_tuple_map):
     iter1_out = [[] for i in range(depth)]
 
     if verbose:
@@ -165,7 +165,7 @@ def iterative_second_block(iter0_read, TP, n2, size0, size1, bram_skip, IDX, ver
                 cont_write = False
             else:
                 cont_write = True
-            calc_ntt = small_stage_model(N, n2, in_poly, file1, TWIDDLE_tuple_map, cont_write)
+            calc_ntt = small_stage_model(N, n2, in_poly, file_in, TWIDDLE_tuple_map, cont_write)
             calc_res_poly[ntt_num*n2:(ntt_num+1)*n2] = calc_ntt
     
         if verbose:
@@ -252,6 +252,102 @@ def ntt_friendly_prime_gen(logq, logqh, num_primes=None, debug=False, random=Non
     return primes
 
 
+# if __name__ == "__main__":
+    
+#     N = int(sys.argv[1])
+#     n1 = int(sys.argv[2])
+#     n2 = int(sys.argv[3])
+#     n3 = int(sys.argv[4])
+#     n4 = int(sys.argv[5])
+#     TP = int(sys.argv[6])
+#     choice = int(sys.argv[7])
+#     q_bit_size = int(sys.argv[8])
+#     test_dir = sys.argv[9]
+#     verbose = int(sys.argv[10]) == 1
+
+#     if q_bit_size == 60:
+#         width = 17
+#     else:
+#         width = 13
+    
+
+#     k = q_bit_size # bit size
+
+#     LOGQ = q_bit_size
+
+#     if q_bit_size == 60:
+#         LOGQH = 17
+#     else:
+#         LOGQH = 15
+
+#     q = ntt_friendly_prime_gen(LOGQ, LOGQH, 1)[0]
+
+#     size0 = n1*n2
+#     size1 = n3*n4
+
+
+#     TWIDDLE_tuple_map = find_twiddle_map(N, q, math.ceil(q_bit_size/width), width)
+
+#     file1 = open(f"{test_dir}/psi.txt", 'w+')
+
+    
+
+#     iterative_seven = False
+#     iterative_six   = False
+#     iterative_four  = False
+
+#     if choice == 0:
+#         iterative_four = True
+#     elif choice == 1:
+#         iterative_six = True
+#     elif choice == 2:
+#         iterative_seven = True
+
+#     assert N == n1*n2*n3*n4 , "ERRORRRR"
+
+#     depth = N//TP
+
+#     in1 = [[0 for j in range(TP)] for i in range(depth)]
+
+#     input1 = []
+
+#     for ctr in range(depth):
+#         arr1 = []
+#         for i in range(TP):
+#             # Generate correct input sequence
+#             arr1.append((   (i)*(N//TP) + (ctr%(size0//TP))*(N//size0) + (ctr//(size0//TP))) % N)
+#         input1.append(arr1)
+
+
+#     if iterative_seven:
+#         iter_0_read = iterative_first_block1(input1, TP, n1, n2, size0, False, 0, verbose)
+
+#         iter_1_read = iterative_second_block(iter_0_read, TP, n2, size0, size1, False, 1, verbose)
+
+#         iter_2_read = iterative_first_block1(iter_1_read, TP, n3, n4, size1, False, 2, verbose)
+
+#         iter_3_read = iterative_first_block1(iter_2_read, TP, n4, n3, size1, True, 3, verbose)
+#     elif iterative_four:
+#         iter_0_read = iterative_first_block1(input1, TP, n1, n2, size0, False, 0, verbose)
+
+#         iter_3_read = iterative_second_block(iter_0_read, TP, n2, n1, n1*n2, True, 1, verbose)
+#     elif iterative_six:
+#         iter_0_read = iterative_first_block1(input1, TP, n1, n2, size0, False, 0, verbose)
+
+#         iter_1_read = iterative_second_block(iter_0_read, TP, n2, size0, size1, False, 1, verbose)
+
+#         iter_3_read = iterative_first_block1(iter_1_read, TP, n3, n4, size1, True, 2, verbose)
+
+
+#     # Check can you generate all elements in correct order, 0 to N-1
+#     last1 = []
+#     for r in iter_3_read:
+#         for e in r:
+#             last1.append(e)
+    
+#     print("check ? " , last1 == [i for i in range(N)])
+
+
 if __name__ == "__main__":
     
     N = int(sys.argv[1])
@@ -288,7 +384,11 @@ if __name__ == "__main__":
 
     TWIDDLE_tuple_map = find_twiddle_map(N, q, math.ceil(q_bit_size/width), width)
 
+    TWIDDLE_inv_tuple_map = find_twiddle_map_INTT(N, q, math.ceil(q_bit_size/width), width)
+
     file1 = open(f"{test_dir}/psi.txt", 'w+')
+
+    file2 = open(f"{test_dir}/psi_inv.txt", 'w+')
 
     
 
@@ -320,23 +420,23 @@ if __name__ == "__main__":
 
 
     if iterative_seven:
-        iter_0_read = iterative_first_block1(input1, TP, n1, n2, size0, False, 0, verbose)
+        iter_0_read = iterative_first_block1(input1, TP, n1, n2, size0, False, 0, verbose, file1, TWIDDLE_tuple_map)
 
-        iter_1_read = iterative_second_block(iter_0_read, TP, n2, size0, size1, False, 1, verbose)
+        iter_1_read = iterative_second_block(iter_0_read, TP, n2, size0, size1, False, 1, verbose, file1, TWIDDLE_tuple_map)
 
-        iter_2_read = iterative_first_block1(iter_1_read, TP, n3, n4, size1, False, 2, verbose)
+        iter_2_read = iterative_first_block1(iter_1_read, TP, n3, n4, size1, False, 2, verbose, file1, TWIDDLE_tuple_map)
 
-        iter_3_read = iterative_first_block1(iter_2_read, TP, n4, n3, size1, True, 3, verbose)
+        iter_3_read = iterative_first_block1(iter_2_read, TP, n4, n3, size1, True, 3, verbose, file1, TWIDDLE_tuple_map)
     elif iterative_four:
-        iter_0_read = iterative_first_block1(input1, TP, n1, n2, size0, False, 0, verbose)
+        iter_0_read = iterative_first_block1(input1, TP, n1, n2, size0, False, 0, verbose, file1, TWIDDLE_tuple_map)
 
-        iter_3_read = iterative_second_block(iter_0_read, TP, n2, n1, n1*n2, True, 1, verbose)
+        iter_3_read = iterative_second_block(iter_0_read, TP, n2, n1, n1*n2, True, 1, verbose, file1, TWIDDLE_tuple_map)
     elif iterative_six:
-        iter_0_read = iterative_first_block1(input1, TP, n1, n2, size0, False, 0, verbose)
+        iter_0_read = iterative_first_block1(input1, TP, n1, n2, size0, False, 0, verbose, file1, TWIDDLE_tuple_map)
 
-        iter_1_read = iterative_second_block(iter_0_read, TP, n2, size0, size1, False, 1, verbose)
+        iter_1_read = iterative_second_block(iter_0_read, TP, n2, size0, size1, False, 1, verbose, file1, TWIDDLE_tuple_map)
 
-        iter_3_read = iterative_first_block1(iter_1_read, TP, n3, n4, size1, True, 2, verbose)
+        iter_3_read = iterative_first_block1(iter_1_read, TP, n3, n4, size1, True, 2, verbose, file1, TWIDDLE_tuple_map)
 
 
     # Check can you generate all elements in correct order, 0 to N-1
@@ -347,4 +447,163 @@ if __name__ == "__main__":
     
     print("check ? " , last1 == [i for i in range(N)])
 
+    
+    print("ITERATIVE NTT INPUT: ")
+    for e in input1:
+        print(e)
+    
+    print("ITERATIVE NTT OUTPUT: ")
+    for e in iter_3_read:
+        print(e)
+    
+    print("APPLY SHUFFLE: ")
+
+    new_check = [[0 for i in range(TP)] for j in range(N//TP)]
+
+    add = int(log2(N//TP))
+
+    start = int(log2(n2))-1
+
+    print("start: ", start, n2)
+
+    for i in range(N//TP):
+        for j in range(TP):
+            # new_check[i][j] = iter_3_read[
+            #     (
+            #         ((i % 2) << ((add - 1 - (start - 0)) // (add) * add + (start - 0))) +
+            #         (((i % 4) // 2) << ((add - 1 - (start - 1)) // (add) * add + (start - 1))) +
+            #         (((i % 8) // 4) << ((add - 1 - (start - 2)) // (add) * add + (start - 2))) +
+            #         (((i % 16) // 8) << ((add - 1 - (start - 3)) // (add) * add + (start - 3))) +
+            #         (((i % 32) // 16) << ((add - 1 - (start - 4)) // (add) * add + (start - 4))) +
+            #         (((i % 64) // 32) << ((add - 1 - (start - 5)) // (add) * add + (start - 5))) +
+            #         (((i % 128) // 64) << ((add - 1 - (start - 6)) // (add) * add + (start - 6))) +
+            #         (((i % 256) // 128) << ((add - 1 - (start - 7)) // (add) * add + (start - 7))) +
+            #         (((i % 512) // 256) << ((add - 1 - (start - 8)) // (add) * add + (start - 8))) +
+            #         (((i % 1024) // 512) << ((add - 1 - (start - 9)) // (add) * add + (start - 9))) +
+            #         (((i % 2048) // 1024) << ((add - 1 - (start - 10)) // (add) * add + (start - 10))) +
+            #         (((i % 4096) // 2048) << ((add - 1 - (start - 11)) // (add) * add + (start - 11)))
+            #     ) % (N // TP)
+            # ][((j % 2) * (n1>>1) + ((j % 4) // 2 * (n1>>2) + (j % 8) // 4 * (n1>>3) + ((j%16) // 8)*(n1>>4) + ((j%32)//16)*(n1>>5) + ((j%64)//32)*(n1>>6) + ((j%128)//64)*(n1>>7)))]            
+            new_check[i][j] = iter_3_read[
+            (
+                ((i % 2) << ((add>=1)*((0 > start)*(add - (0 - start)) + (0 <= start)*(start - 0)))) +
+                (((i % 4) // 2) << ((add>=2)*((1 > start)*(add - (1 - start)) + (1 <= start)*(start - 1)))) +
+                (((i % 8) // 4) << ((add>=3)*((2 > start)*(add - (2 - start)) + (2 <= start)*(start - 2)))) +
+                (((i % 16) // 8) << ((add>=4)*((3 > start)*(add - (3 - start)) + (3 <= start)*(start - 3)))) +
+                (((i % 32) // 16) << ((add>=5)*((4 > start)*(add - (4 - start)) + (4 <= start)*(start - 4)))) +
+                (((i % 64) // 32) << ((add>=6)*((5 > start)*(add - (5 - start)) + (5 <= start)*(start - 5)))) +
+                (((i % 128) // 64) << ((add>=7)*((6 > start)*(add - (6 - start)) + (6 <= start)*(start - 6)))) +
+                (((i % 256) // 128) << ((add>=8)*((7 > start)*(add - (7 - start)) + (7 <= start)*(start - 7)))) +
+                (((i % 512) // 256) << ((add>=9)*((8 > start)*(add - (8 - start)) + (8 <= start)*(start - 8)))) +
+                (((i % 1024) // 512) << (add>=10)*(((9 > start)*(add - (9 - start)) + (9 <= start)*(start - 9)))) +
+                (((i % 2048) // 1024) << ((add>=11)*((10 > start)*(add - (10 - start)) + (10 <= start)*(start - 10)))) +
+                (((i % 4096) // 2048) << ((add>=12)*((11 > start)*(add - (11 - start)) + (11 <= start)*(start - 11))))
+            ) % (N // TP)
+            ][
+            (
+                (j % 2) * (n1 >> 1) +
+                ((j % 4) // 2) * (n1 >> 2) +
+                ((j % 8) // 4) * (n1 >> 3) +
+                ((j % 16) // 8) * (n1 >> 4) +
+                ((j % 32) // 16) * (n1 >> 5) +
+                ((j % 64) // 32) * (n1 >> 6) +
+                ((j % 128) // 64) * (n1 >> 7)
+            )]
+
+    print("ITERATIVE INTT INPUT: ")
+
+    for e in new_check:
+        print(e)
+
+    coeff_read_file = open(f"{test_dir}/ntt_out.txt", 'r')
+
+    hex_lines = []
+
+    for line in coeff_read_file:
+        # Split line into tokens and strip newlines/spaces
+        token = line.strip()
+        # Convert each hex token to an integer
+        int_values = int(token, 16)
+        hex_lines.append(int_values)
+
+    intt_coeff_in_write_file = open(f"{test_dir}/intt_in.txt", 'w+')
+
+    print("hex: ", hex_lines)
+    for e in new_check:
+        for ide in e:
+            intt_coeff_in_write_file.write(str(hex(hex_lines[ide])[2:]) + "\n")
+
+
+
+
+    if iterative_seven:
+        iter_0_read_intt = iterative_first_block1(new_check, TP, n1, n2, size0, False, 0, verbose, file2, TWIDDLE_inv_tuple_map)
+
+        iter_1_read_intt = iterative_second_block(iter_0_read_intt, TP, n2, size0, size1, False, 1, verbose, file2, TWIDDLE_inv_tuple_map)
+
+        iter_2_read_intt = iterative_first_block1(iter_1_read_intt, TP, n3, n4, size1, False, 2, verbose, file2, TWIDDLE_inv_tuple_map)
+
+        iter_3_read_intt = iterative_first_block1(iter_2_read_intt, TP, n4, n3, size1, True, 3, verbose, file2, TWIDDLE_inv_tuple_map)
+    if iterative_six:
+        iter_0_read_intt = iterative_first_block1(new_check, TP, n1, n2, size0, False, 3, verbose, file2, TWIDDLE_inv_tuple_map)
+
+        iter_1_read_intt = iterative_second_block(iter_0_read_intt, TP, n2, size0, size1, False, 4, verbose, file2, TWIDDLE_inv_tuple_map)
+
+        iter_3_read_intt = iterative_first_block1(iter_1_read_intt, TP, n3, n4, size1, True, 5, verbose, file2, TWIDDLE_inv_tuple_map)
+
+    elif iterative_four:
+        iter_0_read_intt = iterative_first_block1(new_check, TP, n1, n2, size0, False, 0, verbose, file2, TWIDDLE_inv_tuple_map)
+
+        iter_3_read_intt = iterative_second_block(iter_0_read_intt, TP, n2, n1, n1*n2, True, 1, verbose, file2, TWIDDLE_inv_tuple_map)
+
+    print("ITERATIVE INTT RESULT: ")
+    for e in iter_3_read_intt:
+        print(e)
+
+    intt_res_read_file = open(f"{test_dir}/intt_out_wo_last.txt", 'r')
+
+    hex_lines = []
+
+    for line in intt_res_read_file:
+        # Split line into tokens and strip newlines/spaces
+        token = line.strip()
+        # Convert each hex token to an integer
+        int_values = int(token, 16)
+        hex_lines.append(int_values)
+
+    intt_coeff_out_write_file = open(f"{test_dir}/intt_out.txt", 'w+')
+
+    print("hex: ", hex_lines)
+    for e in iter_3_read_intt:
+        for ide in e:
+            intt_coeff_out_write_file.write(str(hex(hex_lines[ide])[2:]) + "\n")
+
+    print("APPLY SHUFFLE AGAIN: ")
+
+    try_arr = [[0 for i in range(TP)] for j in range(N//TP)]
+    
+
+    for i in range(N//TP):
+        for j in range(TP):
+            try_arr[i][j] = iter_3_read_intt[
+                (
+                    ((i % 2) << ((add - 1 - (start - 0)) // (add) * add + (start - 0))) +
+                    (((i % 4) // 2) << ((add - 1 - (start - 1)) // (add) * add + (start - 1))) +
+                    (((i % 8) // 4) << ((add - 1 - (start - 2)) // (add) * add + (start - 2))) +
+                    (((i % 16) // 8) << ((add - 1 - (start - 3)) // (add) * add + (start - 3))) +
+                    (((i % 32) // 16) << ((add - 1 - (start - 4)) // (add) * add + (start - 4))) +
+                    (((i % 64) // 32) << ((add - 1 - (start - 5)) // (add) * add + (start - 5))) +
+                    (((i % 128) // 64) << ((add - 1 - (start - 6)) // (add) * add + (start - 6))) +
+                    (((i % 256) // 128) << ((add - 1 - (start - 7)) // (add) * add + (start - 7))) +
+                    (((i % 512) // 256) << ((add - 1 - (start - 8)) // (add) * add + (start - 8))) +
+                    (((i % 1024) // 512) << ((add - 1 - (start - 9)) // (add) * add + (start - 9))) +
+                    (((i % 2048) // 1024) << ((add - 1 - (start - 10)) // (add) * add + (start - 10))) +
+                    (((i % 4096) // 2048) << ((add - 1 - (start - 11)) // (add) * add + (start - 11)))
+                ) % (N // TP)
+            ][(j % 2) * (n1>>1) + ((j % 4) // 2 * (n1>>2) + (j % 8) // 4 * (n1>>3) + ((j%16) // 8)*(n1>>4) + ((j%32)//16)*(n1>>5) + ((j%64)//32)*(n1>>6) + ((j%128)//64)*(n1>>7))]            
+
+
+    print("NTT INPUT AGAIN SANITY ? ")
+
+    print(input1 == try_arr)
 
