@@ -28,7 +28,7 @@ module tp_ntt_top
 localparam tp_ntt_params_t tp_ntt_params = {LOGN, LOGN1, LOGN2, LOGN3, LOGTP, LOGQ, LOGQH, NON_STD, MORE_DSP};
 localparam tp_ntt_dim_t DIM = tp_ntt_dim(tp_ntt_params);
 localparam butterfly_params_t butterfly_params = {LOGQ, LOGQH, NON_STD, MORE_DSP};
-localparam LAT     = tp_ntt_lat(tp_ntt_params) + 3;
+localparam LAT     = tp_ntt_lat(tp_ntt_params);
 localparam BTF_LAT = butterfly_lat(butterfly_params);    
 localparam LOGN4   = tp_ntt_logn4(tp_ntt_params);
 localparam D   =  tp_ntt_d(tp_ntt_params);

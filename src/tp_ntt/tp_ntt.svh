@@ -70,11 +70,11 @@ function int tp_ntt_lat(input tp_ntt_params_t params);
     butterfly_params_t butterfly_params = tp_ntt_butterfly_params(params);
     int butterfly_lat_plus1 = butterfly_lat(butterfly_params) + 1;
     if (tp_ntt_dim(params) == DIM_2D)
-        tp_ntt_lat = (butterfly_lat_plus1 * params.LOGN) + 9 + 2;
+        tp_ntt_lat = (butterfly_lat_plus1 * params.LOGN) + 9 + 2 + 3;
     else if (tp_ntt_dim(params) == DIM_3D)
-        tp_ntt_lat = (butterfly_lat_plus1 * params.LOGN) + tp_ntt_d1(params) + 15 + 3;
+        tp_ntt_lat = (butterfly_lat_plus1 * params.LOGN) + tp_ntt_d1(params) + 15 + 3 + 3;
     else
-        tp_ntt_lat = (butterfly_lat_plus1 * params.LOGN) + tp_ntt_d1(params) + tp_ntt_d2(params) + 21 + 4;
+        tp_ntt_lat = (butterfly_lat_plus1 * params.LOGN) + tp_ntt_d1(params) + tp_ntt_d2(params) + 21 + 4 + 3;
 endfunction
 
 

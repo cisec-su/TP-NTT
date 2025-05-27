@@ -383,7 +383,6 @@ if __name__ == "__main__":
 
 
     TWIDDLE_tuple_map = find_twiddle_map(N, q, math.ceil(q_bit_size/width), width)
-
     TWIDDLE_inv_tuple_map = find_twiddle_map_INTT(N, q, math.ceil(q_bit_size/width), width)
 
     file1 = open(f"{test_dir}/psi.txt", 'w+')
