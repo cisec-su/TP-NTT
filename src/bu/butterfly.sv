@@ -43,10 +43,10 @@ localparam W = LOGQ - LOGQH;
 
 reg  [LOGQH - 1 : 0] q_add;
 reg  [LOGQH - 1 : 0] q_sub; 
-reg [LOGQ-1:0] modadd_res_intt_reg, mod_second_in, mod_second_in_b, modadd_res_reg, modsub_res_d1, modadd_res_d1, modmul_res_d1, odd_gs_out;
+reg [LOGQ-1:0] modadd_res_intt_reg, modadd_res_reg, modsub_res_d1, modadd_res_d1, modmul_res_d1, odd_gs_out ;
  
 wire [LOGQ  - 1 : 0] A_q;
-wire [LOGQ  - 1 : 0] modadd_res, modadd_res_intt, modadd_res_del, modadd_res_del_d1, modadd_res_intt_del, res_anan, mod_second_in_b, new_aa;
+wire [LOGQ  - 1 : 0] modadd_res, modadd_res_intt, modadd_res_del, modadd_res_del_d1, modadd_res_intt_del, res_ana, new_aa, mod_second_in_b, mod_second_in, modadd_res_reg;
 wire [LOGQ  - 1 : 0] modsub_res;
 wire [LOGQ  - 1 : 0] modmul_res;
 wire [LOGQ  - 1 : 0] modadd_B_in;
@@ -122,13 +122,13 @@ always @(posedge clk ) begin
     modadd_res_intt_reg <= modadd_res_intt;
 end
 
-always@(*) begin
+
     assign mod_second_in =  modadd_res>>1;
     
     assign mod_second_in_b = ({qH, {(W){1'b0}}} + 2)>>1;
 
     assign modadd_res_reg = modadd_res;
-end
+
 
 modsub #(
     .LOGQ  (modadd_params.LOGQ  ),
