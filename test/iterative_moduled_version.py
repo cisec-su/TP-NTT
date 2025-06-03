@@ -409,17 +409,56 @@ if __name__ == "__main__":
     in1 = [[0 for j in range(TP)] for i in range(depth)]
 
     input1 = []
+    bef_shuf = []
 
     for ctr in range(depth):
         arr1 = []
+        arr2 = []
         for i in range(TP):
             # Generate correct input sequence
             arr1.append((   (i)*(N//TP) + (ctr%(size0//TP))*(N//size0) + (ctr//(size0//TP))) % N)
+            arr2.append((i+ctr*TP))
         input1.append(arr1)
+        bef_shuf.append(arr2[-(ctr%TP):] + arr2[:-(ctr%TP)])
 
 
+    print("before shuf: ")
+    for e in bef_shuf:
+        print(e)
+    print("wanted: ")
+    for e in input1:
+        print(e)
+    print("APPLY SHUFFLE: ")
+
+    new_check = [[0 for i in range(TP)] for j in range(N//TP)]
+
+    add = int(log2(N//TP))
+
+    start = int(log2(n2))-1
+
+    print("start: ", start, n2)
+
+    for i in range(N//TP):
+        for j in range(TP):
+            if i < 8:
+                print(i,j*4 + (i%4) , (j)*4 + (i%4) + (i//4))
+            new_check[i][j] = bef_shuf[
+            (
+                j*4 + (i%4) 
+            ) % (N // TP)
+            ][
+            (
+                (j)*4 + (i%4) + (i//4)
+            ) % TP]
+
+    print("ITERATIVE NTT INPUT AFTER SHUFFLE: ")
+
+    for e in new_check:
+        print(e)
+
+    print(input1 == new_check)
     if iterative_seven:
-        iter_0_read = iterative_first_block1(input1, TP, n1, n2, size0, False, 0, verbose, file1, TWIDDLE_tuple_map)
+        iter_0_read = iterative_first_block1(new_check, TP, n1, n2, size0, False, 0, verbose, file1, TWIDDLE_tuple_map)
 
         iter_1_read = iterative_second_block(iter_0_read, TP, n2, size0, size1, False, 1, verbose, file1, TWIDDLE_tuple_map)
 
@@ -427,11 +466,11 @@ if __name__ == "__main__":
 
         iter_3_read = iterative_first_block1(iter_2_read, TP, n4, n3, size1, True, 3, verbose, file1, TWIDDLE_tuple_map)
     elif iterative_four:
-        iter_0_read = iterative_first_block1(input1, TP, n1, n2, size0, False, 0, verbose, file1, TWIDDLE_tuple_map)
+        iter_0_read = iterative_first_block1(new_check, TP, n1, n2, size0, False, 0, verbose, file1, TWIDDLE_tuple_map)
 
         iter_3_read = iterative_second_block(iter_0_read, TP, n2, n1, n1*n2, True, 1, verbose, file1, TWIDDLE_tuple_map)
     elif iterative_six:
-        iter_0_read = iterative_first_block1(input1, TP, n1, n2, size0, False, 0, verbose, file1, TWIDDLE_tuple_map)
+        iter_0_read = iterative_first_block1(new_check, TP, n1, n2, size0, False, 0, verbose, file1, TWIDDLE_tuple_map)
 
         iter_1_read = iterative_second_block(iter_0_read, TP, n2, size0, size1, False, 1, verbose, file1, TWIDDLE_tuple_map)
 
@@ -446,10 +485,13 @@ if __name__ == "__main__":
     
     print("check ? " , last1 == [i for i in range(N)])
 
+
+
+
     
-    print("ITERATIVE NTT INPUT: ")
-    for e in input1:
-        print(e)
+    # print("ITERATIVE NTT INPUT: ")
+    # for e in input1:
+    #     print(e)
     
     print("ITERATIVE NTT OUTPUT: ")
     for e in iter_3_read:
@@ -527,7 +569,7 @@ if __name__ == "__main__":
 
     intt_coeff_in_write_file = open(f"{test_dir}/intt_in.txt", 'w+')
 
-    print("hex: ", hex_lines)
+    #print("hex: ", hex_lines)
     for e in new_check:
         for ide in e:
             intt_coeff_in_write_file.write(str(hex(hex_lines[ide])[2:]) + "\n")
@@ -572,7 +614,7 @@ if __name__ == "__main__":
 
     intt_coeff_out_write_file = open(f"{test_dir}/intt_out.txt", 'w+')
 
-    print("hex: ", hex_lines)
+    #print("hex: ", hex_lines)
     for e in iter_3_read_intt:
         for ide in e:
             intt_coeff_out_write_file.write(str(hex(hex_lines[ide])[2:]) + "\n")

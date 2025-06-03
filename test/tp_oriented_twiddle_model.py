@@ -538,8 +538,8 @@ if __name__ == "__main__":
 
     INTT_res_kk = INTT_wo_last(A_NTT_merge,psi_table_inv, q)
 
-    check_res_minus_1 = []
-    #check_res_minus_1 = SchoolbookModPolMul_minus_1(A, B, q)
+    #check_res_minus_1 = []
+    check_res_minus_1 = SchoolbookModPolMul_minus_1(A, B, q)
 
     print("----------------Parameters---------------\n")
 
@@ -552,7 +552,7 @@ if __name__ == "__main__":
 
     print("******************************************\n")
 
-    if INTT_res_kk == check_res_minus_1:
+    if INTT_res_kk == A:
 
         print("**********Correct_Merge*************")
 

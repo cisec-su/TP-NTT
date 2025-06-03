@@ -43,10 +43,10 @@ localparam W = LOGQ - LOGQH;
 
 reg  [LOGQH - 1 : 0] q_add;
 reg  [LOGQH - 1 : 0] q_sub; 
-reg [LOGQ-1:0] modadd_res_intt_reg, mod_second_in, mod_second_in_b, modadd_res_reg;
+reg [LOGQ-1:0] modadd_res_intt_reg, mod_second_in, mod_second_in_b, modadd_res_reg, modsub_res_d1, modadd_res_d1, modmul_res_d1, odd_gs_out;
  
 wire [LOGQ  - 1 : 0] A_q;
-wire [LOGQ  - 1 : 0] modadd_res, modadd_res_intt, modadd_res_del, modadd_res_del_d1, modadd_res_intt_del, res_anan, mod_second_in_b;
+wire [LOGQ  - 1 : 0] modadd_res, modadd_res_intt, modadd_res_del, modadd_res_del_d1, modadd_res_intt_del, res_anan, mod_second_in_b, new_aa;
 wire [LOGQ  - 1 : 0] modsub_res;
 wire [LOGQ  - 1 : 0] modmul_res;
 wire [LOGQ  - 1 : 0] modadd_B_in;
@@ -54,7 +54,6 @@ wire [LOGQ  - 1 : 0] modsub_B_in;
 wire [LOGQ  - 1 : 0] modmul_A_in;
 wire [LOGQ  - 1 : 0] A_q_mx, A_q_mad;
 wire [LOGQ  - 1 : 0] B_d;
-wire [LOGQ  - 1 : 0] modadd_res_d1;
 
 
 /////////////////////////////////////////////////////////////////////////
@@ -67,6 +66,11 @@ wire [LOGQ  - 1 : 0] modadd_res_d1;
 always @(posedge clk ) begin
     q_add <= qH;
     q_sub <= qH;
+
+    modadd_res_d1 <= modadd_res;
+    modsub_res_d1 <= modsub_res;
+    modmul_res_d1 <= modmul_res;
+    odd_gs_out <= new_aa;
 end
 
 /////////////////////////////////////////////////////////////////////////
@@ -217,12 +221,13 @@ modmul_wlm #(
 /////////////////////////////////////////////////////////////////////////
 
 
+assign new_aa = (modadd_res_del_d1[0] == 1'b1 ? modadd_res_intt_del : modadd_res_del_d1>>1);
 
 
 /////////////////////////// output //////////////////////////////////////
 
-assign E = CT ? modadd_res : (modadd_res_del_d1[0] == 1'b1 ? modadd_res_intt_del : modadd_res_del_d1>>1);
-assign O = CT ? modsub_res : modmul_res;
+assign E = CT ? modadd_res_d1 : odd_gs_out;
+assign O = CT ? modsub_res_d1 : modmul_res_d1;
 
 /////////////////////////////////////////////////////////////////////////
 

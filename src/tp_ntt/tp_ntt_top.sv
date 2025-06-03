@@ -18,6 +18,7 @@ module tp_ntt_top
         input                           start,
         input  tp_ntt_op_t              op,
         input                           intt,
+        input                           shuffle_mod,
         input       [LOGQH      -1:0]   qH,
         input       [TP*LOGQ    -1:0]   i_poly,
         input       [(TP-1)*LOGQ-1:0]   psi,
@@ -43,7 +44,7 @@ localparam N4 = 1 << LOGN4;
 
 
 wire start_ntt2, start_ntt3, start_ntt4, start_au1, start_au2, start_au3;
-wire [TP*LOGQ-1:0] poly_ntt1, poly_ntt2, poly_ntt3, poly_ntt4, poly_au1, poly_au2, poly_au3;
+wire [TP*LOGQ-1:0] poly_ntt1, poly_ntt2, poly_ntt3, poly_ntt4, poly_au1, poly_au2, poly_au3, poly_in;
 
 reg [TP*LOGQ-1:0] poly_d1, poly_d2, poly_d3;
 
@@ -52,6 +53,8 @@ always @(posedge clk) begin
     poly_d2 <= poly_d1;
     poly_d3 <= poly_d2;
 end
+
+assign poly_in = intt ? poly_d3 : poly_d3;
 
 
 generate
@@ -137,7 +140,7 @@ generate
             .op(op), 
             .intt(intt),
             .qH(qH), 
-            .i_poly(poly_d3), 
+            .i_poly(poly_in), 
             .psi(psi), 
             .o_poly(poly_ntt1)
         );
@@ -363,8 +366,12 @@ generate
     end
 endgenerate
 
+shiftreg #(.SHIFT((BTF_LAT + 1)*LOGN1 + 4), .DATA(1)) sre107(clk, rst, start     , start_au1_v1 );
 
-shiftreg #(.SHIFT((BTF_LAT + 1)*LOGN1 + 4), .DATA(1)) sre101(clk, rst, start     , start_au1 );
+shiftreg #(.SHIFT((BTF_LAT + 1)*LOGN1 + 3), .DATA(1)) sre101(clk, rst, start     , start_au1_v2 );
+
+assign start_au1 = shuffle_mod ? start_au1_v2 : start_au1_v1;
+
 shiftreg #(.SHIFT( D1 + 4                ), .DATA(1)) sre102(clk, rst, start_au1 , start_ntt2);
 shiftreg #(.SHIFT((BTF_LAT + 1)*LOGN2 + 1), .DATA(1)) sre103(clk, rst, start_ntt2, start_au2 );
 shiftreg #(.SHIFT( D + 6                 ), .DATA(1)) sre104(clk, rst, start_au2 , start_ntt3);

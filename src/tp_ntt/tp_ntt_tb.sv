@@ -5,10 +5,10 @@ module tp_ntt_tb();
     `include "tp_ntt.svh"
 
     // TP-NTT Parameters
-    parameter LOGN          = 16;
-    parameter LOGN1         = 4;
-    parameter LOGN2         = 4;
-    parameter LOGN3         = 4;
+    parameter LOGN          = 12;
+    parameter LOGN1         = 5;
+    parameter LOGN2         = 2;
+    parameter LOGN3         = 5;
     parameter LOGTP         = 5;
     parameter LOGQ          = 60;
     parameter LOGQH         = 17;
@@ -71,6 +71,9 @@ module tp_ntt_tb();
     reg [LOGQ-1:0] q [0:6];
     reg [LOGQ-1:0] psi0  [0:psi_count-1];
     
+    reg [LOGQ-1:0] NTT_res_store [0:N-1]; 
+    reg [LOGQ-1:0] INTT_res_store [0:N-1]; 
+    
 
 
     reg [LOGQ-1:0] INTT_COEF_IN [0:N-1]; 
@@ -78,6 +81,8 @@ module tp_ntt_tb();
     reg [LOGQ-1:0] INTT_RES  [0:psi_count-1];
 
     reg [TP_log:0] ctr1;
+
+    reg shuffle_mod;
     
     reg[LOGQH-1:0] q_tb;
 
@@ -114,6 +119,7 @@ module tp_ntt_tb();
         rst = 1'b1;
         OP_TYPE = 2'b0;
         START_NTT = 1'b0;
+        shuffle_mod = 1'b0;
         NTT_in = 0;
         W_in = 0;
         #FP;
@@ -238,7 +244,8 @@ module tp_ntt_tb();
                 idx_here = (i*TP + j) & (N-1);
                 NTT_in[(TP-(j))*LOGQ-1-:LOGQ] = {INTT_COEF_IN[idx_here]};
             end else begin
-                idx_here = ((j*N_over_TP) + ((i & (size0/TP-1)) * (N/size0)) + (i/(size0/TP))) & (N-1);
+                //idx_here = ((j*N_over_TP) + ((i & (size0/TP-1)) * (N/size0)) + (i/(size0/TP))) & (N-1);
+                idx_here = ((i*TP + j)) & (N-1);
                 NTT_in[(TP-(j))*LOGQ-1-:LOGQ] = {a0_0[idx_here]};
             end
                 
@@ -258,6 +265,7 @@ module tp_ntt_tb();
                     NTT_res[(TP-(j))*LOGQ-1-:LOGQ] = {INTT_RES[j+i*TP]};
                 end else begin
                     NTT_res[(TP-(j))*LOGQ-1-:LOGQ] = {res[j+i*TP]};
+                    NTT_res_store[j+i*TP] = NTT_out[(TP-(j))*LOGQ-1-:LOGQ];
                 end
                 
             end
@@ -276,6 +284,330 @@ module tp_ntt_tb();
         else begin
             $display("FAIL IN SINGLE NTT TEST");
         end
+        
+        #(10*FP);
+        OP_TYPE = 2'b0;
+        
+        
+        INTT = 1'b1;
+        OP_TYPE = 2'b0;
+        START_NTT = 1'b0;
+        shuffle_mod = 1'b1;
+        NTT_in = 0;
+        W_in = 0;
+        #FP;
+
+
+        #FP;
+        OP_TYPE = 2'd0;
+
+        #(FP*3);
+        
+        OP_TYPE = 2'b1;
+        #FP;
+
+        for (i = 0 ; i < total_step_numbers_real ; i = i+1) begin
+            if(is_last_problem && i == 1) begin
+                ctr1 = ((1<<LOGN2)-1)*(TP>>LOGN2);
+            end
+            else begin
+                ctr1 = TP-4'b1;
+            end
+
+            for (k = 0; k < N_over_TP ; k = k+1) begin
+                if (i == 0) begin
+                    for (j = 0; j < TP-1 ; j = j + 1 ) begin
+                        //id11 = 0 + k * (TP-1) + j;
+                        if(j<((1<<LOGN1)-1)*(TP>>LOGN1)) begin
+                            id11 = 0 + k * ((1<<LOGN1)-1)*(TP>>LOGN1) + j;
+                            if (INTT == 1'b1) begin
+                                W_in[(TP-1-j)*LOGQ-1-:LOGQ] = intt_psi0[id11];
+                            end else begin
+                                W_in[(TP-1-j)*LOGQ-1-:LOGQ] = psi0[id11];
+                            end
+                            
+                        end
+                        else begin
+                            id11 = N_over_TP*(TP-1) + k * ctr1 + j;
+                            W_in[(TP-1-j)*LOGQ-1-:LOGQ] = 0;
+                        end
+                        
+                    end
+                end
+                else if (i == 1) begin
+                    for (j = 0; j < TP-1 ; j = j + 1 ) begin
+                        if(j<((1<<LOGN2)-1)*(TP>>LOGN2)) begin
+                            id11 = N_over_TP*((1<<LOGN1)-1)*(TP>>LOGN1) + k * ((1<<LOGN2)-1)*(TP>>LOGN2) + j;
+                            if (INTT == 1'b1) begin
+                                W_in[(TP-1-j)*LOGQ-1-:LOGQ] = intt_psi0[id11];
+                            end else begin
+                                W_in[(TP-1-j)*LOGQ-1-:LOGQ] = psi0[id11];
+                            end
+                        end
+                        else begin
+                            id11 = N_over_TP*(TP-1) + k * ctr1 + j;
+                            W_in[(TP-1-j)*LOGQ-1-:LOGQ] = 0;
+                        end
+                        
+                    end
+                end else if (i == 2) begin
+                    for (j = 0; j < TP-1 ; j = j + 1 ) begin
+
+                        if(j<((1<<LOGN3)-1)*(TP>>LOGN3)) begin
+                            id11 = N_over_TP*(((1<<LOGN1)-1)*(TP>>LOGN1) + ((1<<LOGN2)-1)*(TP>>LOGN2)) + k * ((1<<LOGN3)-1)*(TP>>LOGN3) + j;
+                            if (INTT == 1'b1) begin
+                                W_in[(TP-1-j)*LOGQ-1-:LOGQ] = intt_psi0[id11];
+                            end else begin
+                                W_in[(TP-1-j)*LOGQ-1-:LOGQ] = psi0[id11];
+                            end
+                        end
+                        else begin
+                            id11 = N_over_TP*(TP-1) + k * ctr1 + j;
+                            W_in[(TP-1-j)*LOGQ-1-:LOGQ] = 0;
+                        end
+                    end
+                end
+                else if (i == 3) begin
+                    for (j = 0; j < TP-1 ; j = j + 1 ) begin
+
+                        if(j<((1<<LOGN4)-1)*(TP>>LOGN4)) begin
+                            id11 = N_over_TP*(((1<<LOGN1)-1)*(TP>>LOGN1) + ((1<<LOGN2)-1)*(TP>>LOGN2) + ((1<<LOGN3)-1)*(TP>>LOGN3)) + k * ((1<<LOGN4)-1)*(TP>>LOGN4) + j;
+                            if (INTT == 1'b1) begin
+                                W_in[(TP-1-j)*LOGQ-1-:LOGQ] = intt_psi0[id11];
+                            end else begin
+                                W_in[(TP-1-j)*LOGQ-1-:LOGQ] = psi0[id11];
+                            end
+                        end
+                        else begin
+                            id11 = N_over_TP*(TP-1) + k * ctr1 + j;
+                            W_in[(TP-1-j)*LOGQ-1-:LOGQ] = 0;
+                        end
+                    end
+                end
+                #FP;
+            end
+            
+            
+        end
+        OP_TYPE = 2'b0;
+        #(FP*5);
+        
+        
+        
+        // INTT TEST START
+        OP_TYPE = 2'b0;
+        #(FP*5);
+        //OP_TYPE = 3'd2;
+        @(posedge clk);
+        @(posedge clk);
+        START_NTT = 1'b1;
+        @(posedge clk);
+        START_NTT = 1'b0;
+        // Initialize inputs
+        for (i = 0; i < depth ; i = i + 1) begin
+            for ( j = 0; j < TP; j = j + 1) begin // For every stage
+            if (INTT == 1'b1) begin
+                idx_here = (i*TP + j) & (N-1);
+                NTT_in[(TP-(j))*LOGQ-1-:LOGQ] = {NTT_res_store[idx_here]};
+            end
+                
+            end
+            @(posedge clk);
+        end
+        
+        repeat(uut.LAT) begin
+            @(posedge clk);
+        end
+        
+        flag = 1;
+        i = 0;
+        $display("INTT TEST STARTING");
+        for (i = 0; i < depth ; i = i + 1) begin
+            for ( j = 0; j < TP; j = j + 1) begin // For every stage
+                if (INTT == 1'b1) begin
+                    NTT_res[(TP-(j))*LOGQ-1-:LOGQ] = {INTT_RES[j+i*TP]};
+                    INTT_res_store[j+i*TP] =  NTT_out[(TP-(j))*LOGQ-1-:LOGQ];
+                end else begin
+                    NTT_res[(TP-(j))*LOGQ-1-:LOGQ] = {res[j+i*TP]};
+                    NTT_res_store[j+i*TP] =  NTT_out[(TP-(j))*LOGQ-1-:LOGQ];
+                end
+                
+            end
+            if( NTT_out == NTT_res) begin 
+                $display("CORRECT INTT IDX: %d ", i);
+            end
+            else begin
+                flag = 0;
+                $display("WRONG INTT IDX !!!!: %d ", i);
+            end
+            @(posedge clk);
+        end
+        if (flag) begin
+                $display("SINGLE INTT TEST IS SUCCESSFUL. ALL COEFFICIENTS ARE CORRECT");        
+        end
+        else begin
+            $display("FAIL IN SINGLE INTT TEST");
+        end
+        
+        #(10*FP);
+        OP_TYPE = 2'b0;
+        
+        
+        INTT = 1'b0;
+        OP_TYPE = 2'b0;
+        START_NTT = 1'b0;
+        shuffle_mod = 1'b1;
+        NTT_in = 0;
+        W_in = 0;
+        #FP;
+
+
+        #FP;
+        OP_TYPE = 2'd0;
+
+        #(FP*3);
+        
+        OP_TYPE = 2'b1;
+        #FP;
+
+        for (i = 0 ; i < total_step_numbers_real ; i = i+1) begin
+            if(is_last_problem && i == 1) begin
+                ctr1 = ((1<<LOGN2)-1)*(TP>>LOGN2);
+            end
+            else begin
+                ctr1 = TP-4'b1;
+            end
+
+            for (k = 0; k < N_over_TP ; k = k+1) begin
+                if (i == 0) begin
+                    for (j = 0; j < TP-1 ; j = j + 1 ) begin
+                        //id11 = 0 + k * (TP-1) + j;
+                        if(j<((1<<LOGN1)-1)*(TP>>LOGN1)) begin
+                            id11 = 0 + k * ((1<<LOGN1)-1)*(TP>>LOGN1) + j;
+                            if (INTT == 1'b1) begin
+                                W_in[(TP-1-j)*LOGQ-1-:LOGQ] = intt_psi0[id11];
+                            end else begin
+                                W_in[(TP-1-j)*LOGQ-1-:LOGQ] = psi0[id11];
+                            end
+                            
+                        end
+                        else begin
+                            id11 = N_over_TP*(TP-1) + k * ctr1 + j;
+                            W_in[(TP-1-j)*LOGQ-1-:LOGQ] = 0;
+                        end
+                        
+                    end
+                end
+                else if (i == 1) begin
+                    for (j = 0; j < TP-1 ; j = j + 1 ) begin
+                        if(j<((1<<LOGN2)-1)*(TP>>LOGN2)) begin
+                            id11 = N_over_TP*((1<<LOGN1)-1)*(TP>>LOGN1) + k * ((1<<LOGN2)-1)*(TP>>LOGN2) + j;
+                            if (INTT == 1'b1) begin
+                                W_in[(TP-1-j)*LOGQ-1-:LOGQ] = intt_psi0[id11];
+                            end else begin
+                                W_in[(TP-1-j)*LOGQ-1-:LOGQ] = psi0[id11];
+                            end
+                        end
+                        else begin
+                            id11 = N_over_TP*(TP-1) + k * ctr1 + j;
+                            W_in[(TP-1-j)*LOGQ-1-:LOGQ] = 0;
+                        end
+                        
+                    end
+                end else if (i == 2) begin
+                    for (j = 0; j < TP-1 ; j = j + 1 ) begin
+
+                        if(j<((1<<LOGN3)-1)*(TP>>LOGN3)) begin
+                            id11 = N_over_TP*(((1<<LOGN1)-1)*(TP>>LOGN1) + ((1<<LOGN2)-1)*(TP>>LOGN2)) + k * ((1<<LOGN3)-1)*(TP>>LOGN3) + j;
+                            if (INTT == 1'b1) begin
+                                W_in[(TP-1-j)*LOGQ-1-:LOGQ] = intt_psi0[id11];
+                            end else begin
+                                W_in[(TP-1-j)*LOGQ-1-:LOGQ] = psi0[id11];
+                            end
+                        end
+                        else begin
+                            id11 = N_over_TP*(TP-1) + k * ctr1 + j;
+                            W_in[(TP-1-j)*LOGQ-1-:LOGQ] = 0;
+                        end
+                    end
+                end
+                else if (i == 3) begin
+                    for (j = 0; j < TP-1 ; j = j + 1 ) begin
+
+                        if(j<((1<<LOGN4)-1)*(TP>>LOGN4)) begin
+                            id11 = N_over_TP*(((1<<LOGN1)-1)*(TP>>LOGN1) + ((1<<LOGN2)-1)*(TP>>LOGN2) + ((1<<LOGN3)-1)*(TP>>LOGN3)) + k * ((1<<LOGN4)-1)*(TP>>LOGN4) + j;
+                            if (INTT == 1'b1) begin
+                                W_in[(TP-1-j)*LOGQ-1-:LOGQ] = intt_psi0[id11];
+                            end else begin
+                                W_in[(TP-1-j)*LOGQ-1-:LOGQ] = psi0[id11];
+                            end
+                        end
+                        else begin
+                            id11 = N_over_TP*(TP-1) + k * ctr1 + j;
+                            W_in[(TP-1-j)*LOGQ-1-:LOGQ] = 0;
+                        end
+                    end
+                end
+                #FP;
+            end
+            
+            
+        end
+        OP_TYPE = 2'b0;
+        #(FP*5);
+        
+        
+        
+        // INTT TEST START
+        OP_TYPE = 2'b0;
+        #(FP*5);
+        //OP_TYPE = 3'd2;
+        @(posedge clk);
+        @(posedge clk);
+        START_NTT = 1'b1;
+        @(posedge clk);
+        START_NTT = 1'b0;
+        // Initialize inputs
+        for (i = 0; i < depth ; i = i + 1) begin
+            for ( j = 0; j < TP; j = j + 1) begin // For every stage
+                idx_here = (i*TP + j) & (N-1);
+                NTT_in[(TP-(j))*LOGQ-1-:LOGQ] = {INTT_res_store[idx_here]};
+
+                
+            end
+            @(posedge clk);
+        end
+        
+        repeat(uut.LAT) begin
+            @(posedge clk);
+        end
+        
+        flag = 1;
+        i = 0;
+        $display("NTT TEST 2 STARTING");
+        for (i = 0; i < depth ; i = i + 1) begin
+            for ( j = 0; j < TP; j = j + 1) begin // For every stage
+                    NTT_res[(TP-(j))*LOGQ-1-:LOGQ] = {res[j+i*TP]};
+                    NTT_res_store[j+i*TP] =  NTT_out[(TP-(j))*LOGQ-1-:LOGQ];
+                
+            end
+            if( NTT_out == NTT_res) begin 
+                $display("CORRECT NTT 2 IDX: %d ", i);
+            end
+            else begin
+                flag = 0;
+                $display("WRONG NTT 2 IDX !!!!: %d ", i);
+            end
+            @(posedge clk);
+        end
+        if (flag) begin
+                $display("SINGLE NTT TEST 2 IS SUCCESSFUL. ALL COEFFICIENTS ARE CORRECT");        
+        end
+        else begin
+            $display("FAIL IN SINGLE NTT 2 TEST");
+        end
+            
+        
         // $display("BATCH NTT TEST STARTING");
         // START_NTT = 1'b1;
         // t = depth + BATCH_DELAY;
@@ -345,7 +677,29 @@ module tp_ntt_tb();
         $finish;
     end
 
-    tp_ntt_top #(
+    // tp_ntt_top #(
+    //     .LOGN    (LOGN    ),
+    //     .LOGN1   (LOGN1   ),
+    //     .LOGN2   (LOGN2   ),
+    //     .LOGN3   (LOGN3   ),
+    //     .LOGTP   (LOGTP   ),
+    //     .LOGQ    (LOGQ    ),
+    //     .LOGQH   (LOGQH   ),
+    //     .NON_STD (NON_STD ),
+    //     .MORE_DSP(MORE_DSP)
+    // ) uut (
+    //     .clk(clk),
+    //     .rst(rst),
+    //     .start(START_NTT),
+    //     .op(OP_TYPE),
+    //     .intt(INTT),
+    //     .qH(q_tb),
+    //     .i_poly(NTT_in),
+    //     .psi(W_in),
+    //     .o_poly(NTT_out)
+    // );
+
+    tp_ntt_top_w_shuffle #(
         .LOGN    (LOGN    ),
         .LOGN1   (LOGN1   ),
         .LOGN2   (LOGN2   ),
@@ -361,11 +715,13 @@ module tp_ntt_tb();
         .start(START_NTT),
         .op(OP_TYPE),
         .intt(INTT),
+        .shuffle_mod(shuffle_mod),
         .qH(q_tb),
         .i_poly(NTT_in),
         .psi(W_in),
         .o_poly(NTT_out)
     );
+
 
 
 

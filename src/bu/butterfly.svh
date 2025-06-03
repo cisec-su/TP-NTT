@@ -27,7 +27,7 @@ endfunction
 function int butterfly_lat(input butterfly_params_t params);
     modmul_wlm_params_t modmul_wlm_params = butterfly_modmul_wlm_params(params);
     modadd_params_t modadd_params = butterfly_modadd_params(params);
-    butterfly_lat = modmul_wlm_lat(modmul_wlm_params) + modadd_lat(modadd_params);
+    butterfly_lat =  modmul_wlm_lat(modmul_wlm_params) + modadd_lat(modadd_params) + 1;
 endfunction
 
 
