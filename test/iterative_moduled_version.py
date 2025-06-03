@@ -347,6 +347,54 @@ def ntt_friendly_prime_gen(logq, logqh, num_primes=None, debug=False, random=Non
     
 #     print("check ? " , last1 == [i for i in range(N)])
 
+def shuffle_modop_0(input1):
+    new_check = [[0 for i in range(len(input1[0]))] for j in range(len(input1))]
+
+    for i in range(N//TP):
+        for j in range(TP):
+            new_check[i][j] = input1[
+            (
+                j*4 + (i%4) 
+            ) % (N // TP)
+            ][
+            (
+                (j)*4 + (i%4) + (i//4)
+            ) % TP]
+
+    return new_check
+
+def shuffle_modop_1(input1):
+    print(input1, )
+    new_check = [[0 for i in range(len(input1[0]))] for j in range(len(input1))]
+    for i in range(N//TP):
+        for j in range(TP):
+            new_check[i][j] = input1[
+            (
+                ((i % 2) << ((add>=1)*((0 > start)*(add - (0 - start)) + (0 <= start)*(start - 0)))) +
+                (((i % 4) // 2) << ((add>=2)*((1 > start)*(add - (1 - start)) + (1 <= start)*(start - 1)))) +
+                (((i % 8) // 4) << ((add>=3)*((2 > start)*(add - (2 - start)) + (2 <= start)*(start - 2)))) +
+                (((i % 16) // 8) << ((add>=4)*((3 > start)*(add - (3 - start)) + (3 <= start)*(start - 3)))) +
+                (((i % 32) // 16) << ((add>=5)*((4 > start)*(add - (4 - start)) + (4 <= start)*(start - 4)))) +
+                (((i % 64) // 32) << ((add>=6)*((5 > start)*(add - (5 - start)) + (5 <= start)*(start - 5)))) +
+                (((i % 128) // 64) << ((add>=7)*((6 > start)*(add - (6 - start)) + (6 <= start)*(start - 6)))) +
+                (((i % 256) // 128) << ((add>=8)*((7 > start)*(add - (7 - start)) + (7 <= start)*(start - 7)))) +
+                (((i % 512) // 256) << ((add>=9)*((8 > start)*(add - (8 - start)) + (8 <= start)*(start - 8)))) +
+                (((i % 1024) // 512) << (add>=10)*(((9 > start)*(add - (9 - start)) + (9 <= start)*(start - 9)))) +
+                (((i % 2048) // 1024) << ((add>=11)*((10 > start)*(add - (10 - start)) + (10 <= start)*(start - 10)))) +
+                (((i % 4096) // 2048) << ((add>=12)*((11 > start)*(add - (11 - start)) + (11 <= start)*(start - 11))))
+            ) % (N // TP)
+            ][
+            (
+                (j % 2) * (n1 >> 1) +
+                ((j % 4) // 2) * (n1 >> 2) +
+                ((j % 8) // 4) * (n1 >> 3) +
+                ((j % 16) // 8) * (n1 >> 4) +
+                ((j % 32) // 16) * (n1 >> 5) +
+                ((j % 64) // 32) * (n1 >> 6) +
+                ((j % 128) // 64) * (n1 >> 7)
+            )]
+
+    return new_check
 
 if __name__ == "__main__":
     
@@ -438,18 +486,7 @@ if __name__ == "__main__":
 
     print("start: ", start, n2)
 
-    for i in range(N//TP):
-        for j in range(TP):
-            if i < 8:
-                print(i,j*4 + (i%4) , (j)*4 + (i%4) + (i//4))
-            new_check[i][j] = bef_shuf[
-            (
-                j*4 + (i%4) 
-            ) % (N // TP)
-            ][
-            (
-                (j)*4 + (i%4) + (i//4)
-            ) % TP]
+    new_check = shuffle_modop_0(bef_shuf)
 
     print("ITERATIVE NTT INPUT AFTER SHUFFLE: ")
 
@@ -507,49 +544,9 @@ if __name__ == "__main__":
 
     print("start: ", start, n2)
 
-    for i in range(N//TP):
-        for j in range(TP):
-            # new_check[i][j] = iter_3_read[
-            #     (
-            #         ((i % 2) << ((add - 1 - (start - 0)) // (add) * add + (start - 0))) +
-            #         (((i % 4) // 2) << ((add - 1 - (start - 1)) // (add) * add + (start - 1))) +
-            #         (((i % 8) // 4) << ((add - 1 - (start - 2)) // (add) * add + (start - 2))) +
-            #         (((i % 16) // 8) << ((add - 1 - (start - 3)) // (add) * add + (start - 3))) +
-            #         (((i % 32) // 16) << ((add - 1 - (start - 4)) // (add) * add + (start - 4))) +
-            #         (((i % 64) // 32) << ((add - 1 - (start - 5)) // (add) * add + (start - 5))) +
-            #         (((i % 128) // 64) << ((add - 1 - (start - 6)) // (add) * add + (start - 6))) +
-            #         (((i % 256) // 128) << ((add - 1 - (start - 7)) // (add) * add + (start - 7))) +
-            #         (((i % 512) // 256) << ((add - 1 - (start - 8)) // (add) * add + (start - 8))) +
-            #         (((i % 1024) // 512) << ((add - 1 - (start - 9)) // (add) * add + (start - 9))) +
-            #         (((i % 2048) // 1024) << ((add - 1 - (start - 10)) // (add) * add + (start - 10))) +
-            #         (((i % 4096) // 2048) << ((add - 1 - (start - 11)) // (add) * add + (start - 11)))
-            #     ) % (N // TP)
-            # ][((j % 2) * (n1>>1) + ((j % 4) // 2 * (n1>>2) + (j % 8) // 4 * (n1>>3) + ((j%16) // 8)*(n1>>4) + ((j%32)//16)*(n1>>5) + ((j%64)//32)*(n1>>6) + ((j%128)//64)*(n1>>7)))]            
-            new_check[i][j] = iter_3_read[
-            (
-                ((i % 2) << ((add>=1)*((0 > start)*(add - (0 - start)) + (0 <= start)*(start - 0)))) +
-                (((i % 4) // 2) << ((add>=2)*((1 > start)*(add - (1 - start)) + (1 <= start)*(start - 1)))) +
-                (((i % 8) // 4) << ((add>=3)*((2 > start)*(add - (2 - start)) + (2 <= start)*(start - 2)))) +
-                (((i % 16) // 8) << ((add>=4)*((3 > start)*(add - (3 - start)) + (3 <= start)*(start - 3)))) +
-                (((i % 32) // 16) << ((add>=5)*((4 > start)*(add - (4 - start)) + (4 <= start)*(start - 4)))) +
-                (((i % 64) // 32) << ((add>=6)*((5 > start)*(add - (5 - start)) + (5 <= start)*(start - 5)))) +
-                (((i % 128) // 64) << ((add>=7)*((6 > start)*(add - (6 - start)) + (6 <= start)*(start - 6)))) +
-                (((i % 256) // 128) << ((add>=8)*((7 > start)*(add - (7 - start)) + (7 <= start)*(start - 7)))) +
-                (((i % 512) // 256) << ((add>=9)*((8 > start)*(add - (8 - start)) + (8 <= start)*(start - 8)))) +
-                (((i % 1024) // 512) << (add>=10)*(((9 > start)*(add - (9 - start)) + (9 <= start)*(start - 9)))) +
-                (((i % 2048) // 1024) << ((add>=11)*((10 > start)*(add - (10 - start)) + (10 <= start)*(start - 10)))) +
-                (((i % 4096) // 2048) << ((add>=12)*((11 > start)*(add - (11 - start)) + (11 <= start)*(start - 11))))
-            ) % (N // TP)
-            ][
-            (
-                (j % 2) * (n1 >> 1) +
-                ((j % 4) // 2) * (n1 >> 2) +
-                ((j % 8) // 4) * (n1 >> 3) +
-                ((j % 16) // 8) * (n1 >> 4) +
-                ((j % 32) // 16) * (n1 >> 5) +
-                ((j % 64) // 32) * (n1 >> 6) +
-                ((j % 128) // 64) * (n1 >> 7)
-            )]
+    new_check = shuffle_modop_1(iter_3_read)
+
+    
 
     print("ITERATIVE INTT INPUT: ")
 
@@ -624,25 +621,7 @@ if __name__ == "__main__":
     try_arr = [[0 for i in range(TP)] for j in range(N//TP)]
     
 
-    for i in range(N//TP):
-        for j in range(TP):
-            try_arr[i][j] = iter_3_read_intt[
-                (
-                    ((i % 2) << ((add - 1 - (start - 0)) // (add) * add + (start - 0))) +
-                    (((i % 4) // 2) << ((add - 1 - (start - 1)) // (add) * add + (start - 1))) +
-                    (((i % 8) // 4) << ((add - 1 - (start - 2)) // (add) * add + (start - 2))) +
-                    (((i % 16) // 8) << ((add - 1 - (start - 3)) // (add) * add + (start - 3))) +
-                    (((i % 32) // 16) << ((add - 1 - (start - 4)) // (add) * add + (start - 4))) +
-                    (((i % 64) // 32) << ((add - 1 - (start - 5)) // (add) * add + (start - 5))) +
-                    (((i % 128) // 64) << ((add - 1 - (start - 6)) // (add) * add + (start - 6))) +
-                    (((i % 256) // 128) << ((add - 1 - (start - 7)) // (add) * add + (start - 7))) +
-                    (((i % 512) // 256) << ((add - 1 - (start - 8)) // (add) * add + (start - 8))) +
-                    (((i % 1024) // 512) << ((add - 1 - (start - 9)) // (add) * add + (start - 9))) +
-                    (((i % 2048) // 1024) << ((add - 1 - (start - 10)) // (add) * add + (start - 10))) +
-                    (((i % 4096) // 2048) << ((add - 1 - (start - 11)) // (add) * add + (start - 11)))
-                ) % (N // TP)
-            ][(j % 2) * (n1>>1) + ((j % 4) // 2 * (n1>>2) + (j % 8) // 4 * (n1>>3) + ((j%16) // 8)*(n1>>4) + ((j%32)//16)*(n1>>5) + ((j%64)//32)*(n1>>6) + ((j%128)//64)*(n1>>7))]            
-
+    try_arr = shuffle_modop_1(iter_3_read_intt)
 
     print("NTT INPUT AGAIN SANITY ? ")
 
