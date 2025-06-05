@@ -616,6 +616,25 @@ if __name__ == "__main__":
         for ide in e:
             intt_coeff_out_write_file.write(str(hex(hex_lines[ide])[2:]) + "\n")
 
+
+    intt_res_read_file = open(f"{test_dir}/intt_out_wo_last2.txt", 'r')
+
+    hex_lines = []
+
+    for line in intt_res_read_file:
+        # Split line into tokens and strip newlines/spaces
+        token = line.strip()
+        # Convert each hex token to an integer
+        int_values = int(token, 16)
+        hex_lines.append(int_values)
+
+    intt_coeff_out_write_file = open(f"{test_dir}/intt_out2.txt", 'w+')
+
+    #print("hex: ", hex_lines)
+    for e in iter_3_read_intt:
+        for ide in e:
+            intt_coeff_out_write_file.write(str(hex(hex_lines[ide])[2:]) + "\n")
+
     print("APPLY SHUFFLE AGAIN: ")
 
     try_arr = [[0 for i in range(TP)] for j in range(N//TP)]

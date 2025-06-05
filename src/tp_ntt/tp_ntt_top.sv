@@ -43,8 +43,8 @@ localparam TP = 1 << LOGTP;
 localparam N4 = 1 << LOGN4;
 
 
-wire start_ntt2, start_ntt3, start_ntt4, start_au1, start_au2, start_au3;
-wire [TP*LOGQ-1:0] poly_ntt1, poly_ntt2, poly_ntt3, poly_ntt4, poly_au1, poly_au2, poly_au3, poly_in;
+wire start_ntt2, start_ntt3, start_ntt4, start_au1, start_au2, start_au3, start_au1_v1, start_au1_v2;
+wire [TP*LOGQ-1:0] poly_ntt1, poly_ntt2, poly_ntt3, poly_ntt4, poly_au1, poly_au2, poly_au3;
 
 reg [TP*LOGQ-1:0] poly_d1, poly_d2, poly_d3;
 
@@ -53,8 +53,6 @@ always @(posedge clk) begin
     poly_d2 <= poly_d1;
     poly_d3 <= poly_d2;
 end
-
-assign poly_in = intt ? poly_d3 : poly_d3;
 
 
 generate
@@ -140,7 +138,7 @@ generate
             .op(op), 
             .intt(intt),
             .qH(qH), 
-            .i_poly(poly_in), 
+            .i_poly(poly_d3), 
             .psi(psi), 
             .o_poly(poly_ntt1)
         );
@@ -365,6 +363,7 @@ generate
         );
     end
 endgenerate
+
 
 shiftreg #(.SHIFT((BTF_LAT + 1)*LOGN1 + 4), .DATA(1)) sre107(clk, rst, start     , start_au1_v1 );
 

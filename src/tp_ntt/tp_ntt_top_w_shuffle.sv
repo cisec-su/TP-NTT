@@ -62,7 +62,7 @@ generate
 endgenerate
 
 
-shiftreg #(.SHIFT(14'd128 + 4), .DATA(1)) sre101(clk, rst, start     , start_ntt_top );
+shiftreg #(.SHIFT(14'd128 + 7), .DATA(1)) sre101(clk, rst, start     , start_ntt_top );
 shiftreg #(.SHIFT(1), .DATA(1)) sre102(clk, rst, start_ntt_top     , start_ntt_top_d1 );
 
 assign start_ntt_top_fn = shuffle_mod ? start_ntt_top_d1 : start_ntt_top;
@@ -77,22 +77,18 @@ always @(posedge clk or posedge rst) begin
     end    
 end
 
-shuffle_post_process #(
+shuffle_process_upd #(
         .LOGN    (LOGN    ),
         .LOGN1   (LOGN1   ),
         .LOGN2   (LOGN2   ),
-        .LOGN3   (LOGN3   ),
         .LOGTP   (LOGTP   ),
-        .LOGQ    (LOGQ    ),
-        .LOGQH   (LOGQH   ),
-        .NON_STD (NON_STD ),
-        .MORE_DSP(MORE_DSP)
+        .LOGQ    (LOGQ    )
     ) uut_shuf (
         .clk(clk),
         .rst(rst),
         .start(start),
         .mod_op(shuffle_mod),
-        .input_data(poly_d1),
+        .input_data(shuffle_in),
         .output_data(shuffle_out)
     );
 

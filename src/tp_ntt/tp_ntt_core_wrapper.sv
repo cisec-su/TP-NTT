@@ -67,7 +67,7 @@ reg [N_over_TP_log2-1:0]    br0     [1*(bram_reg_size)-1:0];
 reg                         be0     [1*(bram_reg_size)-1:0];
 
 
-reg [depth_log+1:0] ctr;
+reg [depth_log+3:0] ctr;
 
 reg [TP*LOGQ-1:0] NTT_core_in;
 wire [TP*LOGQ-1:0] NTT_core_out;
@@ -139,7 +139,7 @@ always @(*) begin
             next_state = (ctr == (iter_part_num_tot)*depth-1) ? OP_IDLE : OP_TWIDDLE_LOAD;
         end
         OP_STARTED: begin
-            next_state = ((ctr[depth_log-1:0]) == (depth-1)) ? OP_IDLE : OP_STARTED;
+            next_state = ((ctr[depth_log+3:0]) == (4'd10*depth-1)) ? OP_IDLE : OP_STARTED;
         end
         OP_Q_LOAD: begin
             next_state = (ctr == 1) ? OP_IDLE : OP_Q_LOAD;

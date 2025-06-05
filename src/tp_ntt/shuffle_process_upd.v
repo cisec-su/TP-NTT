@@ -1,18 +1,18 @@
-module automorphism_unit
+module shuffle_process_upd
    #(
-        parameter  LARGE        = 0  ,  // 0 --> SMALL_ADDRESS_GENERATOR , 1 --> LARGE_ADDRESS_GENERATOR
+        parameter  LARGE        = 1  ,  // 0 --> SMALL_ADDRESS_GENERATOR , 1 --> LARGE_ADDRESS_GENERATOR
         parameter  LOGN         = 15,
         parameter  LOGN1        = 6  ,
         parameter  LOGN2        = 3  ,
         parameter  LOGTP        = 6 ,
         parameter  LOGQ         = 60 ,
-        parameter  BTF_LAT      = 10 ,
-        parameter  AU_ID        = 0
+        parameter  AU_ID        = 7
     )
     (
         input                               clk         ,
         input                               rst         ,
         input                               start       ,
+        input                               mod_op      ,
         input           [LOGQ*TP-1:0]       input_data  ,
         output reg      [LOGQ*TP-1:0]       output_data     
     );
@@ -139,39 +139,25 @@ module automorphism_unit
     end
 
 generate
-    if (AU_ID == 0) begin
         shiftreg #(.SHIFT(2),.DATA(1)) sre100(clk,rst,start_addr_gen,start_take_input);
 
         assign start_addr_sig = start_addr_gen;
-    end else begin
-        shiftreg #(.SHIFT(4),.DATA(1)) sre200(clk,rst,start_addr_gen,start_take_input);
-        shiftreg #(.SHIFT(2),.DATA(1)) sre100(clk,rst,start_addr_gen,start_addr_gen_shifted);
-        
 
-        assign start_addr_sig = start_addr_gen_shifted;
-    end
 endgenerate
 
 generate
-    if (AU_ID == 0) begin
         shiftreg #(.SHIFT(2),.DATA(log_depth+1)) sre101(clk,rst,ctr,ctr_shifted);
-    end else begin
-        shiftreg #(.SHIFT(4),.DATA(log_depth+1)) sre101(clk,rst,ctr,ctr_shifted);
-    end
 endgenerate
 
 
 generate
-    if (AU_ID == 0) begin
-        shiftreg #(.SHIFT(depth+5),.DATA(log_depth+1)) sre102(clk,rst,ctr,ctr_out);
-    end else begin
-        shiftreg #(.SHIFT(depth+7),.DATA(log_depth+1)) sre102(clk,rst,ctr,ctr_out);
-    end
+    shiftreg #(.SHIFT(depth+5),.DATA(log_depth+1)) sre102(clk,rst,ctr,ctr_out);
+
 endgenerate
 
 
 generate
-    addr_gen #(.large_addr(LARGE),.LOGN(LOGN), .LOGN1(LOGN1), .size0(size0), .size1(size1), .LOGTP(LOGTP)) small_addr_gen_sm_unit (clk, rst, start_addr_sig, read_addr_res, write_addr_res);
+    shuffle_addr_gen #(.large_addr(LARGE), .LOGN(LOGN), .LOGN1(LOGN1), .LOGN2(LOGN2), .LOGTP(LOGTP)) shuf_addr_gen_unit (clk, rst, start_addr_sig, mod_op, read_addr_res, write_addr_res);
 endgenerate
 
 
@@ -182,17 +168,9 @@ generate
 endgenerate
 
 generate
-    if (LARGE) begin
-        for (genvar rot = 0; rot < TP; rot = rot + 1 ) begin
-            always @(posedge clk) begin
-                input_data_shift[rot*LOGQ +: LOGQ] <= input_data_int[(((rot + (ctr_shifted>>size0_over_tp_mult_size1_over_tp_log2))&(TP-1)))];
-            end
-        end
-    end else begin
-        for (genvar rot = 0; rot < TP; rot = rot + 1) begin
-            always @(posedge clk) begin
-                input_data_shift[(TP-rot)*LOGQ-1 -: LOGQ] <= input_data_int[TP-((   ((((rot - (ctr_shifted&(size0_over_tp-1)))&(TP-1))) >> LOGN2) + (((rot - (ctr_shifted&(size0/TP-1)))&(N2-1))*(TP/N2)))&(TP-1))-1];
-            end
+    for (genvar rot = 0; rot < TP; rot = rot + 1 ) begin
+        always @(posedge clk) begin
+            input_data_shift[rot*LOGQ +: LOGQ] <= mod_op ? input_data_int[rot] : input_data_int[(((rot+(ctr_shifted>>2))&(5'd31)))];;
         end
     end
 endgenerate
@@ -233,18 +211,18 @@ endgenerate
 
 
 generate
-    
-    if (LARGE) begin
-        for (genvar i = 0; i < TP; i = i + 1) begin
-            always @(posedge clk ) begin
-                output_data[(TP-i)*LOGQ-1-:LOGQ] <= do00[(i + (((ctr_out>>size1_over_tp_log2)&(depth-1))))&(TP-1)];
-            end
-        end
-    end else begin
-        for (genvar i = 0; i < TP; i = i + 1) begin
-            always @(posedge clk ) begin
-                output_data[(TP-i)*LOGQ-1 -: LOGQ] <= do00[(i + (ctr_out&(size0_over_tp-1)))&(TP-1)];
-            end
+
+    for (genvar i = 0; i < TP; i = i + 1) begin
+        always @(posedge clk ) begin
+            output_data[(TP-i)*LOGQ-1-:LOGQ] <= mod_op ? do00[(i & 1'd1) * (N1 >> 1) +
+                                                        ((i & 2'd3) >> 1) * (N1 >> 2) +
+                                                        ((i & 3'd7) >> 2) * (N1 >> 3) +
+                                                        ((i & 4'd15) >> 3) * (N1 >> 4) +
+                                                        ((i & 5'd31) >> 4) * (N1 >> 5) +
+                                                        ((i & 6'd63) >> 5) * (N1 >> 6) +
+                                                        ((i & 7'd127) >> 6) * (N1 >> 7)
+            ] 
+            :  do00[(i + (ctr_out>>2)) & (TP-1)] ;
         end
     end
     

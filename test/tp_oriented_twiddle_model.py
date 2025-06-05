@@ -503,6 +503,13 @@ if __name__ == "__main__":
 
     B = [random.randint(0, q - 1) for x in range(n)]
 
+    f0 = open(f'{test_dir}/ntt_in2.txt', 'w+')
+    for i in range(n):
+        f0.write('{}'.format(hex(B[i])[2:]))
+        f0.write('\n')
+    f0.close()
+
+
     # -------Merge NTT -------
     psi_table = generate_ntt_tables(n, q, pow(psi, 1, q))
 
@@ -537,6 +544,7 @@ if __name__ == "__main__":
     #INTT_res_merge = INTT(A_NTT_merge,psi_table_inv, q)
 
     INTT_res_kk = INTT_wo_last(A_NTT_merge,psi_table_inv, q)
+    INTT_res_kk_2 = INTT_wo_last(B_NTT_merge,psi_table_inv, q)
 
     #check_res_minus_1 = []
     check_res_minus_1 = SchoolbookModPolMul_minus_1(A, B, q)
@@ -575,9 +583,23 @@ if __name__ == "__main__":
         f0.write('\n')
     f0.close()
 
+    f0 = open(f'{test_dir}/ntt_out2.txt','w')
+
+    for i in range(n):
+        f0.write('{}'.format(hex(B_NTT_merge[i])[2:]))
+        f0.write('\n')
+    f0.close()
+
     f0 = open(f'{test_dir}/intt_out_wo_last.txt','w')
 
     for i in range(n):
         f0.write('{}'.format(hex(INTT_res_kk[i])[2:]))
+        f0.write('\n')
+    f0.close()
+
+    f0 = open(f'{test_dir}/intt_out_wo_last2.txt','w')
+
+    for i in range(n):
+        f0.write('{}'.format(hex(INTT_res_kk_2[i])[2:]))
         f0.write('\n')
     f0.close()
