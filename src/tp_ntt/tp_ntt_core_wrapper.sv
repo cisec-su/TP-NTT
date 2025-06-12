@@ -76,6 +76,8 @@ reg [LOGQH-1:0] q_core_in;
 
 wire [TP*LOGQ-1:0] NTT_core_out_shift_d2;
 
+reg intt_q;
+
 
 
 always @(posedge clk or posedge rst) begin
@@ -107,6 +109,15 @@ begin
         curr_state <= OP_IDLE;
     else
         curr_state <= next_state;
+end
+
+
+always @(posedge clk) begin
+    if (rst) begin
+        intt_q <= 0;
+    end else if (start) begin
+        intt_q <= intt;
+    end
 end
 
 
@@ -265,7 +276,7 @@ generate
                       .MORE_DSP(MORE_DSP)
         ) tp_ntt_core_inst (
             .clk    (clk      ),
-            .intt   (intt)     ,
+            .intt   (intt_q   ),
             .qH     (q_core_in),
             .i_poly (NTT_core_in[(TP-N1*ntt_idx)*LOGQ-1-:N1*LOGQ]),
             .psi    (W_core_in[(bram_reg_size-(N1-1)*ntt_idx)*LOGQ-1-:(N1-1)*LOGQ]),

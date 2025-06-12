@@ -28,6 +28,7 @@ module butterfly
 
 localparam butterfly_params_t butterfly_params = {LOGQ, LOGQH, NON_STD, MORE_DSP};
 localparam modadd_params_t modadd_params = butterfly_modadd_params(butterfly_params);
+localparam MODADD_LAT = modadd_lat(modadd_params);
 localparam modmul_wlm_params_t modmul_wlm_params = butterfly_modmul_wlm_params(butterfly_params);
 localparam MODMUL_LAT = modmul_wlm_lat(modmul_wlm_params);
 localparam LAT = butterfly_lat(butterfly_params);
@@ -41,19 +42,31 @@ localparam W = LOGQ - LOGQH;
 
 /////////////////////////// signals /////////////////////////////////////
 
-reg  [LOGQH - 1 : 0] q_add;
+reg  [LOGQH - 1 : 0] q_add0;
+reg  [LOGQH - 1 : 0] q_add1;
 reg  [LOGQH - 1 : 0] q_sub; 
-reg [LOGQ-1:0] modadd_res_intt_reg, modadd_res_reg, modsub_res_d1, modadd_res_d1, modmul_res_d1, odd_gs_out ;
- 
-wire [LOGQ  - 1 : 0] A_q;
-wire [LOGQ  - 1 : 0] modadd_res, modadd_res_intt, modadd_res_del, modadd_res_del_d1, modadd_res_intt_del, res_ana, new_aa, mod_second_in_b, mod_second_in, modadd_res_reg;
-wire [LOGQ  - 1 : 0] modsub_res;
-wire [LOGQ  - 1 : 0] modmul_res;
-wire [LOGQ  - 1 : 0] modadd_B_in;
-wire [LOGQ  - 1 : 0] modsub_B_in;
-wire [LOGQ  - 1 : 0] modmul_A_in;
-wire [LOGQ  - 1 : 0] A_q_mx, A_q_mad;
-wire [LOGQ  - 1 : 0] B_d;
+
+wire [LOGQ  - 1 : 0] modadd0_in_A;
+wire [LOGQ  - 1 : 0] modadd0_in_B;
+wire [LOGQ  - 1 : 0] modadd0_out;
+wire [LOGQ  - 1 : 0] modadd1_in_A;
+wire [LOGQ  - 1 : 0] modadd1_in_B;
+wire [LOGQ  - 1 : 0] modadd1_out;
+wire [LOGQ  - 1 : 0] modsub_in_A;
+wire [LOGQ  - 1 : 0] modsub_in_B;
+wire [LOGQ  - 1 : 0] modsub_out;
+wire [LOGQ  - 1 : 0] modmul_in_A;
+wire [LOGQ  - 1 : 0] modmul_in_B;
+wire [LOGQ  - 1 : 0] modmul_out;
+wire [LOGQ  - 1 : 0] A_d;
+wire [LOGQ  - 1 : 0] psi_d;
+wire [LOGQ  - 1 : 0] modadd0_out_d;
+wire [LOGQ  - 1 : 0] modadd0_out_d1;
+wire [LOGQ  - 1 : 0] mulinv2_out;
+
+reg [LOGQ  - 1 : 0] E_q;
+reg [LOGQ  - 1 : 0] O_q;
+
 
 
 /////////////////////////////////////////////////////////////////////////
@@ -64,27 +77,36 @@ wire [LOGQ  - 1 : 0] B_d;
 /////////////////////////// internal registering ////////////////////////
 
 always @(posedge clk ) begin
-    q_add <= qH;
+    q_add0 <= qH;
+    q_add1 <= qH;
     q_sub <= qH;
-
-    modadd_res_d1 <= modadd_res;
-    modsub_res_d1 <= modsub_res;
-    modmul_res_d1 <= modmul_res;
-    odd_gs_out <= new_aa;
 end
+
+
+always @(posedge clk) begin
+    E_q <= CT ? modadd0_out : mulinv2_out;
+    O_q <= CT ? modsub_out  : modmul_out;
+end
+
 
 /////////////////////////////////////////////////////////////////////////
 
+assign modadd0_in_A = CT ? A_d        : A;
+assign modadd0_in_B = CT ? modmul_out : B;
 
+assign modsub_in_A  = CT ? A_d        : A;
+assign modsub_in_B  = CT ? modmul_out : B;
 
-assign modadd_B_in = CT ? modmul_res :  B;
-assign modsub_B_in = CT ? modmul_res :  B;
+assign modmul_in_A  = CT ? B          : modsub_out;
+assign modmul_in_B  = CT ? psi        : psi_d;
 
-assign modmul_A_in = CT ? B     : modsub_res;
-assign A_q_mx      = CT ? A_q   : A;
+assign modadd1_in_A  = modadd0_out_d >> 1;
+assign modadd1_in_B  = ({qH, {(W){1'b0}}} + 2'd2) >> 1;
 
-assign A_q_mad      = CT ? A_q   : A;
+assign mulinv2_out   = (modadd0_out_d1[0] == 1'b1) ? modadd1_out : modadd0_out_d1 >> 1;
 
+assign E = E_q;
+assign O = O_q;
 
 /////////////////////////// modular arithmetic //////////////////////////
 
@@ -95,10 +117,11 @@ modadd #(
     .FF_ADD(modadd_params.FF_ADD),
     .FF_OUT(modadd_params.FF_OUT)
 ) ma0 (
-    .A  (A_q_mad       ),
-    .B  (modadd_B_in),
-    .qH (q_add     ),
-    .C  (modadd_res)
+    .A  (modadd0_in_A),
+    .B  (modadd0_in_B),
+    .clk(clk         ),
+    .qH (q_add0      ),
+    .C  (modadd0_out )
 );
 
 modadd #(
@@ -108,26 +131,12 @@ modadd #(
     .FF_ADD(modadd_params.FF_ADD),
     .FF_OUT(modadd_params.FF_OUT)
 ) ma1 (
-    .A  (mod_second_in     ),
-    .B  (mod_second_in_b),
-    .qH (q_add     ),
-    .C  (modadd_res_intt)
+    .A  (modadd1_in_A),
+    .B  (modadd1_in_B),
+    .clk(clk         ),
+    .qH (q_add1      ),
+    .C  (modadd1_out )
 );
-
-
-
-always @(posedge clk ) begin
-    //mod_second_in_b <=({qH, {(W){1'b0}}} + 2)>>1;
-    //mod_second_in <= modadd_res>>1;  
-    modadd_res_intt_reg <= modadd_res_intt;
-end
-
-
-    assign mod_second_in =  modadd_res>>1;
-    
-    assign mod_second_in_b = ({qH, {(W){1'b0}}} + 2)>>1;
-
-    assign modadd_res_reg = modadd_res;
 
 
 modsub #(
@@ -137,64 +146,12 @@ modsub #(
     .FF_SUB(modadd_params.FF_ADD),
     .FF_OUT(modadd_params.FF_OUT)
 ) ms0 (
-    .A  (A_q_mx   ),
-    .B  (modsub_B_in),
-    .qH (q_sub     ),
-    .C  (modsub_res)
+    .A  (modsub_in_A),
+    .B  (modsub_in_B),
+    .clk(clk        ),
+    .qH (q_sub      ),
+    .C  (modsub_out )
 );
-
-
-shiftreg #(
-    .SHIFT(MODMUL_LAT),
-    .DATA (LOGQ      )
-) sre10 (
-    .clk     (clk    ),
-    .reset   (1'b0   ),
-    .data_in (A      ),
-    .data_out(A_q    )
-);
-
-shiftreg #(
-    .SHIFT(MODMUL_LAT),
-    .DATA (LOGQ      )
-) sre20 (
-    .clk     (clk    ),
-    .reset   (1'b0   ),
-    .data_in (B      ),
-    .data_out(B_d    )
-);
-
-shiftreg #(
-    .SHIFT(MODMUL_LAT-1),
-    .DATA (LOGQ      )
-) sre30 (
-    .clk     (clk    ),
-    .reset   (1'b0   ),
-    .data_in (modadd_res_reg      ),
-    .data_out(modadd_res_del    )
-);
-
-shiftreg #(
-    .SHIFT(1),
-    .DATA (LOGQ      )
-) sre40 (
-    .clk     (clk    ),
-    .reset   (1'b0   ),
-    .data_in (modadd_res_del      ),
-    .data_out(modadd_res_del_d1    )
-);
-
-
-shiftreg #(
-    .SHIFT(MODMUL_LAT-1),
-    .DATA (LOGQ      )
-) sre50 (
-    .clk     (clk    ),
-    .reset   (1'b0   ),
-    .data_in (modadd_res_intt_reg      ),
-    .data_out(modadd_res_intt_del    )
-);
-
 
 
 modmul_wlm #(
@@ -211,23 +168,56 @@ modmul_wlm #(
         .MORE_DSP(modmul_wlm_params.MORE_DSP),
         .NON_STD (modmul_wlm_params.NON_STD )
 ) mm0 (
-        .clk(clk       ),
-        .A  (modmul_A_in         ),
-        .B  (psi       ),
-        .qH (qH        ),
-        .T  (modmul_res)
+        .clk(clk        ),
+        .A  (modmul_in_A),
+        .B  (modmul_in_B),
+        .qH (qH         ),
+        .T  (modmul_out )
 );
 
-/////////////////////////////////////////////////////////////////////////
+
+shiftreg #(
+    .SHIFT(MODMUL_LAT),
+    .DATA (LOGQ      )
+) sre10 (
+    .clk     (clk    ),
+    .reset   (1'b0   ),
+    .data_in (A      ),
+    .data_out(A_d    )
+);
 
 
-assign new_aa = (modadd_res_del_d1[0] == 1'b1 ? modadd_res_intt_del : modadd_res_del_d1>>1);
+shiftreg #(
+    .SHIFT(MODADD_LAT),
+    .DATA (LOGQ      )
+) sre20 (
+    .clk     (clk    ),
+    .reset   (1'b0   ),
+    .data_in (psi    ),
+    .data_out(psi_d  )
+);
 
 
-/////////////////////////// output //////////////////////////////////////
+shiftreg #(
+    .SHIFT(MODMUL_LAT - MODADD_LAT),
+    .DATA (LOGQ)
+) sre30 (
+    .clk     (clk          ),
+    .reset   (1'b0         ),
+    .data_in (modadd0_out  ),
+    .data_out(modadd0_out_d)
+);
 
-assign E = CT ? modadd_res_d1 : odd_gs_out;
-assign O = CT ? modsub_res_d1 : modmul_res_d1;
+
+shiftreg #(
+    .SHIFT(MODADD_LAT),
+    .DATA (LOGQ      )
+) sre40 (
+    .clk     (clk           ),
+    .reset   (1'b0          ),
+    .data_in (modadd0_out_d ),
+    .data_out(modadd0_out_d1)
+);
 
 /////////////////////////////////////////////////////////////////////////
 

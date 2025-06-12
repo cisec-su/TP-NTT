@@ -168,9 +168,9 @@ generate
         for (genvar j = 0; j < LOGN; j = j + 1) begin
 
             always @(posedge clk) begin
-                CT  [j][i] <= intt == 1'b1 ? 1'b0 : 1'b1;
+                CT  [j][i] <= (j == 0) ? ~intt : CT  [j - 1][i];
                 MT  [j][i] <= 1'b0;
-                qH_q[j][i] <= (j == 0) ? qH : qH_q[j - 1][i];
+                qH_q[j][i] <= (j == 0) ?    qH : qH_q[j - 1][i];
             end       
      
             if (j == 0) begin

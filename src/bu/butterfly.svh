@@ -20,7 +20,7 @@ endfunction
 
 
 function modadd_params_t butterfly_modadd_params(input butterfly_params_t params);
-    butterfly_modadd_params = '{LOGQ : params.LOGQ, LOGQH : params.LOGQH, FF_IN : 0, FF_ADD : 0, FF_OUT : 0};
+    butterfly_modadd_params = '{LOGQ : params.LOGQ, LOGQH : params.LOGQH, FF_IN : 1, FF_ADD : 0, FF_OUT : 0};
 endfunction
 
 

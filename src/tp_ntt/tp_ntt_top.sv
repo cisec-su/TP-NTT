@@ -44,6 +44,8 @@ localparam N4 = 1 << LOGN4;
 
 
 wire start_ntt2, start_ntt3, start_ntt4, start_au1, start_au2, start_au3, start_au1_v1, start_au1_v2;
+wire intt_au1, intt_au2, intt_au3, intt_ntt2, intt_ntt3, intt_ntt4;
+
 wire [TP*LOGQ-1:0] poly_ntt1, poly_ntt2, poly_ntt3, poly_ntt4, poly_au1, poly_au2, poly_au3;
 
 reg [TP*LOGQ-1:0] poly_d1, poly_d2, poly_d3;
@@ -175,7 +177,7 @@ generate
             .rst(rst), 
             .start(start_ntt2),
             .op(op), 
-            .intt(intt),
+            .intt(intt_ntt2),
             .qH(qH), 
             .i_poly(poly_au1), 
             .psi(psi), 
@@ -214,7 +216,7 @@ generate
             .rst(rst), 
             .start(start_ntt3),
             .op(op), 
-            .intt(intt),
+            .intt(intt_ntt3),
             .qH(qH), 
             .i_poly(poly_au2), 
             .psi(psi), 
@@ -376,6 +378,13 @@ shiftreg #(.SHIFT((BTF_LAT + 1)*LOGN2 + 1), .DATA(1)) sre103(clk, rst, start_ntt
 shiftreg #(.SHIFT( D + 6                 ), .DATA(1)) sre104(clk, rst, start_au2 , start_ntt3);
 shiftreg #(.SHIFT((BTF_LAT + 1)*LOGN3 + 1), .DATA(1)) sre105(clk, rst, start_ntt3, start_au3 );
 shiftreg #(.SHIFT( D2 + 6                ), .DATA(1)) sre106(clk, rst, start_au3 , start_ntt4);
+
+shiftreg #(.SHIFT( D1 + 4                ), .DATA(1)) sre201(clk, rst, intt     , intt_au1 );
+shiftreg #(.SHIFT( D1 + 4                ), .DATA(1)) sre202(clk, rst, intt_au1 , intt_ntt2);
+shiftreg #(.SHIFT((BTF_LAT + 1)*LOGN2 + 1), .DATA(1)) sre203(clk, rst, intt_ntt2, intt_au2 );
+shiftreg #(.SHIFT( D + 6                 ), .DATA(1)) sre204(clk, rst, intt_au2 , intt_ntt3);
+shiftreg #(.SHIFT((BTF_LAT + 1)*LOGN3 + 1), .DATA(1)) sre205(clk, rst, intt_ntt3, intt_au3 );
+shiftreg #(.SHIFT( D2 + 6                ), .DATA(1)) sre206(clk, rst, intt_au3 , intt_ntt4);
 
 
 always @(posedge clk or posedge rst) begin

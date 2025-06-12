@@ -22,7 +22,7 @@ module tp_ntt_tb();
     parameter HP            = 5;
     parameter FP            = (2*HP);
     parameter TEST_DIR      = "../../../../../test";
-    parameter PYTHON        = "/usr/bin/python3";
+    parameter PYTHON        = "/home/toluntosun/miniconda3/envs/sca/bin/python";
     parameter GEN_TEST_VEC  = 1;
 
     localparam LOGN4        = LOGN - LOGN1 - LOGN2 - LOGN3;
