@@ -48,7 +48,7 @@ module automorphism_unit
     wire [log_depth:0] ctr_shifted, ctr_out;
     reg  curr_state, next_state;
 
-    reg [log_depth_large+4:0] ctr_state;
+    reg [log_depth_large:0] ctr_state;
 
     reg start_addr_gen;
     wire start_addr_gen_shifted;
@@ -86,7 +86,7 @@ module automorphism_unit
         if (start) begin
             next_state = OP_STARTED;
         end
-        else if ((ctr_state[log_depth_large+4:0]) == (4'd10*depth_large-1)) begin
+        else if ((ctr_state[log_depth_large:0]) == (depth_large-1)) begin
             next_state = OP_IDLE;
         end
     end
