@@ -38,7 +38,6 @@ wire [LOGQ * (N - 1) - 1 : 0] psi_mx [0 : LOGN - 1];
 reg  [LOGQ           - 1 : 0] psi_st [0 : LOGN - 1][0 : (N >> 1) - 1];
 
 reg                  CT   [0 : LOGN - 1][0 : (N >> 1) - 1];
-reg                  MT   [0 : LOGN - 1][0 : (N >> 1) - 1];
 reg  [LOGQ  - 1 : 0] A    [0 : LOGN - 1][0 : (N >> 1) - 1];
 reg  [LOGQ  - 1 : 0] B    [0 : LOGN - 1][0 : (N >> 1) - 1];
 reg  [LOGQH - 1 : 0] qH_q [0 : LOGN - 1][0 : (N >> 1) - 1];
@@ -120,7 +119,6 @@ generate
             ) butterfly_inst (
                 .clk(clk         ),
                 .CT (CT    [j][i]),
-                .MT (MT    [j][i]),
                 .A  (A     [j][i]),
                 .B  (B     [j][i]),
                 .psi(psi_st[j][i]),
@@ -169,7 +167,6 @@ generate
 
             always @(posedge clk) begin
                 CT  [j][i] <= (j == 0) ? ~intt : CT  [j - 1][i];
-                MT  [j][i] <= 1'b0;
                 qH_q[j][i] <= (j == 0) ?    qH : qH_q[j - 1][i];
             end       
      

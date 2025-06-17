@@ -2,8 +2,6 @@
 
 // CT:0 -> GS-based butterfly (take input from A,B,psi -- output from E,O)
 // CT:1 -> CT-based butterfly (take input from A,B,psi -- output from E,O)
-// CT:0 -> Mod Add/Sub (take input from A,B   -- output from add/sub)
-// CT:1 -> Mod Mult    (take input from B,psi -- output from mul    )
 
 module butterfly
    #(
@@ -15,7 +13,6 @@ module butterfly
     (
         input               clk,
         input               CT ,
-        input               MT ,
         input  [LOGQ -1:0]  A  ,
         input  [LOGQ -1:0]  B  ,
         input  [LOGQ -1:0]  psi,

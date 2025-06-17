@@ -1,6 +1,5 @@
 module shuffle_addr_gen
    #(
-        parameter  large_addr   = 1  ,  // 0 --> SMALL_ADDRESS_GENERATOR , 1 --> LARGE_ADDRESS_GENERATOR
         parameter  LOGN         = 128,
         parameter  LOGN1        = 2  ,
         parameter  LOGN2        = 2  ,

@@ -1,9 +1,6 @@
 `timescale 1ns/1ps
 
-
-
-
-module btf_tb;
+module butterfyl_tb;
 
     `include "butterfly.svh"
 
@@ -14,7 +11,6 @@ module btf_tb;
     // DUT Inputs
     reg                   clk;
     reg                   CT;
-    reg                   MT;
     reg  [LOGQ -1:0]      A;
     reg  [LOGQ -1:0]      B;
     reg  [LOGQ -1:0]      psi;
@@ -34,7 +30,6 @@ module btf_tb;
     ) dut (
         .clk(clk),
         .CT(CT),
-        .MT(MT),
         .A(A),
         .B(B),
         .psi(psi),
@@ -56,8 +51,7 @@ module btf_tb;
     always #5 clk = ~clk;  // 100MHz clock
     
     initial begin
-//        $readmemh("/home/cisechw/Emre/intt_impl_encrypton/test/q.txt", q_in);  
-    end
+   end
 
     // Stimulus
     initial begin
@@ -66,7 +60,6 @@ module btf_tb;
         $display("Starting testbench...");
         // Initialize inputs
         CT   = 0;
-        MT   = 0;
         A    = 0;
         B    = 0;
         psi  = 0;
@@ -77,7 +70,6 @@ module btf_tb;
 
         // Apply test vectors
         CT   = 0;
-        MT   = 0;
         A    = 60'h3fd423ffc33530c;
         B    = 60'h6d31f7821276e88;
         psi  = 60'hd0f5e648afa14e;
@@ -99,12 +91,6 @@ module btf_tb;
         qH   = q_in[0][LOGQ-1 -: LOGQH];
         #10
          
-        
-        //A    = 32'hb231861;
-        //B    = 32'h4b3adb29;
-        //psi  = 32'h504fbd60;
-        //qH   = 15'h400a;
-
         #((LAT-3) * 10);
 
         $display("Result E : %d", E == 60'h56830dc0ead60ca);
@@ -120,7 +106,6 @@ module btf_tb;
 
         $display("Result E : %d", E == 60'h59715302f5258d1);
         $display("Result O : %d", O == 60'h4e4ab981f8bb2d5);
-
 
         // Add more vectors if needed
         $finish;
