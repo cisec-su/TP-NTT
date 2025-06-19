@@ -35,7 +35,7 @@ module automorphism_unit
     localparam reg_ctr = $clog2(size0_over_tp);
 
     localparam BRAM_size        = LARGE ? 2*depth : 2*size0_over_tp;
-    localparam BRAM_log_size    = LARGE ? $rtoi($ceil($clog2(2*depth))) : log_size0_over_tp + 1;
+    localparam BRAM_log_size    = $clog2(BRAM_size);
 
     localparam log_depth  = LARGE ? $rtoi($ceil($clog2(depth))) : log_size0_over_tp;
     localparam log_depth_large = $rtoi($ceil($clog2(depth_large)));
@@ -171,7 +171,7 @@ endgenerate
 
 
 generate
-    addr_gen #(.large_addr(LARGE),.LOGN(LOGN), .LOGN1(LOGN1), .size0(size0), .size1(size1), .LOGTP(LOGTP)) small_addr_gen_sm_unit (clk, rst, start_addr_sig, read_addr_res, write_addr_res);
+    addr_gen #(.LARGE(LARGE),.LOGN(LOGN), .LOGN1(LOGN1), .size0(size0), .size1(size1), .LOGTP(LOGTP)) small_addr_gen_sm_unit (clk, rst, start_addr_sig, read_addr_res, write_addr_res);
 endgenerate
 
 
