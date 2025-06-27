@@ -19,241 +19,297 @@ module automorphism_unit
 
 
     
-    localparam N  = 1 << LOGN;
-    localparam N1 = 1 << LOGN1;
-    localparam N2 = 1 << LOGN2;
-    localparam TP = 1 << LOGTP;
-    localparam size0 = N1 * N2;
-    localparam size1 = N / (size0);
-    localparam depth  = LARGE ? $rtoi($ceil(N/TP)) : $rtoi($ceil(size0/TP)) ;
-    localparam depth_large = $rtoi($ceil(N/TP));
-    localparam size1_over_tp = size1/TP;
-    localparam size1_over_tp_log2 = $rtoi($ceil($clog2(size1_over_tp)));
-    localparam size0_over_tp = size0/TP;
-    localparam log_size0_over_tp = $rtoi($ceil($clog2((size0)/TP)));
-    localparam size0_over_tp_mult_size1_over_tp_log2 = $rtoi($ceil($clog2((size0/TP)*(size1_over_tp))));
-    localparam reg_ctr = $clog2(size0_over_tp);
+localparam N                                        = 1 << LOGN;
+localparam N1                                       = 1 << LOGN1;
+localparam N2                                       = 1 << LOGN2;
+localparam TP                                       = 1 << LOGTP;
+localparam SIZE0                                    = N1 * N2;
+localparam SIZE1                                    = N / (SIZE0);
+localparam DEPTH                                    = LARGE ? N/TP : SIZE0/TP ;
+localparam DEPTH_LARGE                              = N/TP;
+localparam SIZE1_OVER_TP                            = SIZE1/TP;
+localparam SIZE1_OVER_TP_LOG2                       = $clog2(SIZE1_OVER_TP);
+localparam SIZE0_OVER_TP                            = SIZE0/TP;
+localparam LOG_SIZE0_OVER_TP                        = $clog2(SIZE0_OVER_TP);
+localparam SIZE0_OVER_TP_MULT_SIZE1_OVER_TP_LOG2    = $clog2((SIZE0/TP)*(SIZE1_OVER_TP));
+localparam BRAM_SIZE                                = LARGE ? 2*DEPTH : 2*SIZE0_OVER_TP;
+localparam BRAM_LOG_SIZE                            = $clog2(BRAM_SIZE);
+localparam LOG_DEPTH                                = LARGE ? $clog2(DEPTH) + 1 : LOG_SIZE0_OVER_TP + 1;
+localparam LOG_DEPTH_LARGE                          = $clog2(DEPTH_LARGE) + 1;
 
-    localparam BRAM_size        = LARGE ? 2*depth : 2*size0_over_tp;
-    localparam BRAM_log_size    = $clog2(BRAM_size);
+// states
+localparam OP_IDLE                                  = 1'd0;
+localparam OP_STARTED                               = 1'd1;
 
-    localparam log_depth  = LARGE ? $rtoi($ceil($clog2(depth))) : log_size0_over_tp;
-    localparam log_depth_large = $rtoi($ceil($clog2(depth_large)));
+reg  [LOG_DEPTH-1:0] ctr;
+wire [LOG_DEPTH-1:0] ctr_shifted, ctr_out;
+reg  curr_state, next_state;
 
-    // states
-    localparam OP_IDLE          = 1'd0;
-    localparam OP_STARTED       = 1'd1;
+reg [LOG_DEPTH_LARGE-1:0] ctr_state;
 
-    reg  [log_depth:0] ctr;
-    wire [log_depth:0] ctr_shifted, ctr_out;
-    reg  curr_state, next_state;
+reg start_addr_gen;
+wire start_addr_gen_shifted;
+wire start_addr_sig, start_take_input;
 
-    reg [log_depth_large:0] ctr_state;
+reg [LOGQ-1:0]                  di00     [TP-1:0];
+wire[LOGQ-1:0]                  do00     [TP-1:0];
+reg [LOG_DEPTH-1:0]             dw00     [TP-1:0];
+reg [LOG_DEPTH-1:0]             dr00     [TP-1:0];
+reg                             de00     [TP-1:0];
 
-    reg start_addr_gen;
-    wire start_addr_gen_shifted;
-    wire start_addr_sig, start_take_input;
 
-    reg [LOGQ-1:0]                  di00     [1*(TP)-1:0];
-    wire[LOGQ-1:0]                  do00     [1*(TP)-1:0];
-    reg [(log_depth+1)-1:0]           dw00     [1*(TP)-1:0];
-    reg [(log_depth+1)-1:0]           dr00     [1*(TP)-1:0];
-    reg                             de00     [1*(TP)-1:0];
 
-    
+wire [(LOG_DEPTH)*TP-1:0] read_addr_res;
+wire [(LOG_DEPTH)*TP-1:0] write_addr_res;
 
-    wire [(log_depth+1)*TP-1:0] read_addr_res;
-    wire [(log_depth+1)*TP-1:0] write_addr_res;
+reg [TP*LOGQ-1:0] input_data_shift;
 
-    reg [TP*LOGQ-1:0] input_data_shift;
+wire [LOGQ-1:0] input_data_int [TP-1:0];
+wire [LOGQ-1:0] input_data_shift_int [TP-1:0];
 
-    wire [LOGQ-1:0] input_data_int [TP-1:0];
-    wire [LOGQ-1:0] input_data_shift_int [TP-1:0];
+localparam TEMP = LARGE ? DEPTH_LARGE + 6 : DEPTH_LARGE + 4;
 
-    localparam TEMP = LARGE ? depth_large + 6 : depth_large + 4;
+always @(posedge clk) 
+begin
+    if(rst)
+        curr_state <= OP_IDLE;
+    else
+        curr_state <= next_state;
+end
 
-    always @(posedge clk) 
-    begin
-        if(rst)
-            curr_state <= OP_IDLE;
-        else
-            curr_state <= next_state;
+
+always @(*) begin
+    next_state = curr_state;
+    if (start) begin
+        next_state = OP_STARTED;
     end
-
-
-    always @(*) begin
-        next_state = curr_state;
-        if (start) begin
-            next_state = OP_STARTED;
-        end
-        else if ((ctr_state[log_depth_large:0]) == (depth_large-1)) begin
-            next_state = OP_IDLE;
-        end
+    else if ((ctr_state[LOG_DEPTH_LARGE-1:0]) == (DEPTH_LARGE-1)) begin
+        next_state = OP_IDLE;
     end
+end
 
 
-    always @(posedge clk or posedge rst) begin
-        if (rst) begin
-            ctr <= 0;
-        end else begin
-            case (curr_state)
-                OP_STARTED: begin
-                    ctr <= ctr + 1;
-                end 
-                default: begin
-                    ctr <= 0;
-                end
-            endcase
-            
-        end
-    end
-
-    always @(posedge clk or posedge rst) begin
-        if (rst) begin
-            ctr_state <= 0;
-        end else begin
-            case (curr_state)
-                OP_STARTED: begin
-                    ctr_state <= ctr_state + 1;
-                end 
-                default: begin
-                    ctr_state <= 0;
-                end
-            endcase
-            
-        end
-    end
-
-    always @(posedge clk or posedge rst) begin
-        if (rst) begin
-            start_addr_gen <= 1'b0;
-        end else begin
-            case (curr_state)
-                OP_STARTED: 
-                    start_addr_gen <= 1'b1; 
-                default: begin
-                    start_addr_gen <= 1'b0;
-                end
-            endcase
-        end
-    end
-
-generate
-    if (AU_ID == 0) begin
-        shiftreg #(.SHIFT(2),.DATA(1)) sre100(clk,rst,start_addr_gen,start_take_input);
-
-        assign start_addr_sig = start_addr_gen;
+always @(posedge clk or posedge rst) begin
+    if (rst) begin
+        ctr <= 0;
     end else begin
-        shiftreg #(.SHIFT(4),.DATA(1)) sre200(clk,rst,start_addr_gen,start_take_input);
-        shiftreg #(.SHIFT(2),.DATA(1)) sre100(clk,rst,start_addr_gen,start_addr_gen_shifted);
+        case (curr_state)
+            OP_STARTED: begin
+                ctr <= ctr + 1;
+            end 
+            default: begin
+                ctr <= 0;
+            end
+        endcase
         
-
-        assign start_addr_sig = start_addr_gen_shifted;
     end
-endgenerate
+end
 
-generate
-    if (AU_ID == 0) begin
-        shiftreg #(.SHIFT(2),.DATA(log_depth+1)) sre101(clk,rst,ctr,ctr_shifted);
+always @(posedge clk or posedge rst) begin
+    if (rst) begin
+        ctr_state <= 0;
     end else begin
-        shiftreg #(.SHIFT(4),.DATA(log_depth+1)) sre101(clk,rst,ctr,ctr_shifted);
+        case (curr_state)
+            OP_STARTED: begin
+                ctr_state <= ctr_state + 1;
+            end 
+            default: begin
+                ctr_state <= 0;
+            end
+        endcase
+        
     end
-endgenerate
+end
 
-
-generate
-    if (AU_ID == 0) begin
-        shiftreg #(.SHIFT(depth+5),.DATA(log_depth+1)) sre102(clk,rst,ctr,ctr_out);
+always @(posedge clk or posedge rst) begin
+    if (rst) begin
+        start_addr_gen <= 1'b0;
     end else begin
-        shiftreg #(.SHIFT(depth+7),.DATA(log_depth+1)) sre102(clk,rst,ctr,ctr_out);
+        case (curr_state)
+            OP_STARTED: 
+                start_addr_gen <= 1'b1; 
+            default: begin
+                start_addr_gen <= 1'b0;
+            end
+        endcase
     end
-endgenerate
+end
 
 
-generate
-    addr_gen #(.LARGE(LARGE),.LOGN(LOGN), .LOGN1(LOGN1), .size0(size0), .size1(size1), .LOGTP(LOGTP)) small_addr_gen_sm_unit (clk, rst, start_addr_sig, read_addr_res, write_addr_res);
-endgenerate
+if (AU_ID == 0) begin
+    shiftreg #(
+        .SHIFT (2),
+        .DATA  (1)
+    ) sre100 (
+        .clk      (clk             ),
+        .reset    (rst             ),
+        .data_in  (start_addr_gen  ),
+        .data_out (start_take_input)
+    );
+
+    assign start_addr_sig = start_addr_gen;
+end else begin
+    shiftreg #(
+        .SHIFT (4),
+        .DATA  (1)
+    ) sre200 (
+        .clk      (clk             ),
+        .reset    (rst             ),
+        .data_in  (start_addr_gen  ),
+        .data_out (start_take_input)
+    );
+
+    shiftreg #(
+        .SHIFT (2),
+        .DATA  (1)
+    ) sre100 (
+        .clk      (clk                ),
+        .reset    (rst                ),
+        .data_in  (start_addr_gen     ),
+        .data_out (start_addr_gen_shifted)
+    );
+
+    assign start_addr_sig = start_addr_gen_shifted;
+end
+
+if (AU_ID == 0) begin
+    shiftreg #(
+        .SHIFT (2),
+        .DATA  (LOG_DEPTH)
+    ) sre101 (
+        .clk      (clk        ),
+        .reset    (rst        ),
+        .data_in  (ctr        ),
+        .data_out (ctr_shifted)
+    );
+end else begin
+    shiftreg #(
+        .SHIFT (4),
+        .DATA  (LOG_DEPTH)
+    ) sre101 (
+        .clk      (clk        ),
+        .reset    (rst        ),
+        .data_in  (ctr        ),
+        .data_out (ctr_shifted)
+    );
+end
+
+if (AU_ID == 0) begin
+    shiftreg #(
+        .SHIFT (DEPTH + 5),
+        .DATA  (LOG_DEPTH)
+    ) sre102 (
+        .clk      (clk     ),
+        .reset    (rst     ),
+        .data_in  (ctr     ),
+        .data_out (ctr_out )
+    );
+end else begin
+    shiftreg #(
+        .SHIFT (DEPTH + 7),
+        .DATA  (LOG_DEPTH)
+    ) sre102 (
+        .clk      (clk     ),
+        .reset    (rst     ),
+        .data_in  (ctr     ),
+        .data_out (ctr_out )
+    );
+end
 
 
-generate
+automorphism_addr_gen #(
+    .LARGE (LARGE ),
+    .LOGN  (LOGN  ),
+    .LOGN1 (LOGN1 ),
+    .size0 (SIZE0 ),
+    .size1 (SIZE1 ),
+    .LOGTP (LOGTP )
+) addr_gen_sm (
+    .clk        (clk            ),
+    .rst        (rst            ),
+    .start      (start_addr_sig ),
+    .read_addr  (read_addr_res  ),
+    .write_addr (write_addr_res )
+);
+
+
+for (genvar rot = 0; rot < TP; rot = rot + 1) begin
+    assign input_data_int[rot] = input_data[rot*LOGQ +: LOGQ];
+end
+
+
+
+if (LARGE) begin
+    for (genvar rot = 0; rot < TP; rot = rot + 1 ) begin
+        always @(posedge clk) begin
+            input_data_shift[rot*LOGQ +: LOGQ] <= input_data_int[(((rot + (ctr_shifted>>SIZE0_OVER_TP_MULT_SIZE1_OVER_TP_LOG2))&(TP-1)))];
+        end
+    end
+end else begin
     for (genvar rot = 0; rot < TP; rot = rot + 1) begin
-        assign input_data_int[rot] = input_data[rot*LOGQ +: LOGQ];
-    end
-endgenerate
-
-generate
-    if (LARGE) begin
-        for (genvar rot = 0; rot < TP; rot = rot + 1 ) begin
-            always @(posedge clk) begin
-                input_data_shift[rot*LOGQ +: LOGQ] <= input_data_int[(((rot + (ctr_shifted>>size0_over_tp_mult_size1_over_tp_log2))&(TP-1)))];
-            end
-        end
-    end else begin
-        for (genvar rot = 0; rot < TP; rot = rot + 1) begin
-            always @(posedge clk) begin
-                input_data_shift[(TP-rot)*LOGQ-1 -: LOGQ] <= input_data_int[TP-((   ((((rot - (ctr_shifted&(size0_over_tp-1)))&(TP-1))) >> LOGN2) + (((rot - (ctr_shifted&(size0/TP-1)))&(N2-1))*(TP/N2)))&(TP-1))-1];
-            end
+        always @(posedge clk) begin
+            input_data_shift[(TP-rot)*LOGQ-1 -: LOGQ] <= input_data_int[TP-((   ((((rot - (ctr_shifted&(SIZE0_OVER_TP-1)))&(TP-1))) >> LOGN2) + (((rot - (ctr_shifted&(SIZE0/TP-1)))&(N2-1))*(TP/N2)))&(TP-1))-1];
         end
     end
-endgenerate
+end
 
 
-generate
-    for (genvar rot = 0; rot < TP; rot = rot + 1) begin
-        assign input_data_shift_int[rot] = input_data_shift[rot*LOGQ +: LOGQ];
-    end
-endgenerate
 
 
-generate
-    for (genvar k = 0; k < TP; k = k + 1) begin
-        always @(posedge clk or posedge rst) begin
-            if (rst) begin
-                di00[k]       <= 0;
-                dr00[k]       <= 0;
-                dw00[k]       <= 0;
-                de00[k]       <= 0;
-            end else begin
-                di00[k]       <= input_data_shift_int[(TP-k-1)];
-                dr00[k]       <= read_addr_res[(TP-k)*(log_depth+1)-1-:log_depth+1];
-                dw00[k]       <= write_addr_res[(TP-k)*(log_depth+1)-1-:log_depth+1];
-                de00[k]       <= start_take_input;                        
-            end
+for (genvar rot = 0; rot < TP; rot = rot + 1) begin
+    assign input_data_shift_int[rot] = input_data_shift[rot*LOGQ +: LOGQ];
+end
+
+
+
+for (genvar k = 0; k < TP; k = k + 1) begin
+    always @(posedge clk or posedge rst) begin
+        if (rst) begin
+            di00[k]       <= 0;
+            dr00[k]       <= 0;
+            dw00[k]       <= 0;
+            de00[k]       <= 0;
+        end else begin
+            di00[k]       <= input_data_shift_int[(TP-k-1)];
+            dr00[k]       <= read_addr_res[(TP-k)*(LOG_DEPTH)-1-:LOG_DEPTH];
+            dw00[k]       <= write_addr_res[(TP-k)*(LOG_DEPTH)-1-:LOG_DEPTH];
+            de00[k]       <= start_take_input;                        
         end
     end
-endgenerate
-
-generate
-
-    for (genvar c2 = 0; c2 < TP; c2 = c2 + 1) begin: BRAM_GEN_BLOCK_NTT0 // BRAM for NTT
-        BRAM #(LOGQ, BRAM_size, BRAM_log_size) bm000(clk,de00[1*c2+0],dw00[1*c2+0],di00[1*c2+0],dr00[1*c2+0],do00[1*c2+0]); // 64 BRAMs * 128 depth (2**7) * 32 bit
-    end
-endgenerate
+end
 
 
+for (genvar c2 = 0; c2 < TP; c2 = c2 + 1) begin: BRAM_GEN_BLOCK_NTT0 // BRAM for NTT
+   BRAM #(
+    .DSIZE (LOGQ         ),
+    .MSIZE (BRAM_SIZE    ),
+    .DEPTH (BRAM_LOG_SIZE)
+) bm000 (
+    .clk   (clk          ),
+    .wen   (de00[c2]     ),
+    .waddr (dw00[c2]     ),
+    .din   (di00[c2]     ),
+    .raddr (dr00[c2]     ),
+    .dout  (do00[c2]     )
+);
+end
 
-generate
-    
-    if (LARGE) begin
-        for (genvar i = 0; i < TP; i = i + 1) begin
-            always @(posedge clk ) begin
-                output_data[(TP-i)*LOGQ-1-:LOGQ] <= do00[(i + (((ctr_out>>size1_over_tp_log2)&(depth-1))))&(TP-1)];
-            end
+
+
+
+
+if (LARGE) begin
+    for (genvar i = 0; i < TP; i = i + 1) begin
+        always @(posedge clk ) begin
+            output_data[(TP-i)*LOGQ-1-:LOGQ] <= do00[(i + (((ctr_out>>SIZE1_OVER_TP_LOG2)&(DEPTH-1))))&(TP-1)];
         end
-    end else begin
-        for (genvar i = 0; i < TP; i = i + 1) begin
-            always @(posedge clk ) begin
-                output_data[(TP-i)*LOGQ-1 -: LOGQ] <= do00[(i + (ctr_out&(size0_over_tp-1)))&(TP-1)];
-            end
+    end
+end else begin
+    for (genvar i = 0; i < TP; i = i + 1) begin
+        always @(posedge clk ) begin
+            output_data[(TP-i)*LOGQ-1 -: LOGQ] <= do00[(i + (ctr_out&(SIZE0_OVER_TP-1)))&(TP-1)];
         end
     end
-    
-endgenerate
-
-
-
-
-
-
+end
 
 endmodule

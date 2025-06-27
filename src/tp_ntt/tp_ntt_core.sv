@@ -53,40 +53,38 @@ reg  [LOGQ*N- 1  :0] i_poly_q;
 
 /////////////////////////// stage connections ///////////////////////////
 
-generate
-    for (genvar i = 0; i < LOGN; i = i + 1) begin 
-        for (genvar j = 0; j < (N >> 1) ; j = j + 1) begin
-            assign stage_out[i][(j << 1)    ] = E[i][j];
-            assign stage_out[i][(j << 1) + 1] = O[i][j];
-        end
+
+for (genvar i = 0; i < LOGN; i = i + 1) begin 
+    for (genvar j = 0; j < (N >> 1) ; j = j + 1) begin
+        assign stage_out[i][(j << 1)    ] = E[i][j];
+        assign stage_out[i][(j << 1) + 1] = O[i][j];
     end
-endgenerate
+end
 
 
-generate
-    for (genvar j = 0; j < (LOGN - 1); j = j + 1) begin 
-        for (genvar i = 0; i < (N >> 1); i = i + 1) begin
-            assign stage_in[j + 1][(((i << 1) & ((N >> j) - 1)) / (N >> (j + 1))) + ((i << 1) & ((N >> (j + 1)) - 1)) + (((i << 1) / (N >> j)) * (N >> j))                 ] = stage_out[j][(i << 1)    ];
-            assign stage_in[j + 1][(((i << 1) & ((N >> j) - 1)) / (N >> (j + 1))) + ((i << 1) & ((N >> (j + 1)) - 1)) + (((i << 1) / (N >> j)) * (N >> j)) + (N >> (j + 1))] = stage_out[j][(i << 1) + 1];
-        end
+
+
+for (genvar j = 0; j < (LOGN - 1); j = j + 1) begin 
+    for (genvar i = 0; i < (N >> 1); i = i + 1) begin
+        assign stage_in[j + 1][(((i << 1) & ((N >> j) - 1)) / (N >> (j + 1))) + ((i << 1) & ((N >> (j + 1)) - 1)) + (((i << 1) / (N >> j)) * (N >> j))                 ] = stage_out[j][(i << 1)    ];
+        assign stage_in[j + 1][(((i << 1) & ((N >> j) - 1)) / (N >> (j + 1))) + ((i << 1) & ((N >> (j + 1)) - 1)) + (((i << 1) / (N >> j)) * (N >> j)) + (N >> (j + 1))] = stage_out[j][(i << 1) + 1];
     end
-endgenerate
+end
 
 
-generate
-    for (genvar j = 0; j < LOGN; j = j + 1) begin
-        for (genvar i = 0; i < (N >> 1); i = i + 1) begin
-            always @(posedge clk) begin
-                if (intt) begin
-                    psi_st[j][i] <= psi_q[j][((N - 1 - ((2 * ((1 << (LOGN - 1)) - (1 << (LOGN - j - 1)))) + (i&((1<<(LOGN-(j+1)))-1)))) * LOGQ) - 1 -: LOGQ];
-                end else begin
-                    psi_st[j][i] <= psi_q[j][((N - 1 - (((1 << j) - 1) + i / (N >> (j + 1)))) * LOGQ) - 1 -: LOGQ];   
-                end
-                             
+
+
+for (genvar j = 0; j < LOGN; j = j + 1) begin
+    for (genvar i = 0; i < (N >> 1); i = i + 1) begin
+        always @(posedge clk) begin
+            if (intt) begin
+                psi_st[j][i] <= psi_q[j][((N - 1 - ((2 * ((1 << (LOGN - 1)) - (1 << (LOGN - j - 1)))) + (i&((1<<(LOGN-(j+1)))-1)))) * LOGQ) - 1 -: LOGQ];
+            end else begin
+                psi_st[j][i] <= psi_q[j][((N - 1 - (((1 << j) - 1) + i / (N >> (j + 1)))) * LOGQ) - 1 -: LOGQ];   
             end
         end
     end
-endgenerate
+end
 
 /////////////////////////////////////////////////////////////////////////
 
@@ -95,11 +93,10 @@ endgenerate
 
 /////////////////////////// output //////////////////////////////////////
 
-generate
-    for (genvar i = 0; i < N; i = i + 1) begin 
-        assign o_poly[(N - i) * LOGQ - 1 -: LOGQ] = stage_out[LOGN - 1][i];
-    end
-endgenerate
+
+for (genvar i = 0; i < N; i = i + 1) begin 
+    assign o_poly[(N - i) * LOGQ - 1 -: LOGQ] = stage_out[LOGN - 1][i];
+end
 
 /////////////////////////////////////////////////////////////////////////
 
@@ -108,27 +105,26 @@ endgenerate
 
 ///////////////////// butterfly instantiations //////////////////////////
 
-generate
-    for (genvar j = 0; j < LOGN ; j = j + 1) begin
-        for (genvar i = 0; i < (N >> 1); i = i + 1) begin: BTF_GEN_BLOCK
-            butterfly #(
-                .LOGQ    (LOGQ    ),
-                .LOGQH   (LOGQH   ),
-                .NON_STD (NON_STD ),
-                .MORE_DSP(MORE_DSP)
-            ) butterfly_inst (
-                .clk(clk         ),
-                .CT (CT    [j][i]),
-                .A  (A     [j][i]),
-                .B  (B     [j][i]),
-                .psi(psi_st[j][i]),
-                .qH (qH_q  [j][i]),
-                .E  (E     [j][i]),
-                .O  (O     [j][i])
-            );
-        end
+
+for (genvar j = 0; j < LOGN ; j = j + 1) begin
+    for (genvar i = 0; i < (N >> 1); i = i + 1) begin: BTF_GEN_BLOCK
+        butterfly #(
+            .LOGQ    (LOGQ    ),
+            .LOGQH   (LOGQH   ),
+            .NON_STD (NON_STD ),
+            .MORE_DSP(MORE_DSP)
+        ) butterfly_inst (
+            .clk(clk         ),
+            .CT (CT    [j][i]),
+            .A  (A     [j][i]),
+            .B  (B     [j][i]),
+            .psi(psi_st[j][i]),
+            .qH (qH_q  [j][i]),
+            .E  (E     [j][i]),
+            .O  (O     [j][i])
+        );
     end
-endgenerate
+end
 
 /////////////////////////////////////////////////////////////////////////
 
@@ -137,21 +133,19 @@ endgenerate
 
 /////////////////// shift registers for twiddles ////////////////////////
 
-generate
-    for (genvar i = 0; i < LOGN; i = i + 1) begin
-        localparam SHIFT = (i == 0) ? 1   : BTF_LAT + 1;
-        assign psi_mx[i] = (i == 0) ? psi : psi_q[i - 1];
-        shiftreg #(
-            .SHIFT(SHIFT),
-            .DATA((N - 1)*LOGQ)
-        ) shiftreg_psi (
-            .clk     (clk      ),
-            .reset   (1'b0     ),
-            .data_in (psi_mx[i]),
-            .data_out(psi_q [i])
-        );
-    end
-endgenerate
+for (genvar i = 0; i < LOGN; i = i + 1) begin
+    localparam SHIFT = (i == 0) ? 1   : BTF_LAT + 1;
+    assign psi_mx[i] = (i == 0) ? psi : psi_q[i - 1];
+    shiftreg #(
+        .SHIFT(SHIFT),
+        .DATA((N - 1)*LOGQ)
+    ) shiftreg_psi (
+        .clk     (clk      ),
+        .reset   (1'b0     ),
+        .data_in (psi_mx[i]),
+        .data_out(psi_q [i])
+    );
+end
 
 /////////////////////////////////////////////////////////////////////////
 
@@ -159,8 +153,6 @@ endgenerate
 
 
 ////////////////// sequential logic for butterfly input/output //////////
-
-generate
 
     for (genvar i = 0; i < (N >> 1); i = i + 1) begin
         for (genvar j = 0; j < LOGN; j = j + 1) begin
@@ -186,12 +178,7 @@ generate
         end
     end
 
-endgenerate
-
 /////////////////////////////////////////////////////////////////////////
-
-
-
 
 //////////////////////////// register input /////////////////////////////
 

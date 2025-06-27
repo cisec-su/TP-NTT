@@ -26,21 +26,21 @@ module tp_ntt_top
     );
 
 
-localparam tp_ntt_params_t tp_ntt_params = {LOGN, LOGN1, LOGN2, LOGN3, LOGTP, LOGQ, LOGQH, NON_STD, MORE_DSP};
-localparam tp_ntt_dim_t DIM = tp_ntt_dim(tp_ntt_params);
-localparam butterfly_params_t butterfly_params = {LOGQ, LOGQH, NON_STD, MORE_DSP};
-localparam LAT     = tp_ntt_lat(tp_ntt_params);
-localparam BTF_LAT = butterfly_lat(butterfly_params);    
-localparam LOGN4   = tp_ntt_logn4(tp_ntt_params);
-localparam D   =  tp_ntt_d(tp_ntt_params);
-localparam D1  =  tp_ntt_d1(tp_ntt_params);
-localparam D2  =  tp_ntt_d2(tp_ntt_params);
-localparam N  = 1 << LOGN;
-localparam N1 = 1 << LOGN1;
-localparam N2 = 1 << LOGN2;
-localparam N3 = 1 << LOGN3;
-localparam TP = 1 << LOGTP;
-localparam N4 = 1 << LOGN4;
+localparam tp_ntt_params_t TP_NTT_PARAMS        = {LOGN, LOGN1, LOGN2, LOGN3, LOGTP, LOGQ, LOGQH, NON_STD, MORE_DSP};
+localparam tp_ntt_dim_t DIM                     = tp_ntt_dim(TP_NTT_PARAMS);
+localparam butterfly_params_t BUTTERFLY_PARAMS  = {LOGQ, LOGQH, NON_STD, MORE_DSP};
+localparam LAT                                  = tp_ntt_lat(TP_NTT_PARAMS);
+localparam BTF_LAT                              = butterfly_lat(BUTTERFLY_PARAMS);    
+localparam LOGN4                                = tp_ntt_logn4(TP_NTT_PARAMS);
+localparam D                                    = tp_ntt_d(TP_NTT_PARAMS);
+localparam D1                                   = tp_ntt_d1(TP_NTT_PARAMS);
+localparam D2                                   = tp_ntt_d2(TP_NTT_PARAMS);
+localparam N                                    = 1 << LOGN;
+localparam N1                                   = 1 << LOGN1;
+localparam N2                                   = 1 << LOGN2;
+localparam N3                                   = 1 << LOGN3;
+localparam TP                                   = 1 << LOGTP;
+localparam N4                                   = 1 << LOGN4;
 
 
 wire start_ntt2, start_ntt3, start_ntt4, start_au1, start_au2, start_au3, start_au1_v1, start_au1_v2;
@@ -57,334 +57,448 @@ always @(posedge clk) begin
 end
 
 
-generate
-    if (DIM == DIM_2D) begin
-        tp_ntt_core_wrapper #(
-            .DIM(DIM),
-            .LOGN(LOGN),
-            .LOGN1(LOGN1),
-            .LOGN2(LOGN2),
-            .LOGTP(LOGTP),
-            .LOGQ(LOGQ),
-            .LOGQH(LOGQH),
-            .BLOCK_ID(0),       
-            .LARGE(0),
-            .RW_DIS(0)
-        ) tp_ntt_d1 (
-            .clk(clk), 
-            .rst(rst), 
-            .start(start),
-            .op(op), 
-            .intt(intt),
-            .qH(qH), 
-            .i_poly(poly_d3), 
-            .psi(psi), 
-            .o_poly(poly_ntt1)
-        );
 
-        automorphism_unit#(
-            .LARGE(0),
-            .LOGN(LOGN),            
-            .LOGN1(LOGN1),
-            .LOGN2(LOGN2),   
-            .LOGTP(LOGTP),           
-            .LOGQ(LOGQ),
-            .AU_ID(0)         
-        ) AU1 (
-            .clk(clk),         
-            .rst(rst),         
-            .start(start_au1),
-            .input_data(poly_ntt1),  
-            .output_data(poly_au1)    
-        );
+if (DIM == DIM_2D) begin
+    tp_ntt_core_wrapper #(
+        .DIM(DIM),
+        .LOGN(LOGN),
+        .LOGN1(LOGN1),
+        .LOGN2(LOGN2),
+        .LOGTP(LOGTP),
+        .LOGQ(LOGQ),
+        .LOGQH(LOGQH),
+        .BLOCK_ID(0),       
+        .LARGE(0),
+        .RW_DIS(0)
+    ) tp_ntt_d1 (
+        .clk(clk), 
+        .rst(rst), 
+        .start(start),
+        .op(op), 
+        .intt(intt),
+        .qH(qH), 
+        .i_poly(poly_d3), 
+        .psi(psi), 
+        .o_poly(poly_ntt1)
+    );
 
-        tp_ntt_core_wrapper #(
-            .DIM(DIM),
-            .LOGN(LOGN),
-            .LOGN1(LOGN2),
-            .LOGN2(LOGN1),
-            .LOGTP(LOGTP),
-            .LOGQ(LOGQ),
-            .LOGQH(LOGQH),
-            .BLOCK_ID(1),       
-            .LARGE(1),
-            .RW_DIS(1)
-        ) tp_ntt_d2 (
-          .clk(clk), 
-          .rst(rst), 
-          .start(start_ntt2),
-          .op(op), 
-          .intt(intt),
-          .qH(qH), 
-          .i_poly(poly_au1), 
-          .psi(psi), 
-          .o_poly(poly_ntt2)
-        );
-    end
-    else if (DIM == DIM_3D) begin        
-        tp_ntt_core_wrapper #(
-            .DIM(DIM),
-            .LOGN(LOGN),
-            .LOGN1(LOGN1),
-            .LOGN2(LOGN2),
-            .LOGTP(LOGTP),
-            .LOGQ(LOGQ),
-            .LOGQH(LOGQH),
-            .BLOCK_ID(0),       
-            .LARGE(0),
-            .RW_DIS(0)
-        ) tp_ntt_d1 (
-            .clk(clk), 
-            .rst(rst), 
-            .start(start),
-            .op(op), 
-            .intt(intt),
-            .qH(qH), 
-            .i_poly(poly_d3), 
-            .psi(psi), 
-            .o_poly(poly_ntt1)
-        );
+    automorphism_unit#(
+        .LARGE(0),
+        .LOGN(LOGN),            
+        .LOGN1(LOGN1),
+        .LOGN2(LOGN2),   
+        .LOGTP(LOGTP),           
+        .LOGQ(LOGQ),
+        .AU_ID(0)         
+    ) AU1 (
+        .clk(clk),         
+        .rst(rst),         
+        .start(start_au1),
+        .input_data(poly_ntt1),  
+        .output_data(poly_au1)    
+    );
 
-        automorphism_unit #(
-            .LARGE(0),
-            .LOGN(LOGN),            
-            .LOGN1(LOGN1),
-            .LOGN2(LOGN2),           
-            .LOGTP(LOGTP),           
-            .LOGQ(LOGQ),
-            .AU_ID(0)         
-        ) AU1 (
-            .clk(clk),         
-            .rst(rst),         
-            .start(start_au1),
-            .input_data(poly_ntt1),  
-            .output_data(poly_au1)    
-        );
+    tp_ntt_core_wrapper #(
+        .DIM(DIM),
+        .LOGN(LOGN),
+        .LOGN1(LOGN2),
+        .LOGN2(LOGN1),
+        .LOGTP(LOGTP),
+        .LOGQ(LOGQ),
+        .LOGQH(LOGQH),
+        .BLOCK_ID(1),       
+        .LARGE(1),
+        .RW_DIS(1)
+    ) tp_ntt_d2 (
+        .clk(clk), 
+        .rst(rst), 
+        .start(start_ntt2),
+        .op(op), 
+        .intt(intt_ntt2),
+        .qH(qH), 
+        .i_poly(poly_au1), 
+        .psi(psi), 
+        .o_poly(poly_ntt2)
+    );
+end
+else if (DIM == DIM_3D) begin        
+    tp_ntt_core_wrapper #(
+        .DIM(DIM),
+        .LOGN(LOGN),
+        .LOGN1(LOGN1),
+        .LOGN2(LOGN2),
+        .LOGTP(LOGTP),
+        .LOGQ(LOGQ),
+        .LOGQH(LOGQH),
+        .BLOCK_ID(0),       
+        .LARGE(0),
+        .RW_DIS(0)
+    ) tp_ntt_d1 (
+        .clk(clk), 
+        .rst(rst), 
+        .start(start),
+        .op(op), 
+        .intt(intt),
+        .qH(qH), 
+        .i_poly(poly_d3), 
+        .psi(psi), 
+        .o_poly(poly_ntt1)
+    );
 
-        tp_ntt_core_wrapper #(
-            .DIM(DIM),
-            .LOGN(LOGN),
-            .LOGN1(LOGN2),
-            .LOGN2(LOGN1),
-            .LOGTP(LOGTP),
-            .LOGQ(LOGQ),         
-            .LOGQH(LOGQH),
-            .BLOCK_ID(1),       
-            .LARGE(1),
-            .RW_DIS(0)
-        ) tp_ntt_d2 (
-            .clk(clk), 
-            .rst(rst), 
-            .start(start_ntt2),
-            .op(op), 
-            .intt(intt_ntt2),
-            .qH(qH), 
-            .i_poly(poly_au1), 
-            .psi(psi), 
-            .o_poly(poly_ntt2)
-        );
+    automorphism_unit #(
+        .LARGE(0),
+        .LOGN(LOGN),            
+        .LOGN1(LOGN1),
+        .LOGN2(LOGN2),           
+        .LOGTP(LOGTP),           
+        .LOGQ(LOGQ),
+        .AU_ID(0)         
+    ) AU1 (
+        .clk(clk),         
+        .rst(rst),         
+        .start(start_au1),
+        .input_data(poly_ntt1),  
+        .output_data(poly_au1)    
+    );
 
-        automorphism_unit #(
-            .LARGE(1),
-            .LOGN(LOGN),            
-            .LOGN1(LOGN2),
-            .LOGN2(LOGN1),           
-            .LOGTP(LOGTP),           
-            .LOGQ(LOGQ),
-            .AU_ID(1)         
-        ) AU2 (
-            .clk(clk),         
-            .rst(rst),         
-            .start(start_au2),
-            .input_data(poly_ntt2),  
-            .output_data(poly_au2)    
-        );
+    tp_ntt_core_wrapper #(
+        .DIM(DIM),
+        .LOGN(LOGN),
+        .LOGN1(LOGN2),
+        .LOGN2(LOGN1),
+        .LOGTP(LOGTP),
+        .LOGQ(LOGQ),         
+        .LOGQH(LOGQH),
+        .BLOCK_ID(1),       
+        .LARGE(1),
+        .RW_DIS(0)
+    ) tp_ntt_d2 (
+        .clk(clk), 
+        .rst(rst), 
+        .start(start_ntt2),
+        .op(op), 
+        .intt(intt_ntt2),
+        .qH(qH), 
+        .i_poly(poly_au1), 
+        .psi(psi), 
+        .o_poly(poly_ntt2)
+    );
 
-        tp_ntt_core_wrapper #(
-            .DIM(DIM),
-            .LOGN(LOGN),
-            .LOGN1(LOGN3),
-            .LOGN2(LOGN4),
-            .LOGTP(LOGTP),
-            .LOGQ(LOGQ),         
-            .LOGQH(LOGQH),
-            .BLOCK_ID(2),       
-            .LARGE(0),
-            .RW_DIS(1)
-        ) tp_ntt_d3 (
-            .clk(clk), 
-            .rst(rst), 
-            .start(start_ntt3),
-            .op(op), 
-            .intt(intt_ntt3),
-            .qH(qH), 
-            .i_poly(poly_au2), 
-            .psi(psi), 
-            .o_poly(poly_ntt3)
-        );
-    end
-    else if (DIM == DIM_4D) begin
-        tp_ntt_core_wrapper #(
-            .DIM(DIM),
-            .LOGN(LOGN),
-            .LOGN1(LOGN1),
-            .LOGN2(LOGN2),
-            .LOGTP(LOGTP),
-            .LOGQ(LOGQ),         
-            .LOGQH(LOGQH),
-            .BLOCK_ID(0),       
-            .LARGE(0),
-            .RW_DIS(0)
-        ) tp_ntt_d1 (
-            .clk(clk), 
-            .rst(rst), 
-            .start(start),
-            .op(op), 
-            .intt(intt),
-            .qH(qH), 
-            .i_poly(poly_d3), 
-            .psi(psi), 
-            .o_poly(poly_ntt1)
-        );
+    automorphism_unit #(
+        .LARGE(1),
+        .LOGN(LOGN),            
+        .LOGN1(LOGN2),
+        .LOGN2(LOGN1),           
+        .LOGTP(LOGTP),           
+        .LOGQ(LOGQ),
+        .AU_ID(1)         
+    ) AU2 (
+        .clk(clk),         
+        .rst(rst),         
+        .start(start_au2),
+        .input_data(poly_ntt2),  
+        .output_data(poly_au2)    
+    );
 
-        automorphism_unit #(
-            .LARGE(0),
-            .LOGN(LOGN),            
-            .LOGN1(LOGN1),
-            .LOGN2(LOGN2),           
-            .LOGTP(LOGTP),           
-            .LOGQ(LOGQ),
-            .AU_ID(0)         
-        ) AU1 (
-            .clk(clk),         
-            .rst(rst),         
-            .start(start_au1),
-            .input_data(poly_ntt1),  
-            .output_data(poly_au1)    
-        );
+    tp_ntt_core_wrapper #(
+        .DIM(DIM),
+        .LOGN(LOGN),
+        .LOGN1(LOGN3),
+        .LOGN2(LOGN4),
+        .LOGTP(LOGTP),
+        .LOGQ(LOGQ),         
+        .LOGQH(LOGQH),
+        .BLOCK_ID(2),       
+        .LARGE(0),
+        .RW_DIS(1)
+    ) tp_ntt_d3 (
+        .clk(clk), 
+        .rst(rst), 
+        .start(start_ntt3),
+        .op(op), 
+        .intt(intt_ntt3),
+        .qH(qH), 
+        .i_poly(poly_au2), 
+        .psi(psi), 
+        .o_poly(poly_ntt3)
+    );
+end
+else if (DIM == DIM_4D) begin
+    tp_ntt_core_wrapper #(
+        .DIM(DIM),
+        .LOGN(LOGN),
+        .LOGN1(LOGN1),
+        .LOGN2(LOGN2),
+        .LOGTP(LOGTP),
+        .LOGQ(LOGQ),         
+        .LOGQH(LOGQH),
+        .BLOCK_ID(0),       
+        .LARGE(0),
+        .RW_DIS(0)
+    ) tp_ntt_d1 (
+        .clk(clk), 
+        .rst(rst), 
+        .start(start),
+        .op(op), 
+        .intt(intt),
+        .qH(qH), 
+        .i_poly(poly_d3), 
+        .psi(psi), 
+        .o_poly(poly_ntt1)
+    );
 
-        tp_ntt_core_wrapper #(
-            .DIM(DIM),
-            .LOGN(LOGN),
-            .LOGN1(LOGN2),
-            .LOGN2(LOGN1),
-            .LOGTP(LOGTP),
-            .LOGQ(LOGQ),         
-            .LOGQH(LOGQH),
-            .BLOCK_ID(1),       
-            .LARGE(1),
-            .RW_DIS(0)
-        ) tp_ntt_d2 (
-            .clk(clk), 
-            .rst(rst), 
-            .start(start_ntt2),
-            .op(op), 
-            .intt(intt),
-            .qH(qH), 
-            .i_poly(poly_au1), 
-            .psi(psi), 
-            .o_poly(poly_ntt2)
-        );
+    automorphism_unit #(
+        .LARGE(0),
+        .LOGN(LOGN),            
+        .LOGN1(LOGN1),
+        .LOGN2(LOGN2),           
+        .LOGTP(LOGTP),           
+        .LOGQ(LOGQ),
+        .AU_ID(0)         
+    ) AU1 (
+        .clk(clk),         
+        .rst(rst),         
+        .start(start_au1),
+        .input_data(poly_ntt1),  
+        .output_data(poly_au1)    
+    );
 
-        automorphism_unit #(
-            .LARGE(1),
-            .LOGN(LOGN),            
-            .LOGN1(LOGN2),
-            .LOGN2(LOGN1),        
-            .LOGTP(LOGTP),           
-            .LOGQ(LOGQ),
-            .AU_ID(1)         
-        ) AU2 (
-            .clk(clk),         
-            .rst(rst),         
-            .start(start_au2),
-            .input_data(poly_ntt2),  
-            .output_data(poly_au2)    
-        );
+    tp_ntt_core_wrapper #(
+        .DIM(DIM),
+        .LOGN(LOGN),
+        .LOGN1(LOGN2),
+        .LOGN2(LOGN1),
+        .LOGTP(LOGTP),
+        .LOGQ(LOGQ),         
+        .LOGQH(LOGQH),
+        .BLOCK_ID(1),       
+        .LARGE(1),
+        .RW_DIS(0)
+    ) tp_ntt_d2 (
+        .clk(clk), 
+        .rst(rst), 
+        .start(start_ntt2),
+        .op(op), 
+        .intt(intt_ntt2),
+        .qH(qH), 
+        .i_poly(poly_au1), 
+        .psi(psi), 
+        .o_poly(poly_ntt2)
+    );
 
-        tp_ntt_core_wrapper #(
-            .DIM(DIM),
-            .LOGN(LOGN),
-            .LOGN1(LOGN3),
-            .LOGN2(LOGN4),
-            .LOGTP(LOGTP),
-            .LOGQ(LOGQ),         
-            .LOGQH(LOGQH),
-            .BLOCK_ID(2),       
-            .LARGE(0),
-            .RW_DIS(0)
-        ) tp_ntt_d3 (
-            .clk(clk), 
-            .rst(rst), 
-            .start(start_ntt3),
-            .op(op), 
-            .intt(intt),
-            .qH(qH), 
-            .i_poly(poly_au2), 
-            .psi(psi), 
-            .o_poly(poly_ntt3)
-        );
+    automorphism_unit #(
+        .LARGE(1),
+        .LOGN(LOGN),            
+        .LOGN1(LOGN2),
+        .LOGN2(LOGN1),        
+        .LOGTP(LOGTP),           
+        .LOGQ(LOGQ),
+        .AU_ID(1)         
+    ) AU2 (
+        .clk(clk),         
+        .rst(rst),         
+        .start(start_au2),
+        .input_data(poly_ntt2),  
+        .output_data(poly_au2)    
+    );
 
-        automorphism_unit #(
-            .LARGE(0),
-            .LOGN(LOGN),
-            .LOGN1(LOGN3),
-            .LOGN2(LOGN4),
-            .LOGTP(LOGTP),
-            .LOGQ(LOGQ),
-            .AU_ID(2)
-        ) AU3 (
-            .clk(clk),         
-            .rst(rst),         
-            .start(start_au3),
-            .input_data(poly_ntt3),  
-            .output_data(poly_au3)    
-        );
+    tp_ntt_core_wrapper #(
+        .DIM(DIM),
+        .LOGN(LOGN),
+        .LOGN1(LOGN3),
+        .LOGN2(LOGN4),
+        .LOGTP(LOGTP),
+        .LOGQ(LOGQ),         
+        .LOGQH(LOGQH),
+        .BLOCK_ID(2),       
+        .LARGE(0),
+        .RW_DIS(0)
+    ) tp_ntt_d3 (
+        .clk(clk), 
+        .rst(rst), 
+        .start(start_ntt3),
+        .op(op), 
+        .intt(intt_ntt3),
+        .qH(qH), 
+        .i_poly(poly_au2), 
+        .psi(psi), 
+        .o_poly(poly_ntt3)
+    );
 
-        tp_ntt_core_wrapper #(
-            .DIM(DIM),
-            .LOGN(LOGN),
-            .LOGN1(LOGN4),
-            .LOGN2(LOGN3),
-            .LOGTP(LOGTP),
-            .LOGQ(LOGQ),         
-            .LOGQH(LOGQH),
-            .BLOCK_ID(3),       
-            .LARGE(0),
-            .RW_DIS(1)
-        ) tp_ntt_d4 (
-            .clk(clk), 
-            .rst(rst), 
-            .start(start_ntt4),
-            .op(op), 
-            .intt(intt),
-            .qH(qH), 
-            .i_poly(poly_au3), 
-            .psi(psi), 
-            .o_poly(poly_ntt4)
-        );
-    end
-endgenerate
+    automorphism_unit #(
+        .LARGE(0),
+        .LOGN(LOGN),
+        .LOGN1(LOGN3),
+        .LOGN2(LOGN4),
+        .LOGTP(LOGTP),
+        .LOGQ(LOGQ),
+        .AU_ID(2)
+    ) AU3 (
+        .clk(clk),         
+        .rst(rst),         
+        .start(start_au3),
+        .input_data(poly_ntt3),  
+        .output_data(poly_au3)    
+    );
+
+    tp_ntt_core_wrapper #(
+        .DIM(DIM),
+        .LOGN(LOGN),
+        .LOGN1(LOGN4),
+        .LOGN2(LOGN3),
+        .LOGTP(LOGTP),
+        .LOGQ(LOGQ),         
+        .LOGQH(LOGQH),
+        .BLOCK_ID(3),       
+        .LARGE(0),
+        .RW_DIS(1)
+    ) tp_ntt_d4 (
+        .clk(clk), 
+        .rst(rst), 
+        .start(start_ntt4),
+        .op(op), 
+        .intt(intt_ntt4),
+        .qH(qH), 
+        .i_poly(poly_au3), 
+        .psi(psi), 
+        .o_poly(poly_ntt4)
+    );
+end
 
 
-shiftreg #(.SHIFT((BTF_LAT + 1)*LOGN1 + 4), .DATA(1)) sre107(clk, rst, start     , start_au1_v1 );
 
-shiftreg #(.SHIFT((BTF_LAT + 1)*LOGN1 + 3), .DATA(1)) sre101(clk, rst, start     , start_au1_v2 );
+shiftreg #(
+    .SHIFT ((BTF_LAT + 1) * LOGN1 + 4),
+    .DATA  (1)
+) sre107 (
+    .clk      (clk         ),
+    .reset    (rst         ),
+    .data_in  (start       ),
+    .data_out (start_au1_v1)
+);
+
+shiftreg #(
+    .SHIFT ((BTF_LAT + 1) * LOGN1 + 3),
+    .DATA  (1)
+) sre101 (
+    .clk      (clk         ),
+    .reset    (rst         ),
+    .data_in  (start       ),
+    .data_out (start_au1_v2)
+);
 
 assign start_au1 = shuffle_mod ? start_au1_v2 : start_au1_v1;
 
-shiftreg #(.SHIFT( D1 + 4                ), .DATA(1)) sre102(clk, rst, start_au1 , start_ntt2);
-shiftreg #(.SHIFT((BTF_LAT + 1)*LOGN2 + 1), .DATA(1)) sre103(clk, rst, start_ntt2, start_au2 );
-shiftreg #(.SHIFT( D + 6                 ), .DATA(1)) sre104(clk, rst, start_au2 , start_ntt3);
-shiftreg #(.SHIFT((BTF_LAT + 1)*LOGN3 + 1), .DATA(1)) sre105(clk, rst, start_ntt3, start_au3 );
-shiftreg #(.SHIFT( D2 + 6                ), .DATA(1)) sre106(clk, rst, start_au3 , start_ntt4);
+shiftreg #(
+    .SHIFT (D1 + 4),
+    .DATA  (1)
+) sre102 (
+    .clk      (clk        ),
+    .reset    (rst        ),
+    .data_in  (start_au1  ),
+    .data_out (start_ntt2 )
+);
 
-shiftreg #(.SHIFT( D1 + 4                ), .DATA(1)) sre201(clk, rst, intt     , intt_au1 );
-shiftreg #(.SHIFT( D1 + 4                ), .DATA(1)) sre202(clk, rst, intt_au1 , intt_ntt2);
-shiftreg #(.SHIFT((BTF_LAT + 1)*LOGN2 + 1), .DATA(1)) sre203(clk, rst, intt_ntt2, intt_au2 );
-shiftreg #(.SHIFT( D + 6                 ), .DATA(1)) sre204(clk, rst, intt_au2 , intt_ntt3);
-shiftreg #(.SHIFT((BTF_LAT + 1)*LOGN3 + 1), .DATA(1)) sre205(clk, rst, intt_ntt3, intt_au3 );
-shiftreg #(.SHIFT( D2 + 6                ), .DATA(1)) sre206(clk, rst, intt_au3 , intt_ntt4);
+shiftreg #(
+    .SHIFT ((BTF_LAT + 1) * LOGN2 + 1),
+    .DATA  (1)
+) sre103 (
+    .clk      (clk       ),
+    .reset    (rst       ),
+    .data_in  (start_ntt2),
+    .data_out (start_au2 )
+);
+
+shiftreg #(
+    .SHIFT (D + 6),
+    .DATA  (1)
+) sre104 (
+    .clk      (clk       ),
+    .reset    (rst       ),
+    .data_in  (start_au2 ),
+    .data_out (start_ntt3)
+);
+
+shiftreg #(
+    .SHIFT ((BTF_LAT + 1) * LOGN3 + 1),
+    .DATA  (1)
+) sre105 (
+    .clk      (clk       ),
+    .reset    (rst       ),
+    .data_in  (start_ntt3),
+    .data_out (start_au3 )
+);
+
+shiftreg #(
+    .SHIFT (D2 + 6),
+    .DATA  (1)
+) sre106 (
+    .clk      (clk       ),
+    .reset    (rst       ),
+    .data_in  (start_au3 ),
+    .data_out (start_ntt4)
+);
+
+shiftreg #(
+    .SHIFT (D1 + 4),
+    .DATA  (1)
+) sre201 (
+    .clk      (clk     ),
+    .reset    (rst     ),
+    .data_in  (intt    ),
+    .data_out (intt_au1)
+);
+
+shiftreg #(
+    .SHIFT (D1 + 4),
+    .DATA  (1)
+) sre202 (
+    .clk      (clk        ),
+    .reset    (rst        ),
+    .data_in  (intt_au1   ),
+    .data_out (intt_ntt2  )
+);
+
+shiftreg #(
+    .SHIFT ((BTF_LAT + 1) * LOGN2 + 1),
+    .DATA  (1)
+) sre203 (
+    .clk      (clk        ),
+    .reset    (rst        ),
+    .data_in  (intt_ntt2  ),
+    .data_out (intt_au2   )
+);
+
+shiftreg #(
+    .SHIFT (D + 6),
+    .DATA  (1)
+) sre204 (
+    .clk      (clk       ),
+    .reset    (rst       ),
+    .data_in  (intt_au2  ),
+    .data_out (intt_ntt3 )
+);
+
+shiftreg #(
+    .SHIFT ((BTF_LAT + 1) * LOGN3 + 1),
+    .DATA  (1)
+) sre205 (
+    .clk      (clk        ),
+    .reset    (rst        ),
+    .data_in  (intt_ntt3  ),
+    .data_out (intt_au3   )
+);
+
+shiftreg #(
+    .SHIFT (D2 + 6),
+    .DATA  (1)
+) sre206 (
+    .clk      (clk        ),
+    .reset    (rst        ),
+    .data_in  (intt_au3   ),
+    .data_out (intt_ntt4  )
+);
+
 
 
 always @(posedge clk or posedge rst) begin

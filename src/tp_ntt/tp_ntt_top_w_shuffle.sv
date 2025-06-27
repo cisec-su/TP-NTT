@@ -26,21 +26,21 @@ module tp_ntt_top_w_shuffle
     );
 
 
-localparam tp_ntt_params_t tp_ntt_params = {LOGN, LOGN1, LOGN2, LOGN3, LOGTP, LOGQ, LOGQH, NON_STD, MORE_DSP};
-localparam tp_ntt_dim_t DIM = tp_ntt_dim(tp_ntt_params);
-localparam butterfly_params_t butterfly_params = {LOGQ, LOGQH, NON_STD, MORE_DSP};
-localparam LAT     = tp_ntt_lat(tp_ntt_params);
-localparam BTF_LAT = butterfly_lat(butterfly_params);    
-localparam LOGN4   = tp_ntt_logn4(tp_ntt_params);
-localparam D   =  tp_ntt_d(tp_ntt_params);
-localparam D1  =  tp_ntt_d1(tp_ntt_params);
-localparam D2  =  tp_ntt_d2(tp_ntt_params);
-localparam N  = 1 << LOGN;
-localparam N1 = 1 << LOGN1;
-localparam N2 = 1 << LOGN2;
-localparam N3 = 1 << LOGN3;
-localparam TP = 1 << LOGTP;
-localparam N4 = 1 << LOGN4;
+localparam tp_ntt_params_t tp_ntt_params        = {LOGN, LOGN1, LOGN2, LOGN3, LOGTP, LOGQ, LOGQH, NON_STD, MORE_DSP};
+localparam tp_ntt_dim_t DIM                     = tp_ntt_dim(tp_ntt_params);
+localparam butterfly_params_t butterfly_params  = {LOGQ, LOGQH, NON_STD, MORE_DSP};
+localparam LAT                                  = tp_ntt_lat(tp_ntt_params);
+localparam BTF_LAT                              = butterfly_lat(butterfly_params);    
+localparam LOGN4                                = tp_ntt_logn4(tp_ntt_params);
+localparam D                                    =  tp_ntt_d(tp_ntt_params);
+localparam D1                                   =  tp_ntt_d1(tp_ntt_params);
+localparam D2                                   =  tp_ntt_d2(tp_ntt_params);
+localparam N                                    = 1 << LOGN;
+localparam N1                                   = 1 << LOGN1;
+localparam N2                                   = 1 << LOGN2;
+localparam N3                                   = 1 << LOGN3;
+localparam TP                                   = 1 << LOGTP;
+localparam N4                                   = 1 << LOGN4;
 
 
 
@@ -56,17 +56,28 @@ always @(posedge clk) begin
     shuffle_in <= poly_d2;
 end
 
+shiftreg #(
+    .SHIFT (14'd128 + 7),
+    .DATA  (1)
+) sre101 (
+    .clk      (clk           ),
+    .reset    (rst           ),
+    .data_in  (start         ),
+    .data_out (start_ntt_top )
+);
 
-generate
+shiftreg #(
+    .SHIFT (1),
+    .DATA  (1)
+) sre102 (
+    .clk      (clk              ),
+    .reset    (rst              ),
+    .data_in  (start_ntt_top    ),
+    .data_out (start_ntt_top_d1 )
+);
 
-endgenerate
-
-
-shiftreg #(.SHIFT(14'd128 + 7), .DATA(1)) sre101(clk, rst, start     , start_ntt_top );
-shiftreg #(.SHIFT(1), .DATA(1)) sre102(clk, rst, start_ntt_top     , start_ntt_top_d1 );
 
 assign start_ntt_top_fn = shuffle_mod ? start_ntt_top_d1 : start_ntt_top;
-
 
 always @(posedge clk or posedge rst) begin
     if (rst) begin

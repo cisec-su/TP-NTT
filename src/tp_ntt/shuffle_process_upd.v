@@ -19,51 +19,46 @@ module shuffle_process_upd
 
 
     
-localparam N  = 1 << LOGN;
-localparam N1 = 1 << LOGN1;
-localparam N2 = 1 << LOGN2;
-localparam TP = 1 << LOGTP;
-localparam size0 = N1 * N2;
-localparam size1 = N / (size0);
-localparam depth  = LARGE ? $rtoi($ceil(N/TP)) : $rtoi($ceil(size0/TP)) ;
-localparam depth_large = $rtoi($ceil(N/TP));
-localparam size1_over_tp = size1/TP;
-localparam size1_over_tp_log2 = $rtoi($ceil($clog2(size1_over_tp)));
-localparam size0_over_tp = size0/TP;
-localparam log_size0_over_tp = $rtoi($ceil($clog2((size0)/TP)));
-localparam size0_over_tp_mult_size1_over_tp_log2 = $rtoi($ceil($clog2((size0/TP)*(size1_over_tp))));
-localparam reg_ctr = $clog2(size0_over_tp);
-
-localparam BRAM_size        = LARGE ? 2*depth : 2*size0_over_tp;
-localparam BRAM_log_size    = LARGE ? $rtoi($ceil($clog2(2*depth))) : log_size0_over_tp + 1;
-
-localparam log_depth  = LARGE ? $rtoi($ceil($clog2(depth))) : log_size0_over_tp;
-localparam log_depth_large = $rtoi($ceil($clog2(depth_large)));
+localparam N                        = 1 << LOGN;
+localparam N1                       = 1 << LOGN1;
+localparam N2                       = 1 << LOGN2;
+localparam TP                       = 1 << LOGTP;
+localparam SIZE0                    = N1 * N2;
+localparam SIZE1                    = N / (SIZE0);
+localparam DEPTH                    = LARGE ? N/TP : SIZE0/TP ;
+localparam DEPTH_LARGE              = N/TP;
+localparam SIZE1_OVER_TP            = SIZE1/TP;
+localparam SIZE0_OVER_TP            = SIZE0/TP;
+localparam LOG_SIZE0_OVER_TP        = $clog2((SIZE0)/TP);
+localparam BRAM_SIZE                = LARGE ? 2*DEPTH : 2*SIZE0_OVER_TP;
+localparam BRAM_LOG_SIZE            = LARGE ? $clog2(2*DEPTH) : LOG_SIZE0_OVER_TP + 1;
+localparam LOG_DEPTH                = LARGE ? $clog2(DEPTH) + 1 : LOG_SIZE0_OVER_TP + 1;
+localparam LOG_DEPTH_LARGE          = $clog2(DEPTH_LARGE) + 1;
 
 // states
-localparam OP_IDLE          = 1'd0;
-localparam OP_STARTED       = 1'd1;
+localparam OP_IDLE                  = 1'd0;
+localparam OP_STARTED               = 1'd1;
 
-reg  [log_depth:0] ctr;
-wire [log_depth:0] ctr_shifted, ctr_out;
+reg  [LOG_DEPTH-1:0] ctr;
+wire [LOG_DEPTH-1:0] ctr_shifted, ctr_out;
 reg  curr_state, next_state;
 
-reg [log_depth_large+4:0] ctr_state;
+reg [LOG_DEPTH_LARGE+3:0] ctr_state;
 
 reg start_addr_gen;
 wire start_addr_gen_shifted;
 wire start_addr_sig, start_take_input;
 
-reg [LOGQ-1:0]                  di00     [1*(TP)-1:0];
-wire[LOGQ-1:0]                  do00     [1*(TP)-1:0];
-reg [(log_depth+1)-1:0]           dw00     [1*(TP)-1:0];
-reg [(log_depth+1)-1:0]           dr00     [1*(TP)-1:0];
-reg                             de00     [1*(TP)-1:0];
+reg [LOGQ-1:0]                  di00     [TP-1:0];
+wire[LOGQ-1:0]                  do00     [TP-1:0];
+reg [LOG_DEPTH-1:0]             dw00     [TP-1:0];
+reg [LOG_DEPTH-1:0]             dr00     [TP-1:0];
+reg                             de00     [TP-1:0];
 
 
 
-wire [(log_depth+1)*TP-1:0] read_addr_res;
-wire [(log_depth+1)*TP-1:0] write_addr_res;
+wire [LOG_DEPTH*TP-1:0] read_addr_res;
+wire [LOG_DEPTH*TP-1:0] write_addr_res;
 
 reg [TP*LOGQ-1:0] input_data_shift;
 
@@ -85,7 +80,7 @@ always @(*) begin
     if (start) begin
         next_state = OP_STARTED;
     end
-    else if ((ctr_state[log_depth_large+4:0]) == (4'd10*depth_large-1)) begin
+    else if ((ctr_state[LOG_DEPTH_LARGE+3:0]) == (4'd10*DEPTH_LARGE-1)) begin
         next_state = OP_IDLE;
     end
 end
@@ -137,17 +132,51 @@ always @(posedge clk or posedge rst) begin
     end
 end
 
-
-shiftreg #(.SHIFT(2),.DATA(1)) sre100(clk,rst,start_addr_gen,start_take_input);
+shiftreg #(
+    .SHIFT (2),
+    .DATA  (1)
+) sre100 (
+    .clk      (clk             ),
+    .reset    (rst             ),
+    .data_in  (start_addr_gen  ),
+    .data_out (start_take_input)
+);
 
 assign start_addr_sig = start_addr_gen;
 
-shiftreg #(.SHIFT(2),.DATA(log_depth+1)) sre101(clk,rst,ctr,ctr_shifted);
+shiftreg #(
+    .SHIFT (2),
+    .DATA  (LOG_DEPTH)
+) sre101 (
+    .clk      (clk        ),
+    .reset    (rst        ),
+    .data_in  (ctr        ),
+    .data_out (ctr_shifted)
+);
 
-shiftreg #(.SHIFT(depth+5),.DATA(log_depth+1)) sre102(clk,rst,ctr,ctr_out);
+shiftreg #(
+    .SHIFT (DEPTH + 5),
+    .DATA  (LOG_DEPTH)
+) sre102 (
+    .clk      (clk     ),
+    .reset    (rst     ),
+    .data_in  (ctr     ),
+    .data_out (ctr_out )
+);
 
-
-shuffle_addr_gen #(.LOGN(LOGN), .LOGN1(LOGN1), .LOGN2(LOGN2), .LOGTP(LOGTP)) shuf_addr_gen_unit (clk, rst, start_addr_sig, mod_op, read_addr_res, write_addr_res);
+shuffle_addr_gen #(
+    .LOGN  (LOGN  ),
+    .LOGN1 (LOGN1 ),
+    .LOGN2 (LOGN2 ),
+    .LOGTP (LOGTP )
+) shuf_addr_gen_sm (
+    .clk            (clk            ),
+    .rst            (rst            ),
+    .start          (start_addr_sig ),
+    .mod_op         (mod_op         ),
+    .read_addr      (read_addr_res  ),
+    .write_addr     (write_addr_res )
+);
 
 
 for (genvar rot = 0; rot < TP; rot = rot + 1) begin
@@ -176,8 +205,8 @@ for (genvar k = 0; k < TP; k = k + 1) begin
             de00[k]       <= 0;
         end else begin
             di00[k]       <= input_data_shift_int[(TP-k-1)];
-            dr00[k]       <= read_addr_res[(TP-k)*(log_depth+1)-1-:log_depth+1];
-            dw00[k]       <= write_addr_res[(TP-k)*(log_depth+1)-1-:log_depth+1];
+            dr00[k]       <= read_addr_res[(TP-k)*(LOG_DEPTH)-1-:LOG_DEPTH];
+            dw00[k]       <= write_addr_res[(TP-k)*(LOG_DEPTH)-1-:LOG_DEPTH];
             de00[k]       <= start_take_input;                        
         end
     end
@@ -185,7 +214,18 @@ end
 
 
 for (genvar c2 = 0; c2 < TP; c2 = c2 + 1) begin: BRAM_GEN_BLOCK_NTT0 // BRAM for NTT
-    BRAM #(LOGQ, BRAM_size, BRAM_log_size) bm000(clk,de00[1*c2+0],dw00[1*c2+0],di00[1*c2+0],dr00[1*c2+0],do00[1*c2+0]); // 64 BRAMs * 128 depth (2**7) * 32 bit
+    BRAM #(
+    .DSIZE (LOGQ         ),
+    .MSIZE (BRAM_SIZE    ),
+    .DEPTH (BRAM_LOG_SIZE)
+) bm000 (
+    .clk   (clk          ),
+    .wen   (de00[c2]     ),
+    .waddr (dw00[c2]     ),
+    .din   (di00[c2]     ),
+    .raddr (dr00[c2]     ),
+    .dout  (do00[c2]     )
+);
 end
 
 

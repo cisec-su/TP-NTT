@@ -571,7 +571,23 @@ if __name__ == "__main__":
         for ide in e:
             intt_coeff_in_write_file.write(str(hex(hex_lines[ide])[2:]) + "\n")
 
+    coeff2_read_file = open(f"{test_dir}/ntt_out2.txt", 'r')
 
+    hex_lines = []
+
+    for line in coeff2_read_file:
+        # Split line into tokens and strip newlines/spaces
+        token = line.strip()
+        # Convert each hex token to an integer
+        int_values = int(token, 16)
+        hex_lines.append(int_values)
+
+    intt_coeff_in2_write_file = open(f"{test_dir}/intt_in2.txt", 'w+')
+
+    #print("hex: ", hex_lines)
+    for e in new_check:
+        for ide in e:
+            intt_coeff_in2_write_file.write(str(hex(hex_lines[ide])[2:]) + "\n")
 
 
     if iterative_seven:

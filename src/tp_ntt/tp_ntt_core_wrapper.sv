@@ -26,20 +26,18 @@ module tp_ntt_core_wrapper#(
         output reg [TP*LOGQ-1:0]        o_poly
     );
 
-localparam N  = 1 << LOGN;
-localparam N1 = 1 << LOGN1;
-localparam N2 = 1 << LOGN2;
-localparam TP = 1 << LOGTP;
-localparam size0 = N1*N2;
-localparam size0_over_tp = $rtoi($ceil((size0/TP)));
-localparam N_over_TP_log2 = $rtoi($ceil($clog2(N/TP)));
-localparam depth         =  $rtoi($ceil(N/TP));
-localparam depth_log         =  $rtoi($ceil($clog2(N/TP)));
-
-localparam reg_ctr = $clog2(size0_over_tp);
-localparam bram_reg_size =  (TP/N1)*(N1-1);
-
-localparam iter_part_num_tot = (DIM == DIM_2D) ? 2 : ((DIM == DIM_3D) ? 3 : 4);
+localparam N                        = 1 << LOGN;
+localparam N1                       = 1 << LOGN1;
+localparam N2                       = 1 << LOGN2;
+localparam TP                       = 1 << LOGTP;
+localparam SIZE0                    = N1*N2;
+localparam SIZE0_OVER_TP            = (SIZE0/TP);
+localparam N_OVER_TP_LOG2           = $clog2(N/TP);
+localparam DEPTH                    =  N/TP;
+localparam DEPTH_LOG                =  $clog2(N/TP) + 1;
+localparam REG_CTR                  = $clog2(SIZE0_OVER_TP) + 1;
+localparam BRAM_REG_SIZE            =  (TP/N1)*(N1-1);
+localparam ITER_PART_NUM_TOT        = (DIM == DIM_2D) ? 2 : ((DIM == DIM_3D) ? 3 : 4);
 
 // states
 localparam OP_IDLE                  = 2'd0;
@@ -53,25 +51,25 @@ reg [1:0] OP_TYPE;
 
 reg [1:0] curr_state, next_state;
 
-reg [LOGQ-1:0]                  di00     [1*(TP)-1:0];
-wire[LOGQ-1:0]                  do00     [1*(TP)-1:0];
-reg [(reg_ctr+1)-1:0]           dw00     [1*(TP)-1:0];
-reg [(reg_ctr+1)-1:0]           dr00     [1*(TP)-1:0];
-reg                             de00     [1*(TP)-1:0];
+reg [LOGQ-1:0]                  di00     [TP-1:0];
+wire[LOGQ-1:0]                  do00     [TP-1:0];
+reg [REG_CTR-1:0]               dw00     [TP-1:0];
+reg [REG_CTR-1:0]               dr00     [TP-1:0];
+reg                             de00     [TP-1:0];
 
 
-reg [LOGQ-1:0]              bi0     [1*(bram_reg_size)-1:0];
-wire[LOGQ-1:0]              bo0     [1*(bram_reg_size)-1:0];
-reg [N_over_TP_log2-1:0]    bw0     [1*(bram_reg_size)-1:0];
-reg [N_over_TP_log2-1:0]    br0     [1*(bram_reg_size)-1:0];
-reg                         be0     [1*(bram_reg_size)-1:0];
+reg [LOGQ-1:0]                  bi0     [BRAM_REG_SIZE-1:0];
+wire[LOGQ-1:0]                  bo0     [BRAM_REG_SIZE-1:0];
+reg [N_OVER_TP_LOG2-1:0]        bw0     [BRAM_REG_SIZE-1:0];
+reg [N_OVER_TP_LOG2-1:0]        br0     [BRAM_REG_SIZE-1:0];
+reg                             be0     [BRAM_REG_SIZE-1:0];
 
 
-reg [depth_log+1:0] ctr;
+reg [DEPTH_LOG:0] ctr;
 
 reg [TP*LOGQ-1:0] NTT_core_in;
 wire [TP*LOGQ-1:0] NTT_core_out;
-reg [(bram_reg_size)*LOGQ-1:0] W_core_in;
+reg [BRAM_REG_SIZE*LOGQ-1:0] W_core_in;
 reg [LOGQH-1:0] q_core_in;
 
 wire [TP*LOGQ-1:0] NTT_core_out_shift_d2;
@@ -147,10 +145,10 @@ always @(*) begin
             endcase
         end 
         OP_TWIDDLE_LOAD: begin
-            next_state = (ctr == (iter_part_num_tot)*depth-1) ? OP_IDLE : OP_TWIDDLE_LOAD;
+            next_state = (ctr == (ITER_PART_NUM_TOT)*DEPTH-1) ? OP_IDLE : OP_TWIDDLE_LOAD;
         end
         OP_STARTED: begin
-            next_state = ((ctr[depth_log-1:0]) == (depth-1)) ? OP_IDLE : OP_STARTED;
+            next_state = ((ctr[DEPTH_LOG-2:0]) == (DEPTH-1)) ? OP_IDLE : OP_STARTED;
         end
         OP_Q_LOAD: begin
             next_state = (ctr == 1) ? OP_IDLE : OP_Q_LOAD;
@@ -180,115 +178,116 @@ always @(posedge clk or posedge rst) begin
 end
 
 
-generate
 
-    for (genvar i = 0; i < bram_reg_size; i = i + 1) begin
 
-        always @(posedge clk) begin
-            if (curr_state == OP_STARTED) begin
-                bi0[i]       <= 0;
-                bw0[i]       <= 0;
-                br0[i]       <= (ctr & (depth-1));  
-            end
-            else if (curr_state == OP_TWIDDLE_LOAD) begin
-                bi0[i]       <= psi[(TP-1-i)*LOGQ-1-:LOGQ];
-                bw0[i]       <= (ctr & (depth-1));
-                br0[i]       <= 0;  
-            end
-            
+for (genvar i = 0; i < BRAM_REG_SIZE; i = i + 1) begin
+
+    always @(posedge clk) begin
+        if (curr_state == OP_STARTED) begin
+            bi0[i]       <= 0;
+            bw0[i]       <= 0;
+            br0[i]       <= (ctr & (DEPTH-1));  
         end
+        else if (curr_state == OP_TWIDDLE_LOAD) begin
+            bi0[i]       <= psi[(TP-1-i)*LOGQ-1-:LOGQ];
+            bw0[i]       <= (ctr & (DEPTH-1));
+            br0[i]       <= 0;  
+        end
+        
+    end
 
-        always @(posedge clk or posedge rst) begin
-            if (rst) begin
-                be0[i]       <= 0;
-            end else begin
-                case (curr_state)
-                    OP_TWIDDLE_LOAD: begin
-                        if ((ctr >= (BLOCK_ID << depth_log)) && (ctr < (BLOCK_ID + 1) << depth_log)) begin
-                            be0[i]       <= 1'b1;
-                        end
-                        else begin
-                            be0[i]       <= 0;
-                        end
+    always @(posedge clk or posedge rst) begin
+        if (rst) begin
+            be0[i]       <= 0;
+        end else begin
+            case (curr_state)
+                OP_TWIDDLE_LOAD: begin
+                    if ((ctr >= (BLOCK_ID << (DEPTH_LOG-1))) && (ctr < (BLOCK_ID + 1) << (DEPTH_LOG-1))) begin
+                        be0[i]       <= 1'b1;
                     end
-                    default: begin
+                    else begin
                         be0[i]       <= 0;
                     end
-                endcase
-            end
-        end
-
-    end
-
-endgenerate
-
-
-
-generate
-    for (genvar i = 0; i < bram_reg_size; i = i + 1) begin
-        always @(posedge clk) begin
-            W_core_in[(bram_reg_size-i)*LOGQ-1-:LOGQ] <= bo0[i];
-        end
-    end
-endgenerate
-
-
-generate
-    if (LARGE) begin
-        for (genvar i = 0; i < TP; i = i + 1) begin
-            always @(posedge clk) begin
-                NTT_core_in[(TP-i)*LOGQ-1-:LOGQ] <= i_poly[(TP - (((i/N1)*N1 + (i & 1'd1)*(N1/2) + (i & (N1-1))/2)  & (TP-1)))*LOGQ-1-:LOGQ] ;
-            end
-        end
-    end else begin
-        for (genvar i = 0; i < TP; i = i + 1) begin
-            always @(posedge clk) begin
-                if (RW_DIS) begin
-                    NTT_core_in[( TP - (((i & (N1/2-1))*2 + (i & (N1-1))/(N1/2) + (i/N1)*N1) & (TP-1)) )*LOGQ-1             -:LOGQ]    <= i_poly[(TP-i)*LOGQ-1-:LOGQ];
-                end else begin
-                    NTT_core_in[( TP - ((((i & (N2-1))*N1) + (i/(TP>>1)) + ((i & ((TP>>1)-1))/(TP/N1))*2) & (TP-1)) )*LOGQ-1-:LOGQ]    <= i_poly[(TP-i)*LOGQ-1-:LOGQ];
                 end
-            end
+                default: begin
+                    be0[i]       <= 0;
+                end
+            endcase
         end
     end
-    
-endgenerate
 
+end
 
-generate  
-    for (genvar b2 = 0; b2 < bram_reg_size; b2 = b2 + 1) begin: BRAM_GEN_BLOCK_TWIDDLE // BRAM for TWIDDLE
-        BRAM #(LOGQ, $rtoi($ceil(N>>LOGTP)), $rtoi($ceil($clog2((N>>LOGTP))))) bt000(clk,be0[1*b2+0],bw0[1*b2+0],bi0[1*b2+0],br0[1*b2+0],bo0[1*b2+0]); // 64 BRAMs * 128 depth (2**7) * 32 bit                        
+for (genvar i = 0; i < BRAM_REG_SIZE; i = i + 1) begin
+    always @(posedge clk) begin
+        W_core_in[(BRAM_REG_SIZE-i)*LOGQ-1-:LOGQ] <= bo0[i];
     end
-endgenerate
+end
 
-generate
-    for (genvar ntt_idx = 0; ntt_idx < (TP>>LOGN1) ; ntt_idx = ntt_idx + 1) begin
-        tp_ntt_core #(.LOGN    (LOGN1   ),
-                      .LOGQ    (LOGQ    ),
-                      .LOGQH   (LOGQH   ),
-                      .NON_STD (NON_STD ),
-                      .MORE_DSP(MORE_DSP)
-        ) tp_ntt_core_inst (
-            .clk    (clk      ),
-            .intt   (intt_q   ),
-            .qH     (q_core_in),
-            .i_poly (NTT_core_in[(TP-N1*ntt_idx)*LOGQ-1-:N1*LOGQ]),
-            .psi    (W_core_in[(bram_reg_size-(N1-1)*ntt_idx)*LOGQ-1-:(N1-1)*LOGQ]),
-            .o_poly (NTT_core_out[(TP-N1*ntt_idx)*LOGQ-1-:N1*LOGQ])
-        );
-    end 
-endgenerate
 
-// Output Rotaion for Next Block
-generate
-    
+if (LARGE) begin
     for (genvar i = 0; i < TP; i = i + 1) begin
         always @(posedge clk) begin
-            o_poly[(TP-i)*LOGQ-1 -: LOGQ] <= NTT_core_out[(TP-i)*LOGQ-1-:LOGQ];
+            NTT_core_in[(TP-i)*LOGQ-1-:LOGQ] <= i_poly[(TP - (((i/N1)*N1 + (i & 1'd1)*(N1/2) + (i & (N1-1))/2)  & (TP-1)))*LOGQ-1-:LOGQ] ;
         end
     end
-endgenerate
+end else begin
+    for (genvar i = 0; i < TP; i = i + 1) begin
+        always @(posedge clk) begin
+            if (RW_DIS) begin
+                NTT_core_in[( TP - (((i & (N1/2-1))*2 + (i & (N1-1))/(N1/2) + (i/N1)*N1) & (TP-1)) )*LOGQ-1             -:LOGQ]    <= i_poly[(TP-i)*LOGQ-1-:LOGQ];
+            end else begin
+                NTT_core_in[( TP - ((((i & (N2-1))*N1) + (i/(TP>>1)) + ((i & ((TP>>1)-1))/(TP/N1))*2) & (TP-1)) )*LOGQ-1-:LOGQ]    <= i_poly[(TP-i)*LOGQ-1-:LOGQ];
+            end
+        end
+    end
+end
+    
 
+
+
+
+for (genvar b2 = 0; b2 < BRAM_REG_SIZE; b2 = b2 + 1) begin: BRAM_GEN_BLOCK_TWIDDLE // BRAM for TWIDDLE
+   BRAM #(
+    .DSIZE (LOGQ                  ),
+    .MSIZE (N >> LOGTP            ),
+    .DEPTH ($clog2(N >> LOGTP)    )
+) bt000 (
+    .clk   (clk            ),
+    .wen   (be0[b2]        ),
+    .waddr (bw0[b2]        ),
+    .din   (bi0[b2]        ),
+    .raddr (br0[b2]        ),
+    .dout  (bo0[b2]        )
+);
+end
+
+
+
+for (genvar ntt_idx = 0; ntt_idx < (TP>>LOGN1) ; ntt_idx = ntt_idx + 1) begin
+    tp_ntt_core #(  
+        .LOGN       (LOGN1   ),
+        .LOGQ       (LOGQ    ),
+        .LOGQH      (LOGQH   ),
+        .NON_STD    (NON_STD ),
+        .MORE_DSP   (MORE_DSP)
+    ) tp_ntt_core_inst (
+        .clk        (clk      ),
+        .intt       (intt_q   ),
+        .qH         (q_core_in),
+        .i_poly     (NTT_core_in[(TP-N1*ntt_idx)*LOGQ-1-:N1*LOGQ]),
+        .psi        (W_core_in[(BRAM_REG_SIZE-(N1-1)*ntt_idx)*LOGQ-1-:(N1-1)*LOGQ]),
+        .o_poly     (NTT_core_out[(TP-N1*ntt_idx)*LOGQ-1-:N1*LOGQ])
+    );
+end 
+
+
+// Output Rotaion for Next Block    
+for (genvar i = 0; i < TP; i = i + 1) begin
+    always @(posedge clk) begin
+        o_poly[(TP-i)*LOGQ-1 -: LOGQ] <= NTT_core_out[(TP-i)*LOGQ-1-:LOGQ];
+    end
+end
 
 
 endmodule
