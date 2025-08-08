@@ -21,7 +21,7 @@ module tp_ntt_top
         input                           shuffle_mod,
         input       [LOGQH      -1:0]   qH,
         input       [TP*LOGQ    -1:0]   i_poly,
-        input       [(TP-1)*LOGQ-1:0]   psi,
+        input       [TP*LOGQ    -1:0]   psi,
         output reg  [TP*LOGQ    -1:0]   o_poly
     );
 
@@ -41,6 +41,8 @@ localparam N2                                   = 1 << LOGN2;
 localparam N3                                   = 1 << LOGN3;
 localparam TP                                   = 1 << LOGTP;
 localparam N4                                   = 1 << LOGN4;
+localparam DEPTH                                = N/TP;
+localparam DEF_LAT                              = 4;
 
 
 wire start_ntt2, start_ntt3, start_ntt4, start_au1, start_au2, start_au3, start_au1_v1, start_au1_v2;
@@ -49,6 +51,12 @@ wire intt_au1, intt_au2, intt_au3, intt_ntt2, intt_ntt3, intt_ntt4;
 wire [TP*LOGQ-1:0] poly_ntt1, poly_ntt2, poly_ntt3, poly_ntt4, poly_au1, poly_au2, poly_au3;
 
 reg [TP*LOGQ-1:0] poly_d1, poly_d2, poly_d3;
+
+wire       [LOGQH      -1:0]    qH_d1, qH_d2, qH_d3, qH_d4;
+wire       [1:0]                op_code_d1, op_code_d2, op_code_d3, op_code_d4;
+
+
+wire [(TP-1)*LOGQ-1:0] psi_out, psi_out_d1, psi_out_d2, psi_out_d3, psi_out_d4;
 
 always @(posedge clk) begin
     poly_d1 <= i_poly;
@@ -74,11 +82,11 @@ if (DIM == DIM_2D) begin
         .clk(clk), 
         .rst(rst), 
         .start(start),
-        .op(op), 
+        .op(op_code_d1), 
         .intt(intt),
-        .qH(qH), 
+        .qH(qH_d1), 
         .i_poly(poly_d3), 
-        .psi(psi), 
+        .psi(psi_out_d1), 
         .o_poly(poly_ntt1)
     );
 
@@ -113,11 +121,11 @@ if (DIM == DIM_2D) begin
         .clk(clk), 
         .rst(rst), 
         .start(start_ntt2),
-        .op(op), 
+        .op(op_code_d2), 
         .intt(intt_ntt2),
-        .qH(qH), 
+        .qH(qH_d2), 
         .i_poly(poly_au1), 
-        .psi(psi), 
+        .psi(psi_out_d2), 
         .o_poly(poly_ntt2)
     );
 end
@@ -137,11 +145,11 @@ else if (DIM == DIM_3D) begin
         .clk(clk), 
         .rst(rst), 
         .start(start),
-        .op(op), 
+        .op(op_code_d1), 
         .intt(intt),
-        .qH(qH), 
+        .qH(qH_d1), 
         .i_poly(poly_d3), 
-        .psi(psi), 
+        .psi(psi_out_d1), 
         .o_poly(poly_ntt1)
     );
 
@@ -176,11 +184,11 @@ else if (DIM == DIM_3D) begin
         .clk(clk), 
         .rst(rst), 
         .start(start_ntt2),
-        .op(op), 
+        .op(op_code_d2), 
         .intt(intt_ntt2),
-        .qH(qH), 
+        .qH(qH_d2), 
         .i_poly(poly_au1), 
-        .psi(psi), 
+        .psi(psi_out_d2), 
         .o_poly(poly_ntt2)
     );
 
@@ -215,11 +223,11 @@ else if (DIM == DIM_3D) begin
         .clk(clk), 
         .rst(rst), 
         .start(start_ntt3),
-        .op(op), 
+        .op(op_code_d3), 
         .intt(intt_ntt3),
-        .qH(qH), 
+        .qH(qH_d3), 
         .i_poly(poly_au2), 
-        .psi(psi), 
+        .psi(psi_out_d3), 
         .o_poly(poly_ntt3)
     );
 end
@@ -239,11 +247,11 @@ else if (DIM == DIM_4D) begin
         .clk(clk), 
         .rst(rst), 
         .start(start),
-        .op(op), 
+        .op(op_code_d1), 
         .intt(intt),
-        .qH(qH), 
+        .qH(qH_d1), 
         .i_poly(poly_d3), 
-        .psi(psi), 
+        .psi(psi_out_d1), 
         .o_poly(poly_ntt1)
     );
 
@@ -278,13 +286,14 @@ else if (DIM == DIM_4D) begin
         .clk(clk), 
         .rst(rst), 
         .start(start_ntt2),
-        .op(op), 
+        .op(op_code_d2), 
         .intt(intt_ntt2),
-        .qH(qH), 
+        .qH(qH_d2), 
         .i_poly(poly_au1), 
-        .psi(psi), 
+        .psi(psi_out_d2), 
         .o_poly(poly_ntt2)
     );
+    
 
     automorphism_unit #(
         .LARGE(1),
@@ -317,11 +326,11 @@ else if (DIM == DIM_4D) begin
         .clk(clk), 
         .rst(rst), 
         .start(start_ntt3),
-        .op(op), 
+        .op(op_code_d3), 
         .intt(intt_ntt3),
-        .qH(qH), 
+        .qH(qH_d3), 
         .i_poly(poly_au2), 
-        .psi(psi), 
+        .psi(psi_out_d3), 
         .o_poly(poly_ntt3)
     );
 
@@ -356,11 +365,11 @@ else if (DIM == DIM_4D) begin
         .clk(clk), 
         .rst(rst), 
         .start(start_ntt4),
-        .op(op), 
+        .op(op_code_d4), 
         .intt(intt_ntt4),
-        .qH(qH), 
+        .qH(qH_d4), 
         .i_poly(poly_au3), 
-        .psi(psi), 
+        .psi(psi_out_d4), 
         .o_poly(poly_ntt4)
     );
 end
@@ -501,6 +510,132 @@ shiftreg #(
 
 
 
+
+shiftreg #(
+    .SHIFT (4+DEF_LAT),
+    .DATA  (2)
+) sre300 (
+    .clk      (clk          ),
+    .reset    (rst          ),
+    .data_in  (op           ),
+    .data_out (op_code_d1   )
+);
+
+shiftreg #(
+    .SHIFT (DEPTH+DEF_LAT),
+    .DATA  (2)
+) sre301 (
+    .clk      (clk          ),
+    .reset    (rst          ),
+    .data_in  (op_code_d1   ),
+    .data_out (op_code_d2   )
+);
+
+shiftreg #(
+    .SHIFT (DEPTH+DEF_LAT),
+    .DATA  (2)
+) sre302 (
+    .clk      (clk          ),
+    .reset    (rst          ),
+    .data_in  (op_code_d2   ),
+    .data_out (op_code_d3   )
+);
+
+
+shiftreg #(
+    .SHIFT (DEPTH+DEF_LAT),
+    .DATA  (2)
+) sre303 (
+    .clk      (clk          ),
+    .reset    (rst          ),
+    .data_in  (op_code_d3   ),
+    .data_out (op_code_d4   )
+);
+
+
+
+shiftreg #(
+    .SHIFT (6+DEF_LAT),
+    .DATA  (LOGQH)
+) sre400 (
+    .clk      (clk      ),
+    .reset    (rst      ),
+    .data_in  (qH       ),
+    .data_out (qH_d1    )
+);
+
+shiftreg #(
+    .SHIFT (DEPTH+DEF_LAT),
+    .DATA  (LOGQH)
+) sre401 (
+    .clk      (clk      ),
+    .reset    (rst      ),
+    .data_in  (qH_d1    ),
+    .data_out (qH_d2    )
+);
+
+shiftreg #(
+    .SHIFT (DEPTH+DEF_LAT),
+    .DATA  (LOGQH)
+) sre402 (
+    .clk      (clk      ),
+    .reset    (rst      ),
+    .data_in  (qH_d2    ),
+    .data_out (qH_d3    )
+);
+
+shiftreg #(
+    .SHIFT (DEPTH+DEF_LAT),
+    .DATA  (LOGQH)
+) sre403 (
+    .clk      (clk      ),
+    .reset    (rst      ),
+    .data_in  (qH_d3    ),
+    .data_out (qH_d4    )
+);
+
+
+shiftreg #(
+    .SHIFT (DEF_LAT),
+    .DATA  ((TP-1)*LOGQ)
+) sre500 (
+    .clk      (clk          ),
+    .reset    (rst          ),
+    .data_in  (psi_out      ),
+    .data_out (psi_out_d1   )
+);
+
+shiftreg #(
+    .SHIFT (DEF_LAT),
+    .DATA  ((TP-1)*LOGQ)
+) sre501 (
+    .clk      (clk          ),
+    .reset    (rst          ),
+    .data_in  (psi_out_d1   ),
+    .data_out (psi_out_d2   )
+);
+
+shiftreg #(
+    .SHIFT (DEF_LAT),
+    .DATA  ((TP-1)*LOGQ)
+) sre502 (
+    .clk      (clk          ),
+    .reset    (rst          ),
+    .data_in  (psi_out_d2   ),
+    .data_out (psi_out_d3   )
+);
+
+shiftreg #(
+    .SHIFT (DEF_LAT),
+    .DATA  ((TP-1)*LOGQ)
+) sre503 (
+    .clk      (clk          ),
+    .reset    (rst          ),
+    .data_in  (psi_out_d3   ),
+    .data_out (psi_out_d4   )
+);
+
+
 always @(posedge clk or posedge rst) begin
     if (rst) begin
         o_poly <= 0;
@@ -516,6 +651,28 @@ always @(posedge clk or posedge rst) begin
         end
     end    
 end
+
+
+
+twiddle_load #(
+    .LOGN    (LOGN    ),
+    .LOGN1   (LOGN1   ),
+    .LOGN2   (LOGN2   ),
+    .LOGN3   (LOGN3   ),
+    .LOGTP   (LOGTP   ),
+    .LOGQ    (LOGQ    ),
+    .LOGQH   (LOGQH   ),
+    .NON_STD (NON_STD ),
+    .MORE_DSP(MORE_DSP)
+) uut_twid (
+    .clk(clk),
+    .rst(rst),
+    .op(op),
+    .intt(intt),
+    .psi(psi),
+    .psi_out(psi_out)
+);
+
 
 
 endmodule

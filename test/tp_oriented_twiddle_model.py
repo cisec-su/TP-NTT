@@ -546,8 +546,8 @@ if __name__ == "__main__":
     INTT_res_kk = INTT_wo_last(A_NTT_merge,psi_table_inv, q)
     INTT_res_kk_2 = INTT_wo_last(B_NTT_merge,psi_table_inv, q)
 
-    #check_res_minus_1 = []
-    check_res_minus_1 = SchoolbookModPolMul_minus_1(A, B, q)
+    check_res_minus_1 = []
+    #check_res_minus_1 = SchoolbookModPolMul_minus_1(A, B, q)
 
     print("----------------Parameters---------------\n")
 

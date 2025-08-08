@@ -1,8 +1,9 @@
 from math import ceil, log, log2
-from tp_oriented_twiddle_model import find_twiddle_map, find_twiddle_map_INTT
+from tp_oriented_twiddle_model import find_twiddle_map, find_twiddle_map_INTT, nth_root_of_unity
 import sys
 import sympy
 import math
+from tp_ntt_api import * 
 
 
 def bitreverse(value, width):
@@ -396,6 +397,43 @@ def shuffle_modop_1(input1):
 
     return new_check
 
+
+
+    
+
+
+def iterative_seven_model(new_check, TP, n1, n2, n3, n4, size0, size1, verbose, file1, TWIDDLE_tuple_map):
+    iter_0_read = iterative_first_block1(new_check, TP, n1, n2, size0, False, 0, verbose, file1, TWIDDLE_tuple_map)
+
+    iter_1_read = iterative_second_block(iter_0_read, TP, n2, size0, size1, False, 1, verbose, file1, TWIDDLE_tuple_map)
+
+    iter_2_read = iterative_first_block1(iter_1_read, TP, n3, n4, size1, False, 2, verbose, file1, TWIDDLE_tuple_map)
+
+    iter_3_read = iterative_first_block1(iter_2_read, TP, n4, n3, size1, True, 3, verbose, file1, TWIDDLE_tuple_map)
+
+    return iter_3_read
+
+
+def iterative_four_model(new_check, TP, n1, n2, size0, verbose, file1, TWIDDLE_tuple_map):
+    iter_0_read = iterative_first_block1(new_check, TP, n1, n2, size0, False, 0, verbose, file1, TWIDDLE_tuple_map)
+
+    iter_3_read = iterative_second_block(iter_0_read, TP, n2, n1, n1*n2, True, 1, verbose, file1, TWIDDLE_tuple_map)
+
+    return iter_3_read
+
+
+def iterative_six_model(new_check, TP, n1, n2, n3, n4, size0, size1, verbose, file1, TWIDDLE_tuple_map):
+    iter_0_read = iterative_first_block1(new_check, TP, n1, n2, size0, False, 0, verbose, file1, TWIDDLE_tuple_map)
+
+    iter_1_read = iterative_second_block(iter_0_read, TP, n2, size0, size1, False, 1, verbose, file1, TWIDDLE_tuple_map)
+
+    iter_3_read = iterative_first_block1(iter_1_read, TP, n3, n4, size1, True, 2, verbose, file1, TWIDDLE_tuple_map)
+
+    return iter_3_read
+
+
+
+
 if __name__ == "__main__":
     
     N = int(sys.argv[1])
@@ -486,7 +524,7 @@ if __name__ == "__main__":
 
     print("start: ", start, n2)
 
-    new_check = shuffle_modop_0(bef_shuf)
+    #new_check = shuffle_modop_0(bef_shuf)
 
     print("ITERATIVE NTT INPUT AFTER SHUFFLE: ")
 
@@ -494,25 +532,19 @@ if __name__ == "__main__":
         print(e)
 
     print(input1 == new_check)
+    
+
+    #### following line needs to be deleted ####
+    new_check = input1
+
     if iterative_seven:
-        iter_0_read = iterative_first_block1(new_check, TP, n1, n2, size0, False, 0, verbose, file1, TWIDDLE_tuple_map)
-
-        iter_1_read = iterative_second_block(iter_0_read, TP, n2, size0, size1, False, 1, verbose, file1, TWIDDLE_tuple_map)
-
-        iter_2_read = iterative_first_block1(iter_1_read, TP, n3, n4, size1, False, 2, verbose, file1, TWIDDLE_tuple_map)
-
-        iter_3_read = iterative_first_block1(iter_2_read, TP, n4, n3, size1, True, 3, verbose, file1, TWIDDLE_tuple_map)
+        iter_3_read = iterative_seven_model(new_check, TP, n1, n2, n3, n4, size0, size1, verbose, file1, TWIDDLE_tuple_map)
     elif iterative_four:
-        iter_0_read = iterative_first_block1(new_check, TP, n1, n2, size0, False, 0, verbose, file1, TWIDDLE_tuple_map)
-
-        iter_3_read = iterative_second_block(iter_0_read, TP, n2, n1, n1*n2, True, 1, verbose, file1, TWIDDLE_tuple_map)
+        iter_3_read = iterative_four_model(new_check, TP, n1, n2, size0, verbose, file1, TWIDDLE_tuple_map)
     elif iterative_six:
-        iter_0_read = iterative_first_block1(new_check, TP, n1, n2, size0, False, 0, verbose, file1, TWIDDLE_tuple_map)
+        iter_3_read = iterative_six_model(new_check, TP, n1, n2, n3, n4, size0, size1, verbose, file1, TWIDDLE_tuple_map)
 
-        iter_1_read = iterative_second_block(iter_0_read, TP, n2, size0, size1, False, 1, verbose, file1, TWIDDLE_tuple_map)
-
-        iter_3_read = iterative_first_block1(iter_1_read, TP, n3, n4, size1, True, 2, verbose, file1, TWIDDLE_tuple_map)
-
+    file1.close()
 
     # Check can you generate all elements in correct order, 0 to N-1
     last1 = []
@@ -524,15 +556,17 @@ if __name__ == "__main__":
 
 
 
+    
+
 
     
     # print("ITERATIVE NTT INPUT: ")
     # for e in input1:
     #     print(e)
     
-    print("ITERATIVE NTT OUTPUT: ")
-    for e in iter_3_read:
-        print(e)
+    # print("ITERATIVE NTT OUTPUT: ")
+    # for e in iter_3_read:
+    #     print(e)
     
     print("APPLY SHUFFLE: ")
 
@@ -542,7 +576,7 @@ if __name__ == "__main__":
 
     start = int(log2(n2))-1
 
-    print("start: ", start, n2)
+    # print("start: ", start, n2)
 
     new_check = shuffle_modop_1(iter_3_read)
 
@@ -610,6 +644,8 @@ if __name__ == "__main__":
 
         iter_3_read_intt = iterative_second_block(iter_0_read_intt, TP, n2, n1, n1*n2, True, 1, verbose, file2, TWIDDLE_inv_tuple_map)
 
+    file2.close()
+
     print("ITERATIVE INTT RESULT: ")
     for e in iter_3_read_intt:
         print(e)
@@ -661,4 +697,13 @@ if __name__ == "__main__":
     print("NTT INPUT AGAIN SANITY ? ")
 
     print(input1 == try_arr)
+
+
+    ####### create unique twiddles #######
+    psi = nth_root_of_unity(2*N, q)
+    
+    create_unique_twiddles(psi, N, TP , q, test_dir, False)
+    create_unique_twiddles(psi, N, TP , q, test_dir, True)
+    
+    ####### create unique twiddles #######
 

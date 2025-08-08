@@ -145,7 +145,7 @@ always @(*) begin
             endcase
         end 
         OP_TWIDDLE_LOAD: begin
-            next_state = (ctr == (ITER_PART_NUM_TOT)*DEPTH-1) ? OP_IDLE : OP_TWIDDLE_LOAD;
+            next_state = (ctr == DEPTH-1) ? OP_IDLE : OP_TWIDDLE_LOAD;
         end
         OP_STARTED: begin
             next_state = ((ctr[DEPTH_LOG-2:0]) == (DEPTH-1)) ? OP_IDLE : OP_STARTED;
@@ -202,7 +202,8 @@ for (genvar i = 0; i < BRAM_REG_SIZE; i = i + 1) begin
         end else begin
             case (curr_state)
                 OP_TWIDDLE_LOAD: begin
-                    if ((ctr >= (BLOCK_ID << (DEPTH_LOG-1))) && (ctr < (BLOCK_ID + 1) << (DEPTH_LOG-1))) begin
+                    //if ((ctr >= (BLOCK_ID << (DEPTH_LOG-1))) && (ctr < (BLOCK_ID + 1) << (DEPTH_LOG-1))) begin
+                    if (ctr < DEPTH) begin
                         be0[i]       <= 1'b1;
                     end
                     else begin

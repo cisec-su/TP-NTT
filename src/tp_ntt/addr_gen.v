@@ -19,13 +19,14 @@ localparam N                        = 1 << LOGN;
 localparam N1                       = 1 << LOGN1;
 localparam TP                       = 1 << LOGTP;
 localparam DEPTH                    = N/TP;
-localparam LOG_DEPTH                = LARGE ? $clog2(DEPTH) + 1 : LOG_SIZE0_OVER_TP + 1;
+
 localparam LOG_SIZE1                = $clog2(size1);
 localparam SIZE1_OVER_TP            = size1/TP;
 localparam SIZE1_OVER_TP_LOG2       = $clog2(SIZE1_OVER_TP);
 localparam SIZE0_OVER_TP            = size0/TP;
 localparam LOG_SIZE0_OVER_TP        = $clog2(SIZE0_OVER_TP);
 localparam READ_LAT                 = (LARGE) ? DEPTH : SIZE0_OVER_TP;
+localparam LOG_DEPTH                = LARGE ? $clog2(DEPTH) + 1 : LOG_SIZE0_OVER_TP + 1;
 
 wire [LOG_DEPTH-1:0] read_addr_int [0:TP-1];
 reg  [LOG_DEPTH-1:0] ctr;

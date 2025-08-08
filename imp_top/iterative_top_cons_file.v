@@ -2,10 +2,10 @@
 
 module iterative_tp_cons_file #(
         parameter LOGN          = 16,
-        parameter LOGN1         = 6,
-        parameter LOGN2         = 4,
-        parameter LOGN3         = 6,
-        parameter LOGTP         = 6,
+        parameter LOGN1         = 5,
+        parameter LOGN2         = 1,
+        parameter LOGN3         = 5,
+        parameter LOGTP         = 5,
         parameter LOGQ          = 60,
         parameter LOGQH         = 17
     )
