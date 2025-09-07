@@ -5,9 +5,9 @@ module twid_load_tb();
     `include "tp_ntt.svh"
 
     // TP-NTT Parameters
-    parameter LOGN                      = 12;
+    parameter LOGN                      = 15;
     parameter LOGN1                     = 5;
-    parameter LOGN2                     = 2;
+    parameter LOGN2                     = 5;
     parameter LOGN3                     = 5;
     parameter LOGTP                     = 5;
     parameter LOGQ                      = 60;
@@ -128,9 +128,9 @@ module twid_load_tb();
 
         $display("Simulation started.");
 
-        clk = 1'b0;
+        clk = 1'b1;
         INTT = 1'b0;
-        rst = 1'b1;
+        rst = 1'b0;
         OP_TYPE = 2'b0;
         START_NTT = 1'b0;
         NTT_in = 0;
@@ -140,15 +140,11 @@ module twid_load_tb();
         rst = 1'b1;
         #FP;
         rst = 1'b0;
-
-        #HP;
-        
         
         #FP;
-
-        #HP;
+        
         OP_TYPE = 2'd3;
-        #HP;
+        #FP;
         // Q-LOAD
         q_tb = q[0][LOGQ-1 -: LOGQH];
 
@@ -175,20 +171,6 @@ module twid_load_tb();
 
 
         OP_TYPE = 2'b0;
-        #(FP*5);
-
-
-        #(FP*DEPTH*4);
-        
-
-
-        //#(500*FP);
-
-
-        OP_TYPE = 2'b0;
-        #(FP*5);
-        //OP_TYPE = 3'd2;
-        @(posedge clk);
         @(posedge clk);
         START_NTT = 1'b1;
         @(posedge clk);
@@ -367,27 +349,21 @@ module twid_load_tb();
         end
 
 
-        //////// INTT TESTS ////////
+        ////// INTT TESTS ////////
 
-        clk = 1'b0;
         INTT = 1'b1;
-        rst = 1'b1;
+        rst = 1'b0;
         OP_TYPE = 2'b0;
         START_NTT = 1'b0;
         NTT_in = 0;
         W_in = 0;
         shuffle_mod = 0;
         #FP;
-        rst = 1'b1;
-        #FP;
-        rst = 1'b0;
 
-        #HP;
         #FP;
-        #HP;
         OP_TYPE = 2'd3;
-        #HP;
-        // Q-LOAD
+        #FP;
+        //Q-LOAD
         q_tb = q[0][LOGQ-1 -: LOGQH];
 
         #FP;
@@ -413,18 +389,7 @@ module twid_load_tb();
 
 
         OP_TYPE = 2'b0;
-        #(FP*5);
 
-
-        #(FP*DEPTH*3);
-
-
-
-
-        OP_TYPE = 2'b0;
-        #(FP*5);
-        //OP_TYPE = 3'd2;
-        @(posedge clk);
         @(posedge clk);
         START_NTT = 1'b1;
         @(posedge clk);

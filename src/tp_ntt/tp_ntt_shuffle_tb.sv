@@ -5,11 +5,11 @@ module tp_ntt_shuffle_tb();
     `include "tp_ntt.svh"
 
     // TP-NTT Parameters
-    parameter LOGN          = 12;
-    parameter LOGN1         = 5;
+    parameter LOGN          = 11;
+    parameter LOGN1         = 3;
     parameter LOGN2         = 2;
-    parameter LOGN3         = 5;
-    parameter LOGTP         = 5;
+    parameter LOGN3         = 3;
+    parameter LOGTP         = 3;
     parameter LOGQ          = 60;
     parameter LOGQH         = 17;
     parameter NON_STD       = 1;

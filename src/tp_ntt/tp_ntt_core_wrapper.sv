@@ -51,6 +51,8 @@ reg [1:0] OP_TYPE;
 
 reg [1:0] curr_state, next_state;
 
+reg [1:0] curr_state_twid, next_state_twid;
+
 reg [LOGQ-1:0]                  di00     [TP-1:0];
 wire[LOGQ-1:0]                  do00     [TP-1:0];
 reg [REG_CTR-1:0]               dw00     [TP-1:0];
@@ -65,7 +67,7 @@ reg [N_OVER_TP_LOG2-1:0]        br0     [BRAM_REG_SIZE-1:0];
 reg                             be0     [BRAM_REG_SIZE-1:0];
 
 
-reg [DEPTH_LOG:0] ctr;
+reg [DEPTH_LOG:0] ctr, ctr_twid;
 
 reg [TP*LOGQ-1:0] NTT_core_in;
 wire [TP*LOGQ-1:0] NTT_core_out;
@@ -83,9 +85,6 @@ always @(posedge clk or posedge rst) begin
         ctr <= 0;
     end else begin
         case (curr_state)
-            OP_TWIDDLE_LOAD: begin
-                ctr <= ctr + 1;
-            end 
             OP_STARTED: begin
                 ctr <= ctr + 1;
             end
@@ -101,12 +100,37 @@ always @(posedge clk or posedge rst) begin
     end
 end
 
+always @(posedge clk or posedge rst) begin
+    if (rst) begin
+        ctr_twid <= 0;
+    end else begin
+        case (curr_state_twid)
+            OP_LOAD_TWIDDLE: begin
+                ctr_twid <= ctr_twid + 1;
+            end
+            default: begin
+                ctr_twid <= 0;
+            end
+            
+        endcase
+        
+    end
+end
+
 always @(posedge clk) 
 begin
     if(rst)
         curr_state <= OP_IDLE;
     else
         curr_state <= next_state;
+end
+
+always @(posedge clk) 
+begin
+    if(rst)
+        curr_state_twid <= OP_IDLE;
+    else
+        curr_state_twid <= next_state_twid;
 end
 
 
@@ -124,29 +148,21 @@ always @(*) begin
     next_state = curr_state;
     case (curr_state)
         OP_IDLE: begin
-            case (op)
-                OP_NTT: begin
-                    if (start) begin
-                        next_state = OP_STARTED;
-                    end else begin
+            if (start) begin
+                next_state = OP_STARTED;
+            end 
+            else begin
+                case (op)
+                    OP_LOAD_Q: begin
+                        next_state = OP_Q_LOAD;
+                    end
+                    default: begin
                         next_state = OP_IDLE;
                     end
-                    
-                end 
-                OP_LOAD_TWIDDLE: begin
-                    next_state = OP_TWIDDLE_LOAD;
-                end
-                OP_LOAD_Q: begin
-                    next_state = OP_Q_LOAD;
-                end
-                default: begin
-                    next_state = OP_IDLE;
-                end
-            endcase
+                endcase
+            end
+            
         end 
-        OP_TWIDDLE_LOAD: begin
-            next_state = (ctr == DEPTH-1) ? OP_IDLE : OP_TWIDDLE_LOAD;
-        end
         OP_STARTED: begin
             next_state = ((ctr[DEPTH_LOG-2:0]) == (DEPTH-1)) ? OP_IDLE : OP_STARTED;
         end
@@ -155,6 +171,30 @@ always @(*) begin
         end
         default: begin
             next_state = OP_IDLE;
+        end
+    endcase
+end
+
+
+// New Next State Logic
+always @(*) begin
+    next_state_twid = curr_state_twid;
+    case (curr_state_twid)
+        OP_IDLE: begin
+            case (op)
+                OP_LOAD_TWIDDLE: begin
+                    next_state_twid = OP_TWIDDLE_LOAD;
+                end
+                default: begin
+                    next_state_twid = OP_IDLE;
+                end
+            endcase
+        end 
+        OP_TWIDDLE_LOAD: begin
+            next_state_twid = (ctr_twid == DEPTH-1) ? OP_IDLE : OP_TWIDDLE_LOAD;
+        end
+        default: begin
+            next_state_twid = OP_IDLE;
         end
     endcase
 end
@@ -183,16 +223,23 @@ end
 for (genvar i = 0; i < BRAM_REG_SIZE; i = i + 1) begin
 
     always @(posedge clk) begin
-        if (curr_state == OP_STARTED) begin
+        if (curr_state_twid == OP_TWIDDLE_LOAD) begin
+            bi0[i]       <= psi[(TP-1-i)*LOGQ-1-:LOGQ];
+            bw0[i]       <= (ctr_twid & (DEPTH-1)); 
+        end
+        else begin
             bi0[i]       <= 0;
-            bw0[i]       <= 0;
+            bw0[i]       <= 0;  
+        end
+        
+        if (curr_state == OP_STARTED) begin
             br0[i]       <= (ctr & (DEPTH-1));  
         end
-        else if (curr_state == OP_TWIDDLE_LOAD) begin
-            bi0[i]       <= psi[(TP-1-i)*LOGQ-1-:LOGQ];
-            bw0[i]       <= (ctr & (DEPTH-1));
+        else begin
             br0[i]       <= 0;  
         end
+
+
         
     end
 
@@ -200,10 +247,9 @@ for (genvar i = 0; i < BRAM_REG_SIZE; i = i + 1) begin
         if (rst) begin
             be0[i]       <= 0;
         end else begin
-            case (curr_state)
+            case (curr_state_twid)
                 OP_TWIDDLE_LOAD: begin
-                    //if ((ctr >= (BLOCK_ID << (DEPTH_LOG-1))) && (ctr < (BLOCK_ID + 1) << (DEPTH_LOG-1))) begin
-                    if (ctr < DEPTH) begin
+                    if (ctr_twid < DEPTH) begin
                         be0[i]       <= 1'b1;
                     end
                     else begin

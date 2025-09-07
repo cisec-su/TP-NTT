@@ -99,7 +99,7 @@ twids = []
 def NTT(A, Psi_table, q, debug, L, w, test_dir=None):
     print("aa: ", L, w)
     if debug:
-        debug_file = open(f"{test_dir}/ntt_debug.txt", 'w+')
+        debug_file = open(f"{test_dir}/ntt_debug.txt", 'a')
     N = len(A)
     B = [_ for _ in A]
 
