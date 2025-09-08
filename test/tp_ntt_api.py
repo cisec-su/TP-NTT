@@ -1,8 +1,3 @@
-
-
-## twiddle olusturma ayırma - ntt ve intt twiddle vs doğru sırada üretme
-
-
 def create_unique_twiddles(psi, N, TP ,q, test_dir, intt):    
 
     if not intt:

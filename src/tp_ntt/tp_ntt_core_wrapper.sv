@@ -42,17 +42,18 @@ localparam BRAM_REG_SIZE            =  (TP/N1)*(N1-1);
 localparam ITER_PART_NUM_TOT        = (DIM == DIM_2D) ? 2 : ((DIM == DIM_3D) ? 3 : 4);
 localparam LOG_NEEDED_GLOBAL_N2     = LOG_GLOBAL_N2;
 localparam LOG_NEEDED_GLOBAL_N3     = LOG_GLOBAL_N3;
-localparam TWID_LOAD_CTR            = (DIM == DIM_2D) ? (BLOCK_ID == 0) ? 1         : (BLOCK_ID == 1) ? DEPTH : 0 : (DIM == DIM_4D) ? (BLOCK_ID == 0) ? 1       : (BLOCK_ID == 1) ? 1<<LOG_NEEDED_GLOBAL_N2 : (BLOCK_ID == 2) ? DEPTH                   :  (BLOCK_ID == 3) ? DEPTH  : 0 : 0;
-localparam TWID_LOAD_INV_CTR        = (DIM == DIM_2D) ? (BLOCK_ID == 0) ? DEPTH     : (BLOCK_ID == 1) ? 1     : 0 : (DIM == DIM_4D) ? (BLOCK_ID == 0) ? DEPTH   : (BLOCK_ID == 1) ? DEPTH                   : (BLOCK_ID == 2) ? 1<<LOG_NEEDED_GLOBAL_N3 :  (BLOCK_ID == 3) ? 1      : 0 : 0;
+localparam TWID_LOAD_CTR            = (DIM == DIM_2D) ? (BLOCK_ID == 0) ? 1         : (BLOCK_ID == 1) ? DEPTH : 0 : (DIM == DIM_3D) ? (BLOCK_ID == 0) ? 1       : (BLOCK_ID == 1) ? 1<<LOG_NEEDED_GLOBAL_N2    : (BLOCK_ID == 2) ? DEPTH   : 0 : (DIM == DIM_4D) ? (BLOCK_ID == 0) ? 1       : (BLOCK_ID == 1) ? 1<<LOG_NEEDED_GLOBAL_N2 : (BLOCK_ID == 2) ? DEPTH                   :  (BLOCK_ID == 3) ? DEPTH  : 0 : 0;
+localparam TWID_LOAD_INV_CTR        = (DIM == DIM_2D) ? (BLOCK_ID == 0) ? DEPTH     : (BLOCK_ID == 1) ? 1     : 0 : (DIM == DIM_3D) ? (BLOCK_ID == 0) ? DEPTH   : (BLOCK_ID == 1) ? DEPTH       : (BLOCK_ID == 2) ? 1       : 0 : (DIM == DIM_4D) ? (BLOCK_ID == 0) ? DEPTH   : (BLOCK_ID == 1) ? DEPTH                   : (BLOCK_ID == 2) ? 1<<LOG_NEEDED_GLOBAL_N3 :  (BLOCK_ID == 3) ? 1      : 0 : 0;
 //localparam W_R_DEPTH                = (TWID_LOAD_CTR == 1) ? 1 : $clog2(TWID_LOAD_CTR);
 localparam W_R_DEPTH                = DEPTH_LOG-1;
 localparam BRAM_DEPTH_LOG2          = W_R_DEPTH;
 localparam BRAM_DEPTH               = 1 << W_R_DEPTH;
-localparam WRITE_TWIDDLE_START      = (DIM == DIM_2D) ? (BLOCK_ID == 0) ? 0         : (BLOCK_ID == 1) ? 1       : 0 : (DIM == DIM_4D) ? (BLOCK_ID == 0) ? 0     : (BLOCK_ID == 1) ? 1                               : (BLOCK_ID == 2) ? 1+(1<<LOG_NEEDED_GLOBAL_N2)                     : (BLOCK_ID == 3) ?  1+(1<<LOG_NEEDED_GLOBAL_N2)+DEPTH              : 0 : 0;
-localparam WRITE_TWIDDLE_END        = (DIM == DIM_2D) ? (BLOCK_ID == 0) ? 1         : (BLOCK_ID == 1) ? DEPTH+1 : 0 : (DIM == DIM_4D) ? (BLOCK_ID == 0) ? 1     : (BLOCK_ID == 1) ? 1+(1<<LOG_NEEDED_GLOBAL_N2)     : (BLOCK_ID == 2) ? 1+(1<<LOG_NEEDED_GLOBAL_N2)+DEPTH               : (BLOCK_ID == 3) ?  1+(1<<LOG_NEEDED_GLOBAL_N2)+DEPTH+DEPTH        : 0 : 0;
-localparam WRITE_TWIDDLE_INV_START  = (DIM == DIM_2D) ? (BLOCK_ID == 0) ? 0         : (BLOCK_ID == 1) ? DEPTH   : 0 : (DIM == DIM_4D) ? (BLOCK_ID == 0) ? 0     : (BLOCK_ID == 1) ? DEPTH                           : (BLOCK_ID == 2) ? DEPTH + DEPTH                                   : (BLOCK_ID == 3) ?  DEPTH + DEPTH + (1<<LOG_NEEDED_GLOBAL_N3)      : 0 : 0;
-localparam WRITE_TWIDDLE_INV_END    = (DIM == DIM_2D) ? (BLOCK_ID == 0) ? DEPTH     : (BLOCK_ID == 1) ? DEPTH+1 : 0 : (DIM == DIM_4D) ? (BLOCK_ID == 0) ? DEPTH : (BLOCK_ID == 1) ? DEPTH+DEPTH                     : (BLOCK_ID == 2) ? DEPTH + DEPTH + (1<<LOG_NEEDED_GLOBAL_N3)       : (BLOCK_ID == 3) ?  DEPTH + DEPTH + (1<<LOG_NEEDED_GLOBAL_N3) + 1  : 0 : 0;
-localparam TWID_TOTAL_CTR           = (DIM == DIM_2D) ? 1 + DEPTH : (DIM == DIM_4D) ? 1 + (1<<LOG_NEEDED_GLOBAL_N3) + DEPTH + DEPTH : 0;
+localparam WRITE_TWIDDLE_START      = (DIM == DIM_2D) ? (BLOCK_ID == 0) ? 0         : (BLOCK_ID == 1) ? 1       : 0 : (DIM == DIM_3D) ? (BLOCK_ID == 0) ? 0         : (BLOCK_ID == 1) ? 1               : (BLOCK_ID == 2) ? 1+(1<<LOG_NEEDED_GLOBAL_N2)            : 0 : (DIM == DIM_4D) ? (BLOCK_ID == 0) ? 0     : (BLOCK_ID == 1) ? 1                               : (BLOCK_ID == 2) ? 1+(1<<LOG_NEEDED_GLOBAL_N2)                     : (BLOCK_ID == 3) ?  1+(1<<LOG_NEEDED_GLOBAL_N2)+DEPTH              : 0 : 0;
+localparam WRITE_TWIDDLE_END        = (DIM == DIM_2D) ? (BLOCK_ID == 0) ? 1         : (BLOCK_ID == 1) ? DEPTH+1 : 0 : (DIM == DIM_3D) ? (BLOCK_ID == 0) ? 1         : (BLOCK_ID == 1) ? 1+(1<<LOG_NEEDED_GLOBAL_N2)    : (BLOCK_ID == 2) ? 1+(1<<LOG_NEEDED_GLOBAL_N2)+DEPTH      : 0 : (DIM == DIM_4D) ? (BLOCK_ID == 0) ? 1     : (BLOCK_ID == 1) ? 1+(1<<LOG_NEEDED_GLOBAL_N2)     : (BLOCK_ID == 2) ? 1+(1<<LOG_NEEDED_GLOBAL_N2)+DEPTH               : (BLOCK_ID == 3) ?  1+(1<<LOG_NEEDED_GLOBAL_N2)+DEPTH+DEPTH        : 0 : 0;
+localparam WRITE_TWIDDLE_INV_START  = (DIM == DIM_2D) ? (BLOCK_ID == 0) ? 0         : (BLOCK_ID == 1) ? DEPTH   : 0 : (DIM == DIM_3D) ? (BLOCK_ID == 0) ? 0         : (BLOCK_ID == 1) ? DEPTH           : (BLOCK_ID == 2) ? DEPTH+DEPTH             : 0 : (DIM == DIM_4D) ? (BLOCK_ID == 0) ? 0     : (BLOCK_ID == 1) ? DEPTH                           : (BLOCK_ID == 2) ? DEPTH + DEPTH                                   : (BLOCK_ID == 3) ?  DEPTH + DEPTH + (1<<LOG_NEEDED_GLOBAL_N3)      : 0 : 0;
+localparam WRITE_TWIDDLE_INV_END    = (DIM == DIM_2D) ? (BLOCK_ID == 0) ? DEPTH     : (BLOCK_ID == 1) ? DEPTH+1 : 0 : (DIM == DIM_3D) ? (BLOCK_ID == 0) ? DEPTH     : (BLOCK_ID == 1) ? DEPTH+DEPTH     : (BLOCK_ID == 2) ? DEPTH+DEPTH+1           : 0 : (DIM == DIM_4D) ? (BLOCK_ID == 0) ? DEPTH : (BLOCK_ID == 1) ? DEPTH+DEPTH                     : (BLOCK_ID == 2) ? DEPTH + DEPTH + (1<<LOG_NEEDED_GLOBAL_N3)       : (BLOCK_ID == 3) ?  DEPTH + DEPTH + (1<<LOG_NEEDED_GLOBAL_N3) + 1  : 0 : 0;
+localparam TWID_TOTAL_CTR           = (DIM == DIM_2D) ? 1 + DEPTH : (DIM == DIM_3D) ? 1+(1<<LOG_NEEDED_GLOBAL_N2)+DEPTH : (DIM == DIM_4D) ? 1 + (1<<LOG_NEEDED_GLOBAL_N2) + DEPTH + DEPTH : 0;
+localparam TWID_TOTAL_INV_CTR       = (DIM == DIM_2D) ? 1 + DEPTH : (DIM == DIM_3D) ? DEPTH+DEPTH+1                     : (DIM == DIM_4D) ? 1 + (1<<LOG_NEEDED_GLOBAL_N3) + DEPTH + DEPTH : 0;
 
 // states
 localparam OP_IDLE                  = 2'd0;
@@ -206,7 +207,7 @@ always @(*) begin
             endcase
         end 
         OP_TWIDDLE_LOAD: begin
-            next_state_twid = (ctr_twid == TWID_TOTAL_CTR-1) ? OP_IDLE : OP_TWIDDLE_LOAD;
+            next_state_twid = (ctr_twid == TWID_TOTAL_CTR-1 && intt == 0) || (ctr_twid == TWID_TOTAL_INV_CTR-1 && intt == 1)  ? OP_IDLE : OP_TWIDDLE_LOAD;
         end
         default: begin
             next_state_twid = OP_IDLE;

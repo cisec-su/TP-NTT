@@ -6,10 +6,10 @@ module twid_load_tb();
 
     // TP-NTT Parameters
     parameter LOGN                      = 16;
-    parameter LOGN1                     = 5;
-    parameter LOGN2                     = 1;
-    parameter LOGN3                     = 5;
-    parameter LOGTP                     = 5;
+    parameter LOGN1                     = 4;
+    parameter LOGN2                     = 4;
+    parameter LOGN3                     = 4;
+    parameter LOGTP                     = 4;
     parameter LOGQ                      = 60;
     parameter LOGQH                     = 17;
     parameter NON_STD                   = 1;
@@ -426,7 +426,7 @@ module twid_load_tb();
         
 
 
-        // $display("BATCH INTT TEST STARTING");
+        $display("BATCH INTT TEST STARTING");
 
         input_state = 0;
         output_state = 0;
