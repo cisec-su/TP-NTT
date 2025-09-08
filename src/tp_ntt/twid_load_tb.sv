@@ -5,9 +5,9 @@ module twid_load_tb();
     `include "tp_ntt.svh"
 
     // TP-NTT Parameters
-    parameter LOGN                      = 15;
+    parameter LOGN                      = 16;
     parameter LOGN1                     = 5;
-    parameter LOGN2                     = 5;
+    parameter LOGN2                     = 1;
     parameter LOGN3                     = 5;
     parameter LOGTP                     = 5;
     parameter LOGQ                      = 60;
@@ -155,7 +155,7 @@ module twid_load_tb();
         
         OP_TYPE = 2'b1;
         #FP;
-
+        OP_TYPE = 2'b0;
 
         for (k = 0; k < N_OVER_TP ; k = k+1) begin
             for (j = 0; j < TP ; j = j + 1 ) begin
@@ -349,7 +349,7 @@ module twid_load_tb();
         end
 
 
-        ////// INTT TESTS ////////
+        // ////// INTT TESTS ////////
 
         INTT = 1'b1;
         rst = 1'b0;
@@ -373,6 +373,7 @@ module twid_load_tb();
         
         OP_TYPE = 2'b1;
         #FP;
+        OP_TYPE = 2'b0;
 
 
         for (k = 0; k < N_OVER_TP ; k = k+1) begin
@@ -425,7 +426,7 @@ module twid_load_tb();
         
 
 
-        $display("BATCH INTT TEST STARTING");
+        // $display("BATCH INTT TEST STARTING");
 
         input_state = 0;
         output_state = 0;

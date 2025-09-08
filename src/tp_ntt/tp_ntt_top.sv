@@ -91,6 +91,8 @@ if (DIM == DIM_2D) begin
         .LOGN(LOGN),
         .LOGN1(LOGN1),
         .LOGN2(LOGN2),
+        .LOG_GLOBAL_N2(LOGN2),
+        .LOG_GLOBAL_N3(LOGN3),
         .LOGTP(LOGTP),
         .LOGQ(LOGQ),
         .LOGQH(LOGQH),
@@ -130,6 +132,8 @@ if (DIM == DIM_2D) begin
         .LOGN(LOGN),
         .LOGN1(LOGN2),
         .LOGN2(LOGN1),
+        .LOG_GLOBAL_N2(LOGN2),
+        .LOG_GLOBAL_N3(LOGN3),
         .LOGTP(LOGTP),
         .LOGQ(LOGQ),
         .LOGQH(LOGQH),
@@ -154,6 +158,8 @@ else if (DIM == DIM_3D) begin
         .LOGN(LOGN),
         .LOGN1(LOGN1),
         .LOGN2(LOGN2),
+        .LOG_GLOBAL_N2(LOGN2),
+        .LOG_GLOBAL_N3(LOGN3),
         .LOGTP(LOGTP),
         .LOGQ(LOGQ),
         .LOGQH(LOGQH),
@@ -193,6 +199,8 @@ else if (DIM == DIM_3D) begin
         .LOGN(LOGN),
         .LOGN1(LOGN2),
         .LOGN2(LOGN1),
+        .LOG_GLOBAL_N2(LOGN2),
+        .LOG_GLOBAL_N3(LOGN3),
         .LOGTP(LOGTP),
         .LOGQ(LOGQ),         
         .LOGQH(LOGQH),
@@ -232,6 +240,8 @@ else if (DIM == DIM_3D) begin
         .LOGN(LOGN),
         .LOGN1(LOGN3),
         .LOGN2(LOGN4),
+        .LOG_GLOBAL_N2(LOGN2),
+        .LOG_GLOBAL_N3(LOGN3),
         .LOGTP(LOGTP),
         .LOGQ(LOGQ),         
         .LOGQH(LOGQH),
@@ -256,6 +266,8 @@ else if (DIM == DIM_4D) begin
         .LOGN(LOGN),
         .LOGN1(LOGN1),
         .LOGN2(LOGN2),
+        .LOG_GLOBAL_N2(LOGN2),
+        .LOG_GLOBAL_N3(LOGN3),
         .LOGTP(LOGTP),
         .LOGQ(LOGQ),         
         .LOGQH(LOGQH),
@@ -295,6 +307,8 @@ else if (DIM == DIM_4D) begin
         .LOGN(LOGN),
         .LOGN1(LOGN2),
         .LOGN2(LOGN1),
+        .LOG_GLOBAL_N2(LOGN2),
+        .LOG_GLOBAL_N3(LOGN3),
         .LOGTP(LOGTP),
         .LOGQ(LOGQ),         
         .LOGQH(LOGQH),
@@ -334,6 +348,8 @@ else if (DIM == DIM_4D) begin
         .LOGN(LOGN),
         .LOGN1(LOGN3),
         .LOGN2(LOGN4),
+        .LOG_GLOBAL_N2(LOGN2),
+        .LOG_GLOBAL_N3(LOGN3),
         .LOGTP(LOGTP),
         .LOGQ(LOGQ),         
         .LOGQH(LOGQH),
@@ -373,6 +389,8 @@ else if (DIM == DIM_4D) begin
         .LOGN(LOGN),
         .LOGN1(LOGN4),
         .LOGN2(LOGN3),
+        .LOG_GLOBAL_N2(LOGN2),
+        .LOG_GLOBAL_N3(LOGN3),
         .LOGTP(LOGTP),
         .LOGQ(LOGQ),         
         .LOGQH(LOGQH),
@@ -519,7 +537,7 @@ shiftreg #(
 );
 
 shiftreg #(
-    .SHIFT (D1 + 4),
+    .SHIFT (1),
     .DATA  (1)
 ) sre201 (
     .clk      (clk     ),
@@ -529,7 +547,7 @@ shiftreg #(
 );
 
 shiftreg #(
-    .SHIFT (D1 + 4 + LAT1),
+    .SHIFT (LAT1),
     .DATA  (1)
 ) sre202 (
     .clk      (clk        ),
@@ -539,7 +557,7 @@ shiftreg #(
 );
 
 shiftreg #(
-    .SHIFT ((BTF_LAT + 1) * LOGN2 + 1),
+    .SHIFT (1),
     .DATA  (1)
 ) sre203 (
     .clk      (clk        ),
@@ -549,7 +567,7 @@ shiftreg #(
 );
 
 shiftreg #(
-    .SHIFT (D + 6 + LAT2),
+    .SHIFT (LAT2),
     .DATA  (1)
 ) sre204 (
     .clk      (clk       ),
@@ -559,7 +577,7 @@ shiftreg #(
 );
 
 shiftreg #(
-    .SHIFT ((BTF_LAT + 1) * LOGN3 + 1),
+    .SHIFT (1),
     .DATA  (1)
 ) sre205 (
     .clk      (clk        ),
@@ -569,7 +587,7 @@ shiftreg #(
 );
 
 shiftreg #(
-    .SHIFT (D2 + 6 + LAT3),
+    .SHIFT (LAT3),
     .DATA  (1)
 ) sre206 (
     .clk      (clk        ),
@@ -592,7 +610,7 @@ shiftreg #(
 );
 
 shiftreg #(
-    .SHIFT (DEPTH + LAT1),
+    .SHIFT (LAT1),
     .DATA  (2)
 ) sre301 (
     .clk      (clk          ),
@@ -602,7 +620,7 @@ shiftreg #(
 );
 
 shiftreg #(
-    .SHIFT (DEPTH + LAT2),
+    .SHIFT (LAT2),
     .DATA  (2)
 ) sre302 (
     .clk      (clk          ),
@@ -613,7 +631,7 @@ shiftreg #(
 
 
 shiftreg #(
-    .SHIFT (DEPTH + LAT3),
+    .SHIFT (LAT3),
     .DATA  (2)
 ) sre303 (
     .clk      (clk          ),
@@ -635,7 +653,7 @@ shiftreg #(
 );
 
 shiftreg #(
-    .SHIFT (DEPTH + LAT1),
+    .SHIFT (LAT1),
     .DATA  (LOGQH)
 ) sre401 (
     .clk      (clk      ),
@@ -645,7 +663,7 @@ shiftreg #(
 );
 
 shiftreg #(
-    .SHIFT (DEPTH + LAT2),
+    .SHIFT (LAT2),
     .DATA  (LOGQH)
 ) sre402 (
     .clk      (clk      ),
@@ -655,7 +673,7 @@ shiftreg #(
 );
 
 shiftreg #(
-    .SHIFT (DEPTH + LAT3),
+    .SHIFT (LAT3),
     .DATA  (LOGQH)
 ) sre403 (
     .clk      (clk      ),
