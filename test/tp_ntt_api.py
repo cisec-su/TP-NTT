@@ -88,19 +88,3 @@ def create_unique_twiddles(psi, N, TP ,q, test_dir, intt):
    
 
 
-
-
-
-
-
-## twiddle bram'i ekleyelim top module'e
-
-## twiddle blockları arasına inğuttan gelen her şey için shift ederek gönderelim, twiddle'ı
-
-## cc0: op_code TWIDDLE_LOAD , 0-384, 0-127 , 128-255, 256-384
-
-## TWİDDLE_LOAD içine gelsin tp_ntt_top'un --> bu tamam
-            
-## psi sinyalini aralarına parameterik latency ekleyelim 
-
-## op_code shiftleri için parameterik 
