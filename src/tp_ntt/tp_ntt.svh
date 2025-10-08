@@ -103,7 +103,7 @@ function int tp_ntt_lat(input tp_ntt_params_t params);
     else if (tp_ntt_dim(params) == DIM_3D)
         tp_ntt_lat = (butterfly_lat_plus1 * params.LOGN) + tp_ntt_d1(params) + 15 + 3 + 3 + LAT0 + LAT1 + LAT2;
     else
-        tp_ntt_lat = (butterfly_lat_plus1 * params.LOGN) + tp_ntt_d1(params) + tp_ntt_d2(params) + 21 + 4 + 3 +  LAT0 + LAT1 + LAT2 + LAT3;
+        tp_ntt_lat = (butterfly_lat_plus1 * params.LOGN) + tp_ntt_d1(params) + tp_ntt_d2(params) + 21 + 4 + 3 +  LAT0 + LAT1 + LAT2 + LAT3 + 64 + 8;
 endfunction
 
 

@@ -21,7 +21,7 @@ module tp_ntt_top_w_shuffle
         input                           shuffle_mod,
         input       [LOGQH      -1:0]   qH,
         input       [TP*LOGQ    -1:0]   i_poly,
-        input       [(TP-1)*LOGQ-1:0]   psi,
+        input       [TP*LOGQ    -1:0]   psi,
         output reg  [TP*LOGQ    -1:0]   o_poly
     );
 
@@ -48,16 +48,24 @@ localparam N4                                   = 1 << LOGN4;
 wire start_ntt2, start_ntt_top, start_ntt_top_d1, start_ntt_top_fn;
 wire [TP*LOGQ-1:0] poly_ntt1, shuffle_out, poly_ntt_res;
 
-reg [TP*LOGQ-1:0] poly_d1, poly_d2, poly_d3, shuffle_in;
+reg [TP*LOGQ-1:0] poly_d1, poly_d2, poly_d3, tp_ntt_top_input;
+
+wire [TP*LOGQ-1:0] shuffle_in;
+
+reg start_d1, start_shuffle_ntt, start_intt_top, start_intt_top_d1, start_intt_top_d2;
 
 always @(posedge clk) begin
     poly_d1 <= i_poly;
     poly_d2 <= poly_d1;
-    shuffle_in <= poly_d2;
+    poly_d3 <= poly_d2;
+    start_shuffle_ntt <= start;
+    start_intt_top <= start;
+    start_intt_top_d1 <= start_intt_top;
+    start_intt_top_d2 <= start_intt_top_d1;
 end
 
 shiftreg #(
-    .SHIFT (14'd128 + 7),
+    .SHIFT (14'd64 + 7),
     .DATA  (1)
 ) sre101 (
     .clk      (clk           ),
@@ -67,23 +75,29 @@ shiftreg #(
 );
 
 shiftreg #(
-    .SHIFT (1),
+    .SHIFT (LAT - 8),
     .DATA  (1)
 ) sre102 (
-    .clk      (clk              ),
-    .reset    (rst              ),
-    .data_in  (start_ntt_top    ),
-    .data_out (start_ntt_top_d1 )
+    .clk      (clk                  ),
+    .reset    (rst                  ),
+    .data_in  (start_shuffle_ntt     ),
+    .data_out (start_shuffle_intt   )
 );
 
 
-assign start_ntt_top_fn = shuffle_mod ? start_ntt_top_d1 : start_ntt_top;
+assign start_ntt_top_fn = intt ? start_intt_top_d2 : start_ntt_top;
+
+assign shuffle_in = intt ? poly_ntt_res : poly_d3;
+
+assign start_shuffle = intt ? start_shuffle_intt  :  start_shuffle_ntt;
+
+assign tp_ntt_top_input = intt ? poly_d3 : shuffle_out;
 
 always @(posedge clk or posedge rst) begin
     if (rst) begin
         o_poly <= 0;
     end else begin
-        o_poly <= poly_ntt_res;
+        o_poly <= intt ? shuffle_out : poly_ntt_res;
         
     end    
 end
@@ -97,7 +111,7 @@ shuffle_process_upd #(
     ) uut_shuf (
         .clk(clk),
         .rst(rst),
-        .start(start),
+        .start(start_shuffle),
         .mod_op(shuffle_mod),
         .input_data(shuffle_in),
         .output_data(shuffle_out)
@@ -123,7 +137,7 @@ tp_ntt_top #(
         .shuffle_mod(shuffle_mod),
         .intt(intt),
         .qH(qH),
-        .i_poly(shuffle_out),
+        .i_poly(tp_ntt_top_input),
         .psi(psi),
         .o_poly(poly_ntt_res)
     );

@@ -71,7 +71,7 @@ assign ctr_read = ctr_d + READ_LAT;
 
 if (LARGE) begin
     for (genvar i = 0; i < TP; i = i + 1) begin
-        assign read_addr_int[i] = ((((SIZE0_OVER_TP)<<(SIZE1_OVER_TP_LOG2))*i + (SIZE0_OVER_TP)*(ctr_read&(SIZE1_OVER_TP-1)) + ((ctr_read&(DEPTH-1))>>LOG_SIZE1)) & (DEPTH-1)) + ((ctr_read<DEPTH)<<(LOG_DEPTH-1));
+        assign read_addr_int[i] = ((((SIZE0_OVER_TP))*i + (SIZE0_OVER_TP*SIZE1_OVER_TP)*(ctr_read&(SIZE1_OVER_TP-1)) + ((ctr_read&(DEPTH-1))>>LOG_SIZE1)) & (DEPTH-1)) + ((ctr_read<DEPTH)<<(LOG_DEPTH-1));
     end
 end else begin
     for (genvar i = 0; i < TP; i = i + 1) begin

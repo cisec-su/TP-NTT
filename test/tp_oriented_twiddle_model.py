@@ -194,7 +194,7 @@ def INTT(A, Psi_table, q, debug=True):
 
 def INTT_wo_last(A, Psi_table, q, debug=True):
     if debug:
-        debug_file = open(f"{test_dir}/intt_debug.txt", 'w+')
+        debug_file = open(f"{test_dir}/intt_debug.txt", 'a')
     counterr = 0
     N = len(A)
     B = [_ for _ in A]

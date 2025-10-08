@@ -291,16 +291,16 @@ end
 if (LARGE) begin
     for (genvar i = 0; i < TP; i = i + 1) begin
         always @(posedge clk) begin
-            NTT_core_in[(TP-i)*LOGQ-1-:LOGQ] <= i_poly[(TP - (((i/N1)*N1 + (i & 1'd1)*(N1/2) + (i & (N1-1))/2)  & (TP-1)))*LOGQ-1-:LOGQ] ;
+            NTT_core_in[(TP-(((i & (1'd1)) + ((i&(N1-1))&(2'd3))/2*(N1/2) + ((i&(N1-1))&(3'D7))/4*(N1/4) + ((i&(N1-1))&4'd15)/8*(N1/8) + ((i&(N1-1))&5'd31)/16*(N1/16) + (((i%N1)&(6'd63))/32)*(N1/32) + (((i&(N1-1))&7'd127)/64)*(N1/64) + ((i&(N1-1))/128)*(N1/128) + (i/N1)*N1) & (TP-1)))*LOGQ-1-:LOGQ] <= i_poly[(TP - (i))*LOGQ-1-:LOGQ] ;
         end
     end
 end else begin
     for (genvar i = 0; i < TP; i = i + 1) begin
         always @(posedge clk) begin
             if (RW_DIS) begin
-                NTT_core_in[( TP - (((i & (N1/2-1))*2 + (i & (N1-1))/(N1/2) + (i/N1)*N1) & (TP-1)) )*LOGQ-1             -:LOGQ]    <= i_poly[(TP-i)*LOGQ-1-:LOGQ];
+                NTT_core_in[( TP - (((i & (1'd1)) + (i&(2'd3))/2*(TP/2) + (i&(3'd7))/4*(TP/4) + (i&4'd15)/8*(TP/8) + (i&5'd31)/16*(TP/16) + (i&6'd63)/32*(TP/32) + (i&7'd127)/64*(TP/64) + (i/128)*(TP/128)) & (TP-1)) )*LOGQ-1             -:LOGQ]    <= i_poly[(TP-i)*LOGQ-1-:LOGQ];
             end else begin
-                NTT_core_in[( TP - ((((i & (N2-1))*N1) + (i/(TP>>1)) + ((i & ((TP>>1)-1))/(TP/N1))*2) & (TP-1)) )*LOGQ-1-:LOGQ]    <= i_poly[(TP-i)*LOGQ-1-:LOGQ];
+                NTT_core_in[( TP - (((i & (1'd1)) + (i&(2'd3))/2*(TP/2) + (i&(3'd7))/4*(TP/4) + (i&4'd15)/8*(TP/8) + (i&5'd31)/16*(TP/16) + (i&6'd63)/32*(TP/32) + (i&7'd127)/64*(TP/64) + (i/128)*(TP/128)) & (TP-1)) )*LOGQ-1-:LOGQ]    <= i_poly[(TP-i)*LOGQ-1-:LOGQ];
             end
         end
     end

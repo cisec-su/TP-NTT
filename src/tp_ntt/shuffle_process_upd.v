@@ -26,6 +26,7 @@ localparam TP                       = 1 << LOGTP;
 localparam SIZE0                    = N1 * N2;
 localparam SIZE1                    = N / (SIZE0);
 localparam DEPTH                    = LARGE ? N/TP : SIZE0/TP ;
+localparam DEPTH_NEW                 = N/TP ;
 localparam DEPTH_LARGE              = N/TP;
 localparam SIZE1_OVER_TP            = SIZE1/TP;
 localparam SIZE0_OVER_TP            = SIZE0/TP;
@@ -80,7 +81,7 @@ always @(*) begin
     if (start) begin
         next_state = OP_STARTED;
     end
-    else if ((ctr_state[LOG_DEPTH_LARGE+3:0]) == (4'd10*DEPTH_LARGE-1)) begin
+    else if ((ctr_state[LOG_DEPTH_LARGE-1:0]) == (DEPTH_LARGE-1)) begin
         next_state = OP_IDLE;
     end
 end
@@ -186,7 +187,12 @@ end
 
 for (genvar rot = 0; rot < TP; rot = rot + 1 ) begin
     always @(posedge clk) begin
-        input_data_shift[rot*LOGQ +: LOGQ] <= mod_op ? input_data_int[rot] : input_data_int[(((rot+(ctr_shifted>>2))&(5'd31)))];;
+        input_data_shift[rot*LOGQ +: LOGQ] <=  input_data_int[((((rot+
+                                                                    (
+                                                                        ((ctr_shifted>>4)&1'd1)*2 + 
+                                                                        ((ctr_shifted>>4)>>1)
+                                                                    )
+                                                                    ))&(2'd3)))];
     end
 end
 
@@ -232,15 +238,10 @@ end
 
 for (genvar i = 0; i < TP; i = i + 1) begin
     always @(posedge clk ) begin
-        output_data[(TP-i)*LOGQ-1-:LOGQ] <= mod_op ? do00[(i & 1'd1) * (N1 >> 1) +
-                                                    ((i & 2'd3) >> 1) * (N1 >> 2) +
-                                                    ((i & 3'd7) >> 2) * (N1 >> 3) +
-                                                    ((i & 4'd15) >> 3) * (N1 >> 4) +
-                                                    ((i & 5'd31) >> 4) * (N1 >> 5) +
-                                                    ((i & 6'd63) >> 5) * (N1 >> 6) +
-                                                    ((i & 7'd127) >> 6) * (N1 >> 7)
-        ] 
-        :  do00[(i + (ctr_out>>2)) & (TP-1)] ;
+        output_data[(TP-i)*LOGQ-1-:LOGQ] <= do00[(i + ((ctr_out/8)&1'd1)/1*4 +
+                ((ctr_out/8) & 2'd3)/2*2 +
+                (ctr_out/(DEPTH_NEW/2)) ) & (2'd3)
+        ];
     end
 end
 

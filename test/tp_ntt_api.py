@@ -39,8 +39,13 @@ def create_unique_twiddles(psi, N, TP ,q, test_dir, intt):
                 write_line = write_line + "\n"
                 outfile.write(write_line)
     else:
+        
+        
+        
         input_path = f"{test_dir}/psi_inv.txt"
         output_path = f"{test_dir}/psi_inv_unique.txt"
+
+        
 
         with open(input_path, "r") as infile:
             infile.seek(0)
@@ -54,7 +59,7 @@ def create_unique_twiddles(psi, N, TP ,q, test_dir, intt):
             if line and line not in seen:
                 seen.add(line)
                 unique_lines.append(line)
-
+            #print(line)
         needs_to_add = []
         set_needs_to_add = []
         
@@ -79,7 +84,4 @@ def create_unique_twiddles(psi, N, TP ,q, test_dir, intt):
                     write_line = write_line + elm + "\t"
                 write_line = write_line + "\n"
                 outfile.write(write_line)
-
-   
-
 
