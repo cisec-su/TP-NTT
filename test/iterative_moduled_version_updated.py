@@ -415,6 +415,7 @@ def shuffle_modop_1(input1):
         print(arr)
     
     magical = (N//(n1*TP))
+    magical2 = (n2*size1//TP)
 
     ###### GENERIC ##### 
     for i in range(N//TP):
@@ -437,9 +438,12 @@ def shuffle_modop_1(input1):
             ) % (N // TP)
             ][
             (
-                ((i//16)%4)//2*4 +
-                ((i//16)%8)//4*2 +
-                (i//(depth//2))
+                ((i//magical2)%2)//1*(TP//2) +
+                ((i//magical2)%4)//2*(TP//4) +
+                ((i//magical2)%8)//4*(TP//8) +
+                ((i//magical2)%16)//8*(TP//16) +
+                ((i//magical2)%32)//16*(TP//32) +
+                ((i//magical2)%64)//32*(TP//64) 
             ) % TP]
 
     # ###### 4-2-4-4 4

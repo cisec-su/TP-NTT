@@ -3,6 +3,7 @@ module shuffle_addr_gen
         parameter  LOGN         = 128,
         parameter  LOGN1        = 2  ,
         parameter  LOGN2        = 2  ,
+        parameter  SIZE1        = 4  ,
         parameter  LOGTP        = 8  
     )
     (
@@ -22,6 +23,7 @@ localparam DEPTH            = N/TP;
 localparam LOG_DEPTH        = $clog2(DEPTH)+1;
 localparam READ_LAT         = DEPTH ;
 localparam magical          = (N/(N1*TP));
+localparam magical2         = (N2*SIZE1/TP);
 
 // states
 localparam OP_IDLE          = 1'd0;
@@ -88,7 +90,7 @@ for (genvar j = 0; j < TP; j = j + 1) begin
                 (ctr_read & 3'd7)/4 * (magical/8) + 
                 (ctr_read & 4'd15)/8 * (magical/16) + 
                 (ctr_read & 5'd31)/16 * (magical/32) + 
-                (ctr_read & 5'd63)/32 * (magical/64)) & (DEPTH-1)) + (ctr_read<DEPTH)*DEPTH;
+                (ctr_read & 6'd63)/32 * (magical/64)) & (DEPTH-1)) + (ctr_read<DEPTH)*DEPTH;
 end
 
 
@@ -98,8 +100,12 @@ for (genvar i = 0; i < TP; i = i + 1) begin
     always @(posedge clk) begin
         read_addr [((TP-i)*(LOG_DEPTH))-1 -: LOG_DEPTH] <= read_addr_int[((i - 
         (
-            ((ctr_read/16)&(1'd1))*2 + 
-            (((ctr_read/16)&(2'd3))/2)
+            (((ctr_read & (DEPTH-1))/magical2)&1'd1)/1*(TP/2) +
+            (((ctr_read & (DEPTH-1))/magical2)&2'd3)/2*(TP/4) +
+            (((ctr_read & (DEPTH-1))/magical2)&3'd7)/4*(TP/8) +
+            (((ctr_read & (DEPTH-1))/magical2)&4'd15)/8*(TP/16) +
+            (((ctr_read & (DEPTH-1))/magical2)&5'd31)/16*(TP/32) +
+            (((ctr_read & (DEPTH-1))/magical2)&6'd63)/32*(TP/64) 
         ))) & (TP-1)];
     end
     always @(posedge clk) begin

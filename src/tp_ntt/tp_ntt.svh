@@ -79,7 +79,7 @@ function int tp_ntt_is_not_valid_partition(input tp_ntt_params_t params);
     if ((tp_ntt_dim(params) == DIM_2D) && (N1 == N2 && N2 == TP)) begin
         tp_ntt_is_not_valid_partition = 0;
     end 
-    else if (tp_ntt_dim(params) == DIM_3D && (N1 == N3 && N3 == TP) && (2<N2 && TP >= N2)  ) begin
+    else if (tp_ntt_dim(params) == DIM_3D && (N1 == N3 && N3 == TP) && (1<N2 && TP >= N2)  ) begin
         tp_ntt_is_not_valid_partition = 0;
     end
     else if (tp_ntt_dim(params) == DIM_4D && (N1 == N3 && N3 == N4 && N4 == TP) && (1<N2 && TP >= N2)  ) begin
@@ -99,11 +99,11 @@ function int tp_ntt_lat(input tp_ntt_params_t params);
     butterfly_params_t butterfly_params = tp_ntt_butterfly_params(params);
     int butterfly_lat_plus1 = butterfly_lat(butterfly_params) + 1;
     if (tp_ntt_dim(params) == DIM_2D)
-        tp_ntt_lat = (butterfly_lat_plus1 * params.LOGN) + 9 + 2 + 3 + LAT0 + LAT1;
+        tp_ntt_lat = (butterfly_lat_plus1 * params.LOGN) + 9 + 2 + 3 + LAT0 + LAT1 + (1<<(params.LOGN-params.LOGTP)) + 8;
     else if (tp_ntt_dim(params) == DIM_3D)
-        tp_ntt_lat = (butterfly_lat_plus1 * params.LOGN) + tp_ntt_d1(params) + 15 + 3 + 3 + LAT0 + LAT1 + LAT2;
+        tp_ntt_lat = (butterfly_lat_plus1 * params.LOGN) + tp_ntt_d1(params) + 15 + 3 + 3 + LAT0 + LAT1 + LAT2 + (1<<(params.LOGN-params.LOGTP)) + 8;
     else
-        tp_ntt_lat = (butterfly_lat_plus1 * params.LOGN) + tp_ntt_d1(params) + tp_ntt_d2(params) + 21 + 4 + 3 +  LAT0 + LAT1 + LAT2 + LAT3 + 64 + 8;
+        tp_ntt_lat = (butterfly_lat_plus1 * params.LOGN) + tp_ntt_d1(params) + tp_ntt_d2(params) + 21 + 4 + 3 +  LAT0 + LAT1 + LAT2 + LAT3 + (1<<(params.LOGN-params.LOGTP)) + 8;
 endfunction
 
 

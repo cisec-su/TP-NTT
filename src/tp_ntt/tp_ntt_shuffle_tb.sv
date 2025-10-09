@@ -5,11 +5,11 @@ module tp_ntt_shuffle_tb();
     `include "tp_ntt.svh"
 
     // TP-NTT Parameters
-    parameter LOGN                      = 8;
-    parameter LOGN1                     = 2;
+    parameter LOGN                      = 12;
+    parameter LOGN1                     = 5;
     parameter LOGN2                     = 2;
-    parameter LOGN3                     = 2;
-    parameter LOGTP                     = 2;
+    parameter LOGN3                     = 5;
+    parameter LOGTP                     = 5;
     parameter LOGQ                      = 60;
     parameter LOGQH                     = 17;
     parameter NON_STD                   = 1;
@@ -353,7 +353,7 @@ module tp_ntt_shuffle_tb();
         
 
 
-        // ////// INTT TESTS ////////
+        ////// INTT TESTS ////////
 
         INTT = 1'b1;
         rst = 1'b0;
@@ -399,7 +399,7 @@ module tp_ntt_shuffle_tb();
         START_NTT = 1'b1;
         @(posedge clk);
         START_NTT = 1'b0;
-        // Initialize inputs
+        //Initialize inputs
         for (i = 0; i < DEPTH ; i = i + 1) begin
             for ( j = 0; j < TP; j = j + 1) begin // For every stage
                 idx_here = (i*TP + j) & (N-1);
@@ -546,7 +546,7 @@ module tp_ntt_shuffle_tb();
                     end
                 end
             end
-            ////////////// NEXT CYCLE //////////////////
+            //////////// NEXT CYCLE //////////////////
             @(posedge clk);
             k = k + 1;
         end

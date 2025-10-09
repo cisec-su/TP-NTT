@@ -237,14 +237,14 @@ for (genvar i = 0; i < TP; i = i + 1) begin: FIFO_LOOP // BRAM for NTT
                             if (ctr < DEPTH_LARGE) begin
                                 fifo_reg[LOGQ*(ctr+1)-1-:LOGQ] <= psi[LOGQ*(1)-1-:LOGQ];
                             end
-                            else if (ctr >= DEPTH_LARGE && ctr < DEPTH_LARGE + (1<<LOGN2)) begin
-                                if (i >= TWID_FACTOR_N2) begin // take first (ctr-1)*4+1 (1-5-9-13)  elements from fifo 
-                                    fifo_reg[LOGQ*((i-(TWID_FACTOR_N2-1))+(ctr-DEPTH_LARGE)*(TP-TWID_FACTOR_N2)+1)-1-:LOGQ] <= psi[LOGQ*((TP-i))-1-:LOGQ];
-                                end
-                            end
-                            else begin
-                                fifo_reg[LOGQ*((ctr-(DEPTH_LARGE + (1<<LOGN2)) + (DEPTH_LARGE + (TP-TWID_FACTOR_N2)*(1<<LOGN2))) + 1)-1-:LOGQ] <= psi[LOGQ*(1)-1-:LOGQ];
-                            end
+                            // else if (ctr >= DEPTH_LARGE && ctr < DEPTH_LARGE + (1<<LOGN2)) begin
+                            //     if (i >= TWID_FACTOR_N2) begin // take first (ctr-1)*4+1 (1-5-9-13)  elements from fifo 
+                            //         fifo_reg[LOGQ*((i-(TWID_FACTOR_N2-1))+(ctr-DEPTH_LARGE)*(TP-TWID_FACTOR_N2)+1)-1-:LOGQ] <= psi[LOGQ*((TP-i))-1-:LOGQ];
+                            //     end
+                            // end
+                            // else begin
+                            //     fifo_reg[LOGQ*((ctr-(DEPTH_LARGE + (1<<LOGN2)) + (DEPTH_LARGE + (TP-TWID_FACTOR_N2)*(1<<LOGN2))) + 1)-1-:LOGQ] <= psi[LOGQ*(1)-1-:LOGQ];
+                            // end
                         end 
                     end else if (DIM_NUM == 2) begin
                         if (intt == 1'b0) begin

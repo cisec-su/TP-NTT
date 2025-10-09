@@ -41,6 +41,7 @@ localparam N2                                   = 1 << LOGN2;
 localparam N3                                   = 1 << LOGN3;
 localparam TP                                   = 1 << LOGTP;
 localparam N4                                   = 1 << LOGN4;
+localparam DEPTH                                = 1 << (LOGN-LOGTP);
 
 
 
@@ -65,7 +66,7 @@ always @(posedge clk) begin
 end
 
 shiftreg #(
-    .SHIFT (14'd64 + 7),
+    .SHIFT (DEPTH + 7),
     .DATA  (1)
 ) sre101 (
     .clk      (clk           ),
