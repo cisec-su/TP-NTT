@@ -22,8 +22,11 @@ localparam TP               = 1 << LOGTP;
 localparam DEPTH            = N/TP;
 localparam LOG_DEPTH        = $clog2(DEPTH)+1;
 localparam READ_LAT         = DEPTH ;
-localparam magical          = (N/(N1*TP));
-localparam magical2         = (N2*SIZE1/TP);
+localparam MAGICAL          = (N/(N1*TP));
+localparam MAGICAL2         = (N2*SIZE1/TP);
+localparam REG_CTR = LOGN-LOGTP;
+
+localparam MAGIC_NUM = LOGN2 - 1;
 
 // states
 localparam OP_IDLE          = 1'd0;
@@ -35,11 +38,6 @@ reg  [LOG_DEPTH-1:0] ctr;
 wire [LOG_DEPTH-1:0] ctr_d;
 wire [LOG_DEPTH-1:0] ctr_read;
 reg  curr_state, next_state;
-
-localparam REG_CTR = LOGN-LOGTP;
-
-localparam MAGIC_NUM = LOGN2 - 1;
-
 
 reg start_d;
 
@@ -78,19 +76,22 @@ shiftreg #(
 assign ctr_read = ctr_d + READ_LAT;
 
 for (genvar j = 0; j < TP; j = j + 1) begin
-    assign read_addr_int[j] =           (((j & 1'd1) * magical * (N1 >> 1) +
-                ((j & 2'd3) / 2) * magical * (N1 >> 2) +
-                ((j & 3'd7) / 4) * magical * (N1 >> 3) +
-                ((j & 4'd15) / 8) * magical * (N1 >> 4) +
-                ((j & 5'd31) / 16) * magical *  (N1 >> 5) +
-                ((j & 6'd63) / 32) * magical * (N1 >> 6) +
-                ((j & 7'd127) / 64) * magical * (N1 >> 7) + 
-                (ctr_read & 1'd1)/1 * (magical/2) + 
-                (ctr_read & 2'd3)/2 * (magical/4) + 
-                (ctr_read & 3'd7)/4 * (magical/8) + 
-                (ctr_read & 4'd15)/8 * (magical/16) + 
-                (ctr_read & 5'd31)/16 * (magical/32) + 
-                (ctr_read & 6'd63)/32 * (magical/64)) & (DEPTH-1)) + (ctr_read<DEPTH)*DEPTH;
+    assign read_addr_int[j] =           (((j & 1'd1) * MAGICAL * (N1 >> 1) +
+                ((j & 2'd3) / 2) * MAGICAL * (N1 >> 2) +
+                ((j & 3'd7) / 4) * MAGICAL * (N1 >> 3) +
+                ((j & 4'd15) / 8) * MAGICAL * (N1 >> 4) +
+                ((j & 5'd31) / 16) * MAGICAL *  (N1 >> 5) +
+                ((j & 6'd63) / 32) * MAGICAL * (N1 >> 6) +
+                ((j & 7'd127) / 64) * MAGICAL * (N1 >> 7) + 
+                ((j & 8'd255) / 128) * MAGICAL * (N1 >> 8) + 
+                (ctr_read & 1'd1)/1 * (MAGICAL/2) + 
+                (ctr_read & 2'd3)/2 * (MAGICAL/4) + 
+                (ctr_read & 3'd7)/4 * (MAGICAL/8) + 
+                (ctr_read & 4'd15)/8 * (MAGICAL/16) + 
+                (ctr_read & 5'd31)/16 * (MAGICAL/32) + 
+                (ctr_read & 6'd63)/32 * (MAGICAL/64) + 
+                (ctr_read & 7'd127)/64 * (MAGICAL/128) + 
+                (ctr_read & 8'd255)/128 * (MAGICAL/256)) & (DEPTH-1)) + (ctr_read<DEPTH)*DEPTH;
 end
 
 
@@ -100,12 +101,14 @@ for (genvar i = 0; i < TP; i = i + 1) begin
     always @(posedge clk) begin
         read_addr [((TP-i)*(LOG_DEPTH))-1 -: LOG_DEPTH] <= read_addr_int[((i - 
         (
-            (((ctr_read & (DEPTH-1))/magical2)&1'd1)/1*(TP/2) +
-            (((ctr_read & (DEPTH-1))/magical2)&2'd3)/2*(TP/4) +
-            (((ctr_read & (DEPTH-1))/magical2)&3'd7)/4*(TP/8) +
-            (((ctr_read & (DEPTH-1))/magical2)&4'd15)/8*(TP/16) +
-            (((ctr_read & (DEPTH-1))/magical2)&5'd31)/16*(TP/32) +
-            (((ctr_read & (DEPTH-1))/magical2)&6'd63)/32*(TP/64) 
+            (((ctr_read & (DEPTH-1))/MAGICAL2)&1'd1)/1*(TP/2) +
+            (((ctr_read & (DEPTH-1))/MAGICAL2)&2'd3)/2*(TP/4) +
+            (((ctr_read & (DEPTH-1))/MAGICAL2)&3'd7)/4*(TP/8) +
+            (((ctr_read & (DEPTH-1))/MAGICAL2)&4'd15)/8*(TP/16) +
+            (((ctr_read & (DEPTH-1))/MAGICAL2)&5'd31)/16*(TP/32) +
+            (((ctr_read & (DEPTH-1))/MAGICAL2)&6'd63)/32*(TP/64) + 
+            (((ctr_read & (DEPTH-1))/MAGICAL2)&7'd127)/64*(TP/128) + 
+            (((ctr_read & (DEPTH-1))/MAGICAL2)&8'd255)/128*(TP/256) 
         ))) & (TP-1)];
     end
     always @(posedge clk) begin

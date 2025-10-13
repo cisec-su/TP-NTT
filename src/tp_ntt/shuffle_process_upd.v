@@ -35,7 +35,7 @@ localparam BRAM_SIZE                = LARGE ? 2*DEPTH : 2*SIZE0_OVER_TP;
 localparam BRAM_LOG_SIZE            = LARGE ? $clog2(2*DEPTH) : LOG_SIZE0_OVER_TP + 1;
 localparam LOG_DEPTH                = LARGE ? $clog2(DEPTH) + 1 : LOG_SIZE0_OVER_TP + 1;
 localparam LOG_DEPTH_LARGE          = $clog2(DEPTH_LARGE) + 1;
-localparam magical2                 = (N2*SIZE1/TP);
+localparam MAGICAL2                 = (N2*SIZE1/TP);
 
 // states
 localparam OP_IDLE                  = 1'd0;
@@ -191,12 +191,14 @@ for (genvar rot = 0; rot < TP; rot = rot + 1 ) begin
     always @(posedge clk) begin
         input_data_shift[rot*LOGQ +: LOGQ] <=  input_data_int[((((rot+
                                                                     (
-                                                                        (((ctr_shifted)/magical2)&1'd1)/1*(TP/2) +
-                                                                        (((ctr_shifted)/magical2)&2'd3)/2*(TP/4) +
-                                                                        (((ctr_shifted)/magical2)&3'd7)/4*(TP/8) +
-                                                                        (((ctr_shifted)/magical2)&4'd15)/8*(TP/16) +
-                                                                        (((ctr_shifted)/magical2)&5'd31)/16*(TP/32) +
-                                                                        (((ctr_shifted)/magical2)&6'd63)/32*(TP/64) 
+                                                                        (((ctr_shifted)/MAGICAL2)&1'd1)/1*(TP/2) +
+                                                                        (((ctr_shifted)/MAGICAL2)&2'd3)/2*(TP/4) +
+                                                                        (((ctr_shifted)/MAGICAL2)&3'd7)/4*(TP/8) +
+                                                                        (((ctr_shifted)/MAGICAL2)&4'd15)/8*(TP/16) +
+                                                                        (((ctr_shifted)/MAGICAL2)&5'd31)/16*(TP/32) +
+                                                                        (((ctr_shifted)/MAGICAL2)&6'd63)/32*(TP/64) + 
+                                                                        (((ctr_shifted)/MAGICAL2)&7'd127)/64*(TP/128) + 
+                                                                        (((ctr_shifted)/MAGICAL2)&8'd255)/128*(TP/256) 
                                                                     )
                                                                     ))&(TP-1)))];
     end
@@ -246,12 +248,14 @@ for (genvar i = 0; i < TP; i = i + 1) begin
     always @(posedge clk ) begin
         output_data[(TP-i)*LOGQ-1-:LOGQ] <= do00[
                 (i + 
-                (((ctr_out & (DEPTH-1))/magical2)&1'd1)/1*(TP/2) +
-                (((ctr_out & (DEPTH-1))/magical2)&2'd3)/2*(TP/4) +
-                (((ctr_out & (DEPTH-1))/magical2)&3'd7)/4*(TP/8) +
-                (((ctr_out & (DEPTH-1))/magical2)&4'd15)/8*(TP/16) +
-                (((ctr_out & (DEPTH-1))/magical2)&5'd31)/16*(TP/32) +
-                (((ctr_out & (DEPTH-1))/magical2)&6'd63)/32*(TP/64) 
+                (((ctr_out & (DEPTH-1))/MAGICAL2)&1'd1)/1*(TP/2) +
+                (((ctr_out & (DEPTH-1))/MAGICAL2)&2'd3)/2*(TP/4) +
+                (((ctr_out & (DEPTH-1))/MAGICAL2)&3'd7)/4*(TP/8) +
+                (((ctr_out & (DEPTH-1))/MAGICAL2)&4'd15)/8*(TP/16) +
+                (((ctr_out & (DEPTH-1))/MAGICAL2)&5'd31)/16*(TP/32) +
+                (((ctr_out & (DEPTH-1))/MAGICAL2)&6'd63)/32*(TP/64) + 
+                (((ctr_out & (DEPTH-1))/MAGICAL2)&7'd127)/64*(TP/128) + 
+                (((ctr_out & (DEPTH-1))/MAGICAL2)&8'd255)/128*(TP/256) 
                 ) & (TP-1)
         ];
     end
