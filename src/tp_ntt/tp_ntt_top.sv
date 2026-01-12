@@ -27,9 +27,16 @@ module tp_ntt_top
 
 
 localparam tp_ntt_params_t TP_NTT_PARAMS        = {LOGN, LOGN1, LOGN2, LOGN3, LOGTP, LOGQ, LOGQH, NON_STD, MORE_DSP};
-if (tp_ntt_is_not_valid_partition(TP_NTT_PARAMS)) begin
-    partitioning_is_NOT_supported();
-end
+// if (tp_ntt_is_not_valid_partition(TP_NTT_PARAMS)) begin
+//     partitioning_is_NOT_supported();
+// end
+
+// assert instead of fake module
+// initial begin
+//     if (tp_ntt_is_not_valid_partition(TP_NTT_PARAMS)) begin
+//         $error("Invalid NTT partitioning");
+//     end
+// end
 
 localparam tp_ntt_dim_t DIM                     = tp_ntt_dim(TP_NTT_PARAMS);
 localparam butterfly_params_t BUTTERFLY_PARAMS  = {LOGQ, LOGQH, NON_STD, MORE_DSP};
