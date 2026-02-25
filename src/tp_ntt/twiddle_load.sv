@@ -46,6 +46,21 @@ localparam NEEDED_TWIDDLE           = DIM_NUM == 4 ? (N-1) - (1+((1<<(LOGTP-LOGN
 localparam CTR_READ_NUM             = DIM_NUM == 2 ? (1+DEPTH)-1 : DIM_NUM == 3 ? (1+(1<<LOGN2)+DEPTH)-1    : DIM_NUM == 4 ? (1+(1<<LOGN2)+DEPTH+DEPTH)-1 : 0;
 localparam CTR_READ_NUM_INTT        = DIM_NUM == 2 ? (1+DEPTH)-1 : DIM_NUM == 3 ? (DEPTH+DEPTH+1)-1         : DIM_NUM == 4 ? (1+(1<<LOGN3)+DEPTH+DEPTH)-1 : 0;
 
+localparam div          = (TP/(TP-TWID_FACTOR_N2));
+localparam log_div      =  $clog2(div);
+
+localparam param_new_aa_pre =  ((TP-1)-((((N2-1)*(TP-TWID_FACTOR_N2)+1))));
+
+localparam param_new_aa  =  param_new_aa_pre < 0 ? 2 : (TP/N2)-param_new_aa_pre;
+
+localparam param_new_aa_other  =  param_new_aa_pre < 0 ? 1 : (TP/N2)-param_new_aa_pre;
+
+localparam start_param = param_new_aa_pre < 0 ? param_new_aa_other: 0;
+
+localparam end_param = param_new_aa_pre < 0 ? param_new_aa_other+1 : param_new_aa_other;
+
+localparam minus =  param_new_aa_pre < 0 ? 1 : 0;
+
 endgenerate
 
 // states
@@ -66,6 +81,12 @@ reg [LOG_DEPTH:0]               bw00     [(TP-1)-1:0];
 reg [LOG_DEPTH:0]               br00     [(TP-1)-1:0];
 reg                             be00     [(TP-1)-1:0];
 
+reg [LOGQ-1:0]                  bi_new     [(TP-1)-1:0];
+wire[LOGQ-1:0]                  bo_new     [(TP-1)-1:0];
+reg [LOG_DEPTH:0]               bw_new     [(TP-1)-1:0];
+reg [LOG_DEPTH:0]               br_new     [(TP-1)-1:0];
+reg                             be_new     [(TP-1)-1:0];
+
 
 //reg [NEEDED_TWIDDLE*LOGQ-1:0] fifo_reg;
 
@@ -79,7 +100,7 @@ wire [1:0] op_in_ntt;
 
 shiftreg #(
     .SHIFT (1),
-    .DATA  (LOG_DEPTH+1)
+    .DATA  (LOG_DEPTH+2)
 ) sre_ctr_read (
     .clk      (clk        ),
     .reset    (rst        ),
@@ -89,7 +110,7 @@ shiftreg #(
 
 shiftreg #(
     .SHIFT (1),
-    .DATA  (LOG_DEPTH+1)
+    .DATA  (LOG_DEPTH+2)
 ) sre_ctr_read_d2 (
     .clk      (clk        ),
     .reset    (rst        ),
@@ -99,7 +120,7 @@ shiftreg #(
 
 shiftreg #(
     .SHIFT (2),
-    .DATA  (LOG_DEPTH+1)
+    .DATA  (LOG_DEPTH+2)
 ) sre_ctr_read_d3 (
     .clk      (clk        ),
     .reset    (rst        ),
@@ -134,6 +155,122 @@ always @(*) begin
     end
     else if ((ctr_read_d1 == CTR_READ_NUM && intt == 1'b0 ) || (ctr_read_d1 == CTR_READ_NUM_INTT && intt == 1'b1 ) ) begin
         next_state = OP_IDLE;
+    end
+end
+
+
+
+reg [12:0] subctr, subctr2;  
+reg [12:0] write_addr, write_addr2;
+
+reg en2;
+
+always @(posedge clk) begin
+    if (rst) begin
+        subctr     <= 2;
+        subctr2    <= 0;
+        write_addr <= 1;
+        write_addr2 <= (N3*N4)/TWID_FACTOR_N2;
+    end
+    else begin
+        case (curr_state)
+            OP_TWIDDLE_LOAD: begin
+                if (en) begin
+                    if (intt == 0) begin
+                        if (subctr == (TP-1)-1) begin
+                            subctr     <= 0;
+                            write_addr <= write_addr + 1;
+                        end
+                        else begin
+                            subctr <= subctr + 1;
+                        end
+                    end else begin
+                        if (subctr == (TWID_FACTOR_N2)-1) begin
+                            subctr     <= 0;
+                            write_addr <= write_addr + 1;
+                        end
+                        else begin
+                            subctr <= subctr + 1;
+                        end
+                        
+                    end
+                    
+                end
+                if (en2) begin
+                    if (intt == 1'b1) begin
+                        if (subctr2 == TP-2) begin
+                            subctr2     <= 0;
+                            write_addr2 <= write_addr2 + 1;
+                        end
+                        else begin
+                            subctr2 <= subctr2 + 1;
+                        end
+                    end
+                    
+                end
+                
+            end 
+            default: begin
+                if (intt == 0) begin
+                    write_addr <= 1;
+                    subctr <= param_new_aa;
+
+                    write_addr2 <= (N3*N4)/TWID_FACTOR_N2;
+                    subctr2 <= 0;
+                end else begin
+                    write_addr <= 0;
+                    subctr <= 0;
+
+                    write_addr2 <= (N3*N4)/TWID_FACTOR_N2;
+                    subctr2 <= 0;
+                end
+                
+                
+            end
+        endcase
+        if (DIM_NUM == 3) begin
+            if (intt == 1'b0) begin
+                if (ctr == (1 + (1<<LOGN2))-1 ) begin
+                    en <= 1'd1;
+                end
+                else if (ctr == DEPTH_LARGE - 1 ) begin
+                    en <= 1'd0;
+                end
+            end else begin
+                if (ctr == 0 ) begin
+                    en <= 1'd1;
+                end
+                else if (ctr == DEPTH_LARGE - 1 ) begin
+                    en <= 1'd0;
+                end
+            end
+            
+        end
+        if (DIM_NUM == 4) begin
+            if (intt == 1'b0) begin
+                if (ctr == (1 + (1<<LOGN2))-1 ) begin
+                    en <= 1'd1;
+                end
+                else if (ctr == DEPTH_LARGE - 1 ) begin
+                    en <= 1'd0;
+                end
+            end else begin
+                if (ctr == 0 ) begin
+                    en <= 1'd1;
+                end
+                else if (ctr == DEPTH_LARGE - 1 ) begin
+                    en <= 1'd0;
+                end
+                if (ctr == (N3*N4)-1 ) begin
+                    en2 <= 1'd1;
+                end
+                else if (ctr == DEPTH_LARGE - 1 ) begin
+                    en2 <= 1'd0;
+                end
+            end
+            
+        end
+        
     end
 end
 
@@ -254,6 +391,254 @@ end
 //     end
 // end
 
+reg en;
+
+
+for (genvar i = 0; i < TP; i = i + 1) begin: FIFO_LOOP // BRAM for NTT
+    always @(posedge clk or posedge rst) begin
+        if (rst) begin
+            br_new[i] <= 0;
+        end else begin
+            case (curr_state)
+                OP_TWIDDLE_LOAD: begin
+                    if (DIM_NUM == 3) begin
+                        if (intt == 0) begin
+                            if (ctr >= DEPTH_LARGE-2) begin
+                                br_new[i] <= ctr - (DEPTH_LARGE-2);
+                            end
+                        end else begin
+                            if (ctr >= DEPTH-2 && ctr < DEPTH + (1<<LOGN2)-2) begin
+                                br_new[i] <= ctr - (DEPTH-2);
+                            end
+                            else if (ctr >= DEPTH + (1<<LOGN2)-2) begin
+                                br_new[i] <= (1<<LOGN2);
+                            end
+                            else begin
+                                 br_new[i] <= 'd0;
+                            end
+                        end
+                    end 
+                    else if (DIM_NUM == 4) begin
+                        if (intt == 0) begin
+                            if (ctr >= DEPTH_LARGE-2) begin
+                                br_new[i] <= ctr - (DEPTH_LARGE-2);
+                            end
+                        end else begin
+                            if (ctr >= DEPTH-2 && ctr < DEPTH + (N3*N4)/TWID_FACTOR_N2 - 2) begin
+                                br_new[i] <= ctr - (DEPTH-2);
+                            end
+                            else if (ctr >= DEPTH + (N3*N4)/TWID_FACTOR_N2 - 2   && ctr < DEPTH + (N3*N4)/TWID_FACTOR_N2 + (N3) - 2) begin
+                                br_new[i] <=  (ctr - (DEPTH+(N3*N4)/TWID_FACTOR_N2-2)) + (N3*N4)/TWID_FACTOR_N2;
+                            end
+                            else if (ctr >=  DEPTH + (N3*N4)/TWID_FACTOR_N2 + N3 - 2) begin
+                                br_new[i] <= (N3*N4)/TWID_FACTOR_N2 + N3;
+                            end
+                            else begin
+                                 br_new[i] <= 'd0;
+                            end
+                        end
+                    end 
+                   
+                end
+            endcase
+        end
+    end
+end
+
+for (genvar i = 0; i < TP; i = i + 1) begin: FIFO_LOOP22 // BRAM for NTT
+    always @(posedge clk or posedge rst) begin
+        if (rst) begin
+            bi_new[i] <= 'd0;
+            be_new[i] <= 'd0;
+            bw_new[i] <= 'd0;
+        end else begin
+            case (curr_state)
+                OP_TWIDDLE_LOAD: begin
+                    if (DIM_NUM == 3) begin
+                        if (intt == 0) begin
+                            if (ctr == 0) begin
+                                if (i == ctr) begin
+                                    bi_new[i] <= psi[LOGQ*(1)-1-:LOGQ];
+                                    be_new[i] <= 1'b1;
+                                    bw_new[i] <= ctr;
+                                end
+                                else begin
+                                    bi_new[i] <= 'd0;
+                                    be_new[i] <= 1'b0;
+                                    bw_new[i] <= ctr & 1'd1;
+                                end
+                                
+                            end
+                            else if (ctr >= 1 && ctr < 1 + (1<<LOGN2)) begin
+                                if (ctr < (1<<LOGN2)) begin
+                                    if (i < (ctr*(TP-TWID_FACTOR_N2)+1) && i >= (ctr-1)*(TP-TWID_FACTOR_N2)+1) begin // take first (ctr-1)*4+1 (1-5-9-13)  elements from fifo 
+                                        //fifo_reg[LOGQ*((i-(TWID_FACTOR_N2-1))+(ctr-1)*(TP-TWID_FACTOR_N2)+1)-1-:LOGQ] <= psi[LOGQ*((TP-i))-1-:LOGQ];
+                                        bi_new[i] <= psi[LOGQ*((TP-(i-((ctr-1)*(TP-TWID_FACTOR_N2)+1)+TWID_FACTOR_N2)))-1-:LOGQ];
+                                        be_new[i] <= 1'b1;
+                                        bw_new[i] <= ((ctr-1)>>log_div) & (div-1);
+                                    end
+                                    else if (ctr == (1<<LOGN2)-1 && i == 0 && LOGN2 == LOGTP) begin
+                                        bi_new[i] <= psi[LOGQ*((TP-(TP-1-i)))-1-:LOGQ];
+                                        be_new[i] <= 1'b1;
+                                        bw_new[i] <= 'b1;
+                                    end
+                                    else begin
+                                        bi_new[i] <= 'd0;
+                                        be_new[i] <= 'b0;
+                                        bw_new[i] <= 'b0;
+                                    end
+                                end else begin
+                                    if ((N2-1)*(TP-TWID_FACTOR_N2)+1 < TP-1 && i < TP-1 && i >= (((N2-1)*(TP-TWID_FACTOR_N2))+1)) begin // take first (ctr-1)*4+1 (1-5-9-13)  elements from fifo 
+                                        bi_new[i] <= psi[LOGQ*(TP-(i-1))-1-:LOGQ];
+                                        be_new[i] <= 1'b1;
+                                        bw_new[i] <= 'd0; // can change
+                                    end
+                                    else if (i < end_param && i >= start_param) begin // take first (ctr-1)*4+1 (1-5-9-13)  elements from fifo 
+                                        bi_new[i] <= psi[LOGQ*((TP-(TP-param_new_aa_other))-(i-minus))-1-:LOGQ];
+                                        be_new[i] <= 1'b1;
+                                        bw_new[i] <= 'd1; // can change
+                                    end
+                                    else begin
+                                        bi_new[i] <= 'd0;
+                                        be_new[i] <= 'b0;
+                                        bw_new[i] <= 'b0;
+                                    end
+                                end
+                            end
+                            else begin
+                                //fifo_reg[LOGQ*((ctr-(1 + (1<<LOGN2)) + (1 + (TP-TWID_FACTOR_N2)*(1<<LOGN2))) + 1)-1-:LOGQ] <= psi[LOGQ*(1)-1-:LOGQ];
+                                if (ctr < DEPTH_LARGE-1 && ctr >= 1 + (1<<LOGN2)) begin
+                                    bi_new[i] <= (i == subctr) ? psi[LOGQ*(1)-1-:LOGQ]: 'd0;
+                                    be_new[i] <= (i == subctr) ? 1'b1: 'd0;
+                                    bw_new[i] <= (i == subctr) ? write_addr : 'd0;
+                                end else begin
+                                    bi_new[i] <= 'd0;
+                                    be_new[i] <= 'd0;
+                                    bw_new[i] <= 'd0;
+                                end 
+                            end
+                        end else begin
+                            if (ctr <= DEPTH_LARGE - (TP-1)) begin
+                                //fifo_reg[LOGQ*(ctr+1)-1-:LOGQ] <= psi[LOGQ*(1)-1-:LOGQ];
+                                bi_new[i] <= (i == subctr) ? psi[LOGQ*(1)-1-:LOGQ] : 'd0;
+                                be_new[i] <= (i == subctr) ? 1'b1 : 'd0;
+                                bw_new[i] <= (i == subctr) ? write_addr : 'd0;
+                            end
+                            else if (ctr >  DEPTH_LARGE - (TP-1)) begin
+                                if (i == ctr - ( DEPTH_LARGE - (TP))) begin
+                                    bi_new[i] <= psi[LOGQ*(1)-1-:LOGQ];
+                                    be_new[i] <= 1'b1;
+                                    bw_new[i] <= N2;
+                                end else begin
+                                    bi_new[i] <= 'd0;
+                                    be_new[i] <= 'd0;
+                                    bw_new[i] <= 'd0;
+                                end
+                                
+                            end
+                            else begin
+                                bi_new[i] <='d0;
+                                be_new[i] <= 'd0;
+                                bw_new[i] <= 'd0;
+                            end
+                        end 
+                    end
+                    else if (DIM_NUM == 4) begin
+                        if (intt == 0) begin
+                            if (ctr == 0) begin
+                                if (i == ctr) begin
+                                    bi_new[i] <= psi[LOGQ*(1)-1-:LOGQ];
+                                    be_new[i] <= 1'b1;
+                                    bw_new[i] <= ctr;
+                                end
+                                else begin
+                                    bi_new[i] <= 'd0;
+                                    be_new[i] <= 1'b0;
+                                    bw_new[i] <= ctr & 1'd1;
+                                end
+                                
+                            end
+                            else if (ctr >= 1 && ctr < 1 + (1<<LOGN2)) begin
+                                if (ctr < (1<<LOGN2)) begin
+                                    if (i < (ctr*(TP-TWID_FACTOR_N2)+1) && i >= (ctr-1)*(TP-TWID_FACTOR_N2)+1) begin // take first (ctr-1)*4+1 (1-5-9-13)  elements from fifo 
+                                        //fifo_reg[LOGQ*((i-(TWID_FACTOR_N2-1))+(ctr-1)*(TP-TWID_FACTOR_N2)+1)-1-:LOGQ] <= psi[LOGQ*((TP-i))-1-:LOGQ];
+                                        bi_new[i] <= psi[LOGQ*((TP-(i-((ctr-1)*(TP-TWID_FACTOR_N2)+1)+TWID_FACTOR_N2)))-1-:LOGQ];
+                                        be_new[i] <= 1'b1;
+                                        bw_new[i] <= ((ctr-1)>>log_div) & (div-1);
+                                    end
+                                    else begin
+                                        bi_new[i] <= 'd0;
+                                        be_new[i] <= 'b0;
+                                        bw_new[i] <= 'b0;
+                                    end
+                                end else begin
+                                    if ((N2-1)*(TP-TWID_FACTOR_N2)+1 < TP-1 && i < TP-1 && i >= (((N2-1)*(TP-TWID_FACTOR_N2))+1)) begin // take first (ctr-1)*4+1 (1-5-9-13)  elements from fifo 
+                                        bi_new[i] <= psi[LOGQ*(TP-(i-1))-1-:LOGQ];
+                                        be_new[i] <= 1'b1;
+                                        bw_new[i] <= 'd0; // can change
+                                    end
+                                    else if (i < end_param && i >= start_param) begin // take first (ctr-1)*4+1 (1-5-9-13)  elements from fifo 
+                                        bi_new[i] <= psi[LOGQ*((TP-(TP-param_new_aa_other))-(i-minus))-1-:LOGQ];
+                                        be_new[i] <= 1'b1;
+                                        bw_new[i] <= 'd1; // can change
+                                    end
+                                    else begin
+                                        bi_new[i] <= 'd0;
+                                        be_new[i] <= 'b0;
+                                        bw_new[i] <= 'b0;
+                                    end
+                                end
+                            end
+                            else begin
+                                //fifo_reg[LOGQ*((ctr-(1 + (1<<LOGN2)) + (1 + (TP-TWID_FACTOR_N2)*(1<<LOGN2))) + 1)-1-:LOGQ] <= psi[LOGQ*(1)-1-:LOGQ];
+                                if (ctr < DEPTH_LARGE-1 && ctr >= 1 + (1<<LOGN2)) begin
+                                    bi_new[i] <= (i == subctr) ? psi[LOGQ*(1)-1-:LOGQ]: 'd0;
+                                    be_new[i] <= (i == subctr) ? 1'b1: 'd0;
+                                    bw_new[i] <= (i == subctr) ? write_addr : 'd0;
+                                end else begin
+                                    bi_new[i] <= 'd0;
+                                    be_new[i] <= 'd0;
+                                    bw_new[i] <= 'd0;
+                                end 
+                            end
+                        end else begin
+                            if (ctr < (N3*N4)) begin
+                                //fifo_reg[LOGQ*(ctr+1)-1-:LOGQ] <= psi[LOGQ*(1)-1-:LOGQ];
+                                bi_new[i] <= (i == subctr) ? psi[LOGQ*(1)-1-:LOGQ] : 'd0;
+                                be_new[i] <= (i == subctr) ? 1'b1 : 'd0;
+                                bw_new[i] <= (i == subctr) ? write_addr : 'd0;
+                            end
+                            else if (ctr >=  (N3*N4) && ctr < (N3*N4) + N3*(TP-1)) begin
+                                    bi_new[i] <= (i == subctr2) ? psi[LOGQ*(1)-1-:LOGQ] : 'd0;
+                                    be_new[i] <= (i == subctr2) ? 1'b1 : 'd0;
+                                    bw_new[i] <= (i == subctr2) ? write_addr2 : 'd0;
+                                
+                            end
+                            else if (ctr >=  (N3*N4) + N3*(TP-1) && ctr < (N3*N4) + N3*(TP-1) + (TP-1)) begin
+                                    bi_new[i] <= (i == subctr2) ? psi[LOGQ*(1)-1-:LOGQ] : 'd0;
+                                    be_new[i] <= (i == subctr2) ? 1'b1 : 'd0;
+                                    bw_new[i] <= (i == subctr2) ? write_addr2 : 'd0;
+                                
+                            end
+                            else begin
+                                bi_new[i] <='d0;
+                                be_new[i] <= 'd0;
+                                bw_new[i] <= 'd0;
+                            end
+                        end 
+                    end
+                end 
+                default: begin
+                    //fifo_reg <= 0;
+                    bi_new[i] <= 'd0;
+                    be_new[i] <= 'd0;
+                    bw_new[i] <= 'd0;
+                end
+            endcase
+        end
+    end
+end
+
 
 for (genvar i = 0; i < TP-1; i = i + 1) begin: BRAM_TWIDDLE_LOAD_2 // BRAM for NTT
     always @(posedge clk or posedge rst) begin
@@ -269,23 +654,23 @@ for (genvar i = 0; i < TP-1; i = i + 1) begin: BRAM_TWIDDLE_LOAD_2 // BRAM for N
                     if (DIM_NUM == 4) begin
                         if (intt == 0) begin
                             if (ctr == 0) begin
-                                bi00[i] <= 60'd1;//psi[(TP-i)*LOGQ-1-:LOGQ];
+                                bi00[i] <= psi[(TP-i)*LOGQ-1-:LOGQ];
                             end else if (ctr >= 1 && ctr < 1 + (1<<LOGN2)) begin
                                 if (i < TWID_FACTOR_N2) begin
-                                    bi00[i] <= 60'd1;//psi[(TP-i)*LOGQ-1-:LOGQ];
+                                    bi00[i] <= psi[(TP-i)*LOGQ-1-:LOGQ];
                                 end
                                 else begin 
                                     bi00[i] <= 0;
                                 end
                             end
                             else if ( ctr >= 1 + (1<<LOGN2) && ctr < 1 + (1<<LOGN2) + (((1<<(LOGN-LOGTP))-1)>>LOGN3)) begin
-                                bi00[i] <= 60'd1;//psi[(TP-i)*LOGQ-1-:LOGQ];
+                                bi00[i] <= psi[(TP-i)*LOGQ-1-:LOGQ];
                             end
                             else begin
                                 if (ctr < DEPTH_LARGE) begin  
-                                    bi00[i] <=  60'd1;//psi[(TP-i)*LOGQ-1-:LOGQ];
+                                    bi00[i] <=  psi[(TP-i)*LOGQ-1-:LOGQ];
                                 end else begin
-                                    bi00[i] <= 60'd1;//fifo_reg[((LAST_PARTITION_SIZE)*(ctr-DEPTH_LARGE) + i + 1)*LOGQ-1-:LOGQ];
+                                    bi00[i] <= bo_new[i];//fifo_reg[((LAST_PARTITION_SIZE)*(ctr-DEPTH_LARGE) + i + 1)*LOGQ-1-:LOGQ];
                                 end
                             end
                             br00[i] <= ctr_read_d1 < (1) ? 1'd0 : ctr_read_d1 < (1 + (1<<LOGN2)) ? ((ctr_read_d1-1) & ((1<<LOGN2)-1)) + 1 : ctr_read_d1 < (1 + (1<<LOGN2) + (1<<(LOGN-LOGTP))) ? (((ctr_read_d1 - (1 + (1<<LOGN2))) & ((1<<(LOGN-LOGTP))-1))>>LOGN3) + (1<<LOGN2) + 1 : ((ctr_read_d1-( DEPTH +(1<<LOGN2) + 1)) & ((1<<(LOGN-LOGTP))-1)) + (DEPTH/N3) +  (1<<LOGN2) + 1;
@@ -293,17 +678,17 @@ for (genvar i = 0; i < TP-1; i = i + 1) begin: BRAM_TWIDDLE_LOAD_2 // BRAM for N
                             be00[i] <= (ctr < (1 + (1<<LOGN2) + (DEPTH/N3) + (1<<(LOGN-LOGTP)))) ? 1'b1 : 1'b0;
                         end else begin
                             if (ctr < DEPTH) begin
-                                bi00[i] <= 60'd1;//psi[(TP-i)*LOGQ-1-:LOGQ];
+                                bi00[i] <= psi[(TP-i)*LOGQ-1-:LOGQ];
                             end else if (ctr >= DEPTH && ctr < DEPTH + (DEPTH/TP) ) begin
                                 if (i < TWID_FACTOR_N2) begin
-                                    bi00[i] <= 60'd1;//fifo_reg[((TWID_FACTOR_N2)*(ctr-DEPTH_LARGE) + i + 1)*LOGQ-1-:LOGQ];
+                                    bi00[i] <= bo_new[i];//fifo_reg[((TWID_FACTOR_N2)*(ctr-DEPTH_LARGE) + i + 1)*LOGQ-1-:LOGQ];
                                 end
                                 else begin 
-                                    bi00[i] <= 0;
+                                    bi00[i] <= 'd0;
                                 end
                             end
                             else if (ctr >= DEPTH + (DEPTH/TP) && ctr < DEPTH + (DEPTH/TP + (1<<LOGN3)) + 1) begin
-                                bi00[i] <= 60'd1;//fifo_reg[(TWID_FACTOR_N2 * DEPTH/TP + (ctr - (DEPTH + DEPTH/TP))*(N3-1) + i + 1)*LOGQ-1-:LOGQ];
+                                bi00[i] <= bo_new[i];//fifo_reg[(TWID_FACTOR_N2 * DEPTH/TP + (ctr - (DEPTH + DEPTH/TP))*(N3-1) + i + 1)*LOGQ-1-:LOGQ];
                             end
                             br00[i] <= ctr_read_d1 < (DEPTH) ? ctr_read_d1 : ctr_read_d1 < (DEPTH + DEPTH) ? ((ctr_read_d1 & (DEPTH - 1)) >> LOGTP) + DEPTH : ctr_read_d1 < (DEPTH + DEPTH + (1<<LOGN3) ) ?  DEPTH + (DEPTH>>LOGTP) + ((ctr_read_d1 - (DEPTH + (DEPTH>>LOGTP))) & ((1<<LOGN3)-1)) : DEPTH + (DEPTH>>LOGTP) + (1<<LOGN3);
                             bw00[i] <= ctr;
@@ -313,10 +698,10 @@ for (genvar i = 0; i < TP-1; i = i + 1) begin: BRAM_TWIDDLE_LOAD_2 // BRAM for N
                     else if (DIM_NUM == 3) begin
                         if (intt == 0) begin
                             if (ctr == 0) begin
-                                bi00[i] <= 60'd1;//psi[(TP-i)*LOGQ-1-:LOGQ];
+                                bi00[i] <= psi[(TP-i)*LOGQ-1-:LOGQ];
                             end else if (ctr >= 1 && ctr < 1 + (1<<LOGN2)) begin
                                 if (i < TWID_FACTOR_N2) begin
-                                    bi00[i] <= 60'd1;//psi[(TP-i)*LOGQ-1-:LOGQ];
+                                    bi00[i] <= psi[(TP-i)*LOGQ-1-:LOGQ];
                                 end
                                 else begin 
                                     bi00[i] <= 0;
@@ -324,9 +709,9 @@ for (genvar i = 0; i < TP-1; i = i + 1) begin: BRAM_TWIDDLE_LOAD_2 // BRAM for N
                             end
                             else begin
                                 if (ctr < DEPTH_LARGE) begin  
-                                    bi00[i] <=  60'd1;//psi[(TP-i)*LOGQ-1-:LOGQ];
+                                    bi00[i] <=  psi[(TP-i)*LOGQ-1-:LOGQ];
                                 end else begin
-                                    bi00[i] <= 60'd1;//fifo_reg[((LAST_PARTITION_SIZE)*(ctr-DEPTH_LARGE) + i + 1)*LOGQ-1-:LOGQ];
+                                    bi00[i] <= bo_new[i];//60'd1;//fifo_reg[((LAST_PARTITION_SIZE)*(ctr-DEPTH_LARGE) + i + 1)*LOGQ-1-:LOGQ];
                                 end
                             end
                             br00[i] <= ctr_read_d1 < (1) ? 1'd0 : ctr_read_d1 < (1 + (1<<LOGN2)) ? ((ctr_read_d1-1) & ((1<<LOGN2)-1)) + 1 : ((ctr_read_d1-(1+(1<<LOGN2))) & ((1<<(LOGN-LOGTP))-1)) + (1<<LOGN2) + 1;
@@ -334,16 +719,16 @@ for (genvar i = 0; i < TP-1; i = i + 1) begin: BRAM_TWIDDLE_LOAD_2 // BRAM for N
                             be00[i] <= (ctr < (1 + (1<<LOGN2) + (1<<(LOGN-LOGTP)))) ? 1'b1 : 1'b0;
                         end else begin
                             if (ctr < DEPTH) begin
-                                bi00[i] <= 60'd1;//psi[(TP-i)*LOGQ-1-:LOGQ];
+                                bi00[i] <= psi[(TP-i)*LOGQ-1-:LOGQ];
                             end else if (ctr >= DEPTH && ctr < DEPTH + (1<<LOGN2)) begin
                                 if (i < TWID_FACTOR_N2) begin
-                                    bi00[i] <= 60'd1;//fifo_reg[((TWID_FACTOR_N2)*(ctr-DEPTH_LARGE) + i + 1)*LOGQ-1-:LOGQ];
+                                    bi00[i] <= bo_new[i];//fifo_reg[((TWID_FACTOR_N2)*(ctr-DEPTH_LARGE) + i + 1)*LOGQ-1-:LOGQ];
                                 end
                                 else begin 
                                     bi00[i] <= 0;
                                 end
                             end else begin
-                                    bi00[i] <= 60'd1;//fifo_reg[(TWID_FACTOR_N2 * N2 + i + 1)*LOGQ-1-:LOGQ];
+                                    bi00[i] <= bo_new[i];//fifo_reg[(TWID_FACTOR_N2 * N2 + i + 1)*LOGQ-1-:LOGQ];
                                 end
                             br00[i] <= ctr_read_d1 < (DEPTH) ? ctr_read_d1 : ctr_read_d1 < (DEPTH+DEPTH) ? ((ctr_read_d1 & (DEPTH - 1)) >> LOGTP) + DEPTH : DEPTH + (1<<LOGN2);                            
                             bw00[i] <= ctr;
@@ -408,6 +793,21 @@ for (genvar c2 = 0; c2 < TP-1; c2 = c2 + 1) begin: BRAM_GEN_BLOCK_NTT0 // BRAM f
 );
 end
 
+for (genvar c2 = 0; c2 < TP-1; c2 = c2 + 1) begin: BRAM_GEN_BLOCK_NTT1 // BRAM for NTT
+    BRAM #(
+    .DSIZE (LOGQ         ),
+    .MSIZE (BRAM_SIZE    ),
+    .DEPTH (BRAM_LOG_SIZE)
+) bm000 (
+    .clk   (clk          ),
+    .wen   (be_new[c2]     ),
+    .waddr (bw_new[c2]     ),
+    .din   (bi_new[c2]     ),
+    .raddr (br_new[c2]     ),
+    .dout  (bo_new[c2]     )
+);
+end
+
 
 for (genvar loop_id = 0; loop_id < TP-1; loop_id = loop_id + 1) begin
     always @(posedge clk or posedge rst) begin
@@ -437,42 +837,43 @@ for (genvar loop_id = 0; loop_id < TP-1; loop_id = loop_id + 1) begin
     end
 end
 
+integer loop_id;
 
-// for (genvar loop_id = 0; loop_id < TP-1; loop_id = loop_id + 1) begin
-//      always @(*) begin
-//         if (rst) begin
-//             twiddle_in_true[(TP-1-loop_id)*LOGQ-1-:LOGQ] <= 0; 
-//         end else begin
-//             if (intt == 1'b0) begin
-//                 twiddle_in_true[(TP-1-loop_id)*LOGQ-1-:LOGQ] <= twiddle_in_read[(TP-1-loop_id)*LOGQ-1-:LOGQ];
-//             end else begin
-//                 if (DIM_NUM == 3) begin
-//                     if (ctr_read_d3 >= DEPTH && ctr_read_d3 < DEPTH * 2) begin
-//                         if (loop_id < TP/N2) begin
-//                             twiddle_in_true[(TP-1-((N2-1)*loop_id))*LOGQ-1-:(N2-1)*LOGQ] <= twiddle_in_read[(TP-1-((N2-1)*(((ctr_read_d3 & (DEPTH-1))>>LOGN2) & (TP/N2-1))))*LOGQ-1-:((N2-1)*LOGQ)];
-//                         end
-//                     end
-//                     else begin
-//                         twiddle_in_true[(TP-1-loop_id)*LOGQ-1-:LOGQ] <= twiddle_in_read[(TP-1-loop_id)*LOGQ-1-:LOGQ];
-//                     end
-//                 end else if (DIM_NUM == 2) begin
-//                     twiddle_in_true[(TP-1-loop_id)*LOGQ-1-:LOGQ] <= twiddle_in_read[(TP-1-loop_id)*LOGQ-1-:LOGQ];
-//                 end else if (DIM_NUM == 4) begin
-//                     if (ctr_read_d3 >= DEPTH && ctr_read_d3 < DEPTH * 2) begin
-//                         if (loop_id < TP/N2) begin
-//                             twiddle_in_true[(TP-1-((N2-1)*loop_id))*LOGQ-1-:(N2-1)*LOGQ] <= twiddle_in_read[(TP-1-((N2-1)*(((ctr_read_d3 & (DEPTH-1))>>LOGN2) & (TP/N2-1))))*LOGQ-1-:((N2-1)*LOGQ)];
-//                         end
-//                     end
-//                     else begin
-//                         twiddle_in_true[(TP-1-loop_id)*LOGQ-1-:LOGQ] <= twiddle_in_read[(TP-1-loop_id)*LOGQ-1-:LOGQ];
-//                     end
-//                 end
-//             end
-//         end
-//     end
-// end
+for (genvar loop_id = 0; loop_id < TP-1; loop_id = loop_id + 1) begin
+     always @(*) begin
+        if (rst) begin
+            twiddle_in_true[(TP-1-loop_id)*LOGQ-1-:LOGQ] <= 0; 
+        end else begin
+            if (intt == 1'b0) begin
+                twiddle_in_true[(TP-1-loop_id)*LOGQ-1-:LOGQ] <= twiddle_in_read[(TP-1-loop_id)*LOGQ-1-:LOGQ];
+            end else begin
+                if (DIM_NUM == 3) begin
+                    if (ctr_read_d3 >= DEPTH && ctr_read_d3 < DEPTH * 2) begin
+                        if (loop_id < TP/N2) begin
+                            twiddle_in_true[(TP-1-((N2-1)*loop_id))*LOGQ-1-:(N2-1)*LOGQ] <= twiddle_in_read[(TP-1-((N2-1)*(((ctr_read_d3 & (DEPTH-1))>>LOGN2) & (TP/N2-1))))*LOGQ-1-:((N2-1)*LOGQ)];
+                        end
+                    end
+                    else begin
+                        twiddle_in_true[(TP-1-loop_id)*LOGQ-1-:LOGQ] <= twiddle_in_read[(TP-1-loop_id)*LOGQ-1-:LOGQ];
+                    end
+                end else if (DIM_NUM == 2) begin
+                    twiddle_in_true[(TP-1-loop_id)*LOGQ-1-:LOGQ] <= twiddle_in_read[(TP-1-loop_id)*LOGQ-1-:LOGQ];
+                end else if (DIM_NUM == 4) begin
+                    if (ctr_read_d3 >= DEPTH && ctr_read_d3 < DEPTH * 2) begin
+                        if (loop_id < TP/N2) begin
+                            twiddle_in_true[(TP-1-((N2-1)*loop_id))*LOGQ-1-:(N2-1)*LOGQ] <= twiddle_in_read[(TP-1-((N2-1)*(((ctr_read_d3 & (DEPTH-1))>>LOGN2) & (TP/N2-1))))*LOGQ-1-:((N2-1)*LOGQ)];
+                        end
+                    end
+                    else begin
+                        twiddle_in_true[(TP-1-loop_id)*LOGQ-1-:LOGQ] <= twiddle_in_read[(TP-1-loop_id)*LOGQ-1-:LOGQ];
+                    end
+                end
+            end
+        end
+    end
+end
 
-//integer loop_id;
+
 
 // for (genvar loop_id = 0; loop_id < TP-1; loop_id++) begin
 //     always_ff @(*) begin
@@ -526,18 +927,18 @@ end
 //     end
 // end
 
-for (genvar loop_id = 0; loop_id < TP-1; loop_id++) begin
-    always @(posedge clk) begin
-        if (rst) begin
-            twiddle_in_true[(TP-1-(loop_id))*LOGQ-1-:LOGQ] <= 60'd0;
-        end 
-        else begin
-                // Only DIM = 3D behavior kept
-                // Default: straight copy (covers most cases)
-                twiddle_in_true[(TP-1-(loop_id))*LOGQ-1-:LOGQ] <= 60'd1;
-        end
-    end
-end
+// for (genvar loop_id = 0; loop_id < TP-1; loop_id++) begin
+//     always @(posedge clk) begin
+//         if (rst) begin
+//             twiddle_in_true[(TP-1-(loop_id))*LOGQ-1-:LOGQ] <= 60'd0;
+//         end 
+//         else begin
+//                 // Only DIM = 3D behavior kept
+//                 // Default: straight copy (covers most cases)
+//                 twiddle_in_true[(TP-1-(loop_id))*LOGQ-1-:LOGQ] <= 60'd1;
+//         end
+//     end
+// end
 
 assign psi_out        = twiddle_in_true;
     
