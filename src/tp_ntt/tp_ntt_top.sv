@@ -54,6 +54,9 @@ localparam TP                                   = 1 << LOGTP;
 localparam N4                                   = 1 << LOGN4;
 localparam DEPTH                                = N/TP;
 
+localparam OP_IDLE                      = 1'd0;
+localparam OP_TWIDDLE_LOAD              = 1'd1;
+
 
 
 
@@ -746,6 +749,44 @@ always @(posedge clk or posedge rst) begin
         end
     end    
 end
+
+
+reg [20:0] ctr2;
+
+always @(posedge clk ) begin
+    if (rst) begin
+        ctr2 <= 'd0;
+    end
+    else begin
+        if (ctr2 == DEPTH*DIM-1) begin
+            ctr2 <= 'd0;
+        end else if(twiddle_load_started) begin
+            ctr2 <= ctr2 + 'd1;
+        end
+    end
+    
+end
+
+reg twiddle_load_started;
+
+always @(posedge clk) begin
+    if (rst) begin
+        twiddle_load_started <= 0;
+    end
+    else begin
+        if (op == OP_TWIDDLE_LOAD) begin
+            twiddle_load_started <= 1;
+        end
+        else if (ctr2 == DEPTH*DIM-1) begin
+            twiddle_load_started <= 0;
+        end
+    end
+    
+end
+
+wire new_intt_flag;
+
+assign new_intt_flag = (twiddle_load_started || op == OP_TWIDDLE_LOAD)  ? intt : 0;
 
 
 

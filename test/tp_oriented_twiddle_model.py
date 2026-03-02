@@ -463,6 +463,20 @@ if __name__ == "__main__":
 
     q = ntt_friendly_prime_gen(LOGQ, LOGQH, 1)[0]
 
+    q_new = ntt_friendly_prime_gen(LOGQ, LOGQH, 5)
+    print("q: ", q, hex(q), len(bin(q)[2:]))
+    for q_a in q_new:
+        print("q_new: ", q_a, hex(q_a), bin(q_a)[2:])
+    # q = 0x800580000000001   # 100000000000010110000000000000000000000000000000000000000001
+    # q = 0x800800000000001 # 100000000000100000000000000000000000000000000000000000000001
+    q = 0x801a80000000001 # 100000000001101010000000000000000000000000000000000000000001
+
+    # q = 0x802500000000001 # 100000000010010100000000000000000000000000000000000000000001
+    # q = 0x803200000000001 # 100000000011001000000000000000000000000000000000000000000001
+    
+
+
+
     q_file = open(f'{test_dir}/q.txt', 'w+')
 
     q_file.write(str(hex(q)[2:]) + "\n")
@@ -483,6 +497,11 @@ if __name__ == "__main__":
 
 
     psi = nth_root_of_unity(2*n, q)
+
+    if pow(psi, n, q) == 1:
+        print("psi is not 2n-th root of unity")
+        assert "psi is not 2n-th root of unity"
+
 
     psi = psi
     psi_inv = modinv(psi, q)
@@ -541,6 +560,12 @@ if __name__ == "__main__":
         res_merge.append((A_NTT_merge[i] * B_NTT_merge[i]) % q)
 
     psi_table_inv = generate_ntt_tables(n, q, pow(psi_inv, 1, q))
+    print("psi: ", hex(psi))
+    print("psi_inv: ", hex(psi_inv))
+    print("psi_table_inv: ", psi_table_inv[:10])
+
+    for e in psi_table_inv[:10]:
+        print("psi_table_inv element: ", hex(e))
     #INTT_res_merge = INTT(A_NTT_merge,psi_table_inv, q)
 
     INTT_res_kk = INTT_wo_last(A_NTT_merge,psi_table_inv, q)

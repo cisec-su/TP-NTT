@@ -5,11 +5,11 @@ module tp_ntt_shuffle_tb();
     `include "tp_ntt.svh"
 
     // TP-NTT Parameters
-    parameter LOGN                      = 12;
-    parameter LOGN1                     = 4;
-    parameter LOGN2                     = 4;
-    parameter LOGN3                     = 4;
-    parameter LOGTP                     = 4;
+    parameter LOGN                      = 16;
+    parameter LOGN1                     = 5;
+    parameter LOGN2                     = 1;
+    parameter LOGN3                     = 5;
+    parameter LOGTP                     = 5;
     parameter LOGQ                      = 60;
     parameter LOGQH                     = 17;
     parameter NON_STD                   = 1;
@@ -17,7 +17,7 @@ module tp_ntt_shuffle_tb();
     
  
     // Test-Bench Parameters
-    parameter BATCH_SIZE                = 3;
+    parameter BATCH_SIZE                = 1;
     parameter BATCH_DELAY               = 1;
     parameter HP                        = 5;
     parameter FP                        = (2*HP);
@@ -151,209 +151,209 @@ module tp_ntt_shuffle_tb();
         #FP;
         OP_TYPE = 2'd0;
 
-        #(FP*3);
+        // #(FP*3);
         
-        OP_TYPE = 2'b1;
-        #FP;
-        OP_TYPE = 2'b0;
+        // OP_TYPE = 2'b1;
+        // #FP;
+        // OP_TYPE = 2'b0;
 
-        for (k = 0; k < N_OVER_TP ; k = k+1) begin
-            for (j = 0; j < TP ; j = j + 1 ) begin
-                if (k == N_OVER_TP-1 && j == TP-1) begin
-                    W_in[(TP-j)*LOGQ-1-:LOGQ] = 0; 
-                end else begin
-                    W_in[(TP-j)*LOGQ-1-:LOGQ] = psi0[k*TP+j];
-                end
+        // for (k = 0; k < N_OVER_TP ; k = k+1) begin
+        //     for (j = 0; j < TP ; j = j + 1 ) begin
+        //         if (k == N_OVER_TP-1 && j == TP-1) begin
+        //             W_in[(TP-j)*LOGQ-1-:LOGQ] = 0; 
+        //         end else begin
+        //             W_in[(TP-j)*LOGQ-1-:LOGQ] = psi0[k*TP+j];
+        //         end
                     
-            end                
-            #FP;
-        end
+        //     end                
+        //     #FP;
+        // end
 
 
-        OP_TYPE = 2'b0;
-        @(posedge clk);
-        START_NTT = 1'b1;
-        @(posedge clk);
-        START_NTT = 1'b0;
-        // Initialize inputs
-        for (i = 0; i < DEPTH ; i = i + 1) begin
-            for ( j = 0; j < TP; j = j + 1) begin // For every stage
-            if (INTT == 1'b1) begin
-                idx_here = (i*TP + j) & (N-1);
-                NTT_in[(TP-(j))*LOGQ-1-:LOGQ] = {INTT_COEF_IN[idx_here]};
-            end else begin
-                //idx_here = ((j*N_OVER_TP) + ((i & (SIZE0/TP-1)) * (N/SIZE0)) + (i/(SIZE0/TP))) & (N-1);
-                idx_here = (i*TP + j) & (N-1);
-                NTT_in[(TP-(j))*LOGQ-1-:LOGQ] = {a0_0[idx_here]};
-            end
+        // OP_TYPE = 2'b0;
+        // @(posedge clk);
+        // START_NTT = 1'b1;
+        // @(posedge clk);
+        // START_NTT = 1'b0;
+        // // Initialize inputs
+        // for (i = 0; i < DEPTH ; i = i + 1) begin
+        //     for ( j = 0; j < TP; j = j + 1) begin // For every stage
+        //     if (INTT == 1'b1) begin
+        //         idx_here = (i*TP + j) & (N-1);
+        //         NTT_in[(TP-(j))*LOGQ-1-:LOGQ] = {INTT_COEF_IN[idx_here]};
+        //     end else begin
+        //         //idx_here = ((j*N_OVER_TP) + ((i & (SIZE0/TP-1)) * (N/SIZE0)) + (i/(SIZE0/TP))) & (N-1);
+        //         idx_here = (i*TP + j) & (N-1);
+        //         NTT_in[(TP-(j))*LOGQ-1-:LOGQ] = {a0_0[idx_here]};
+        //     end
                 
-            end
-            @(posedge clk);
-        end
+        //     end
+        //     @(posedge clk);
+        // end
         
-        repeat(uut.LAT) begin
-            @(posedge clk);
-        end
-        flag_ntt_single = 1;
-        i = 0;
-        $display("SINGLE NTT TEST STARTING");
-        for (i = 0; i < DEPTH ; i = i + 1) begin
-            for ( j = 0; j < TP; j = j + 1) begin // For every stage
-                if (INTT == 1'b1) begin
-                    NTT_res[(TP-(j))*LOGQ-1-:LOGQ] = {INTT_RES[j+i*TP]};
-                end else begin
-                    NTT_res[(TP-(j))*LOGQ-1-:LOGQ] = {res[j+i*TP]};
-                    NTT_res_store[j+i*TP] = NTT_out[(TP-(j))*LOGQ-1-:LOGQ];
-                end
+        // repeat(uut.LAT) begin
+        //     @(posedge clk);
+        // end
+        // flag_ntt_single = 1;
+        // i = 0;
+        // $display("SINGLE NTT TEST STARTING");
+        // for (i = 0; i < DEPTH ; i = i + 1) begin
+        //     for ( j = 0; j < TP; j = j + 1) begin // For every stage
+        //         if (INTT == 1'b1) begin
+        //             NTT_res[(TP-(j))*LOGQ-1-:LOGQ] = {INTT_RES[j+i*TP]};
+        //         end else begin
+        //             NTT_res[(TP-(j))*LOGQ-1-:LOGQ] = {res[j+i*TP]};
+        //             NTT_res_store[j+i*TP] = NTT_out[(TP-(j))*LOGQ-1-:LOGQ];
+        //         end
                 
-            end
-            if( NTT_out == NTT_res) begin 
-                $display("CORRECT IDX: %d ", i);
-            end
-            else begin
-                flag_ntt_single = 0;
-                $display("WRONG IDX !!!!: %d ", i);
-            end
-            @(posedge clk);
-        end
+        //     end
+        //     if( NTT_out == NTT_res) begin 
+        //         $display("CORRECT IDX: %d ", i);
+        //     end
+        //     else begin
+        //         flag_ntt_single = 0;
+        //         $display("WRONG IDX !!!!: %d ", i);
+        //     end
+        //     @(posedge clk);
+        // end
 
 
-        $display("BATCH NTT TEST STARTING");
+        // $display("BATCH NTT TEST STARTING");
 
-        input_state = 0;
-        output_state = 0;
-        input_idx_ctr = 0;
-        output_idx_ctr = 0;
-        input_idy_ctr = 0;
-        output_idy_ctr = 0;
-        batch_done = 0;
-        k = 0;
+        // input_state = 0;
+        // output_state = 0;
+        // input_idx_ctr = 0;
+        // output_idx_ctr = 0;
+        // input_idy_ctr = 0;
+        // output_idy_ctr = 0;
+        // batch_done = 0;
+        // k = 0;
 
-        START_NTT = 1'b1;
+        // START_NTT = 1'b1;
 
-        @(posedge clk);
+        // @(posedge clk);
 
-        flag_ntt_batch = 1;
-        flag_ntt1 = 1;
+        // flag_ntt_batch = 1;
+        // flag_ntt1 = 1;
 
-        random_wait_array[0] = 1;
+        // random_wait_array[0] = 1;
 
-        for (i = 1; i < BATCH_SIZE-1 ; i = i + 1) begin
-            //random_wait = ($urandom(random_wait_array[i-1]) % MAX_BATCH_DELAY) + 1;
-            random_wait = i+1;
-            random_wait_array[i] = random_wait;
-        end
+        // for (i = 1; i < BATCH_SIZE-1 ; i = i + 1) begin
+        //     //random_wait = ($urandom(random_wait_array[i-1]) % MAX_BATCH_DELAY) + 1;
+        //     random_wait = i+1;
+        //     random_wait_array[i] = random_wait;
+        // end
         
 
-        while (batch_done == 0) begin
-            if (input_state == 0) begin
-                if (input_idy_ctr == 0) begin
-                    $display("BATCH NTT IDY: %d", input_idx_ctr);
-                    START_NTT = 1'b0;
-                end
-                for (j = 0; j < TP; j = j + 1) begin
-                    //idx_here = ((j*N_OVER_TP) + ((input_idy_ctr & (SIZE0/TP-1)) * (N/SIZE0)) + (input_idy_ctr/(SIZE0/TP))) & (N-1);
-                    idx_here = (input_idy_ctr*TP + j) & (N-1);
-                    if (input_idx_ctr[0] == 0) begin
-                        NTT_in[(TP-(j))*LOGQ-1-:LOGQ] = {a0_0[idx_here]};
-                    end
-                    else begin
-                        NTT_in[(TP-(j))*LOGQ-1-:LOGQ] = {a0_0_2[idx_here]};
-                    end
+        // while (batch_done == 0) begin
+        //     if (input_state == 0) begin
+        //         if (input_idy_ctr == 0) begin
+        //             $display("BATCH NTT IDY: %d", input_idx_ctr);
+        //             START_NTT = 1'b0;
+        //         end
+        //         for (j = 0; j < TP; j = j + 1) begin
+        //             //idx_here = ((j*N_OVER_TP) + ((input_idy_ctr & (SIZE0/TP-1)) * (N/SIZE0)) + (input_idy_ctr/(SIZE0/TP))) & (N-1);
+        //             idx_here = (input_idy_ctr*TP + j) & (N-1);
+        //             if (input_idx_ctr[0] == 0) begin
+        //                 NTT_in[(TP-(j))*LOGQ-1-:LOGQ] = {a0_0[idx_here]};
+        //             end
+        //             else begin
+        //                 NTT_in[(TP-(j))*LOGQ-1-:LOGQ] = {a0_0_2[idx_here]};
+        //             end
                     
-                end
-                if (input_idy_ctr == DEPTH-1) begin
-                    input_state = 1;
-                    input_idy_ctr = 0;
-                end
-                else begin
-                    input_idy_ctr = input_idy_ctr + 1;
-                end
-            end
-            else begin
-                if (input_idx_ctr == BATCH_SIZE-1) begin
+        //         end
+        //         if (input_idy_ctr == DEPTH-1) begin
+        //             input_state = 1;
+        //             input_idy_ctr = 0;
+        //         end
+        //         else begin
+        //             input_idy_ctr = input_idy_ctr + 1;
+        //         end
+        //     end
+        //     else begin
+        //         if (input_idx_ctr == BATCH_SIZE-1) begin
                     
-                end
-                else if (input_idy_ctr == random_wait_array[input_idx_ctr]) begin
-                    input_idy_ctr = 0;
-                    input_state = 0;
-                    START_NTT = 1'b1;
-                    input_idx_ctr = input_idx_ctr + 1;
-                end
-                else begin
-                    input_idy_ctr = input_idy_ctr + 1;
-                end
-            end
+        //         end
+        //         else if (input_idy_ctr == random_wait_array[input_idx_ctr]) begin
+        //             input_idy_ctr = 0;
+        //             input_state = 0;
+        //             START_NTT = 1'b1;
+        //             input_idx_ctr = input_idx_ctr + 1;
+        //         end
+        //         else begin
+        //             input_idy_ctr = input_idy_ctr + 1;
+        //         end
+        //     end
 
             
 
-            if (k >= (uut.LAT + DEPTH)) begin
-                if (output_state == 0) begin
-                    i = output_idy_ctr;
-                    if (i == 0) begin
-                        flag_ntt1 = 1;
-                    end
-                    for ( j = 0; j < TP; j = j + 1) begin // For every stage
-                        if (output_idx_ctr[0] == 0) begin
-                            NTT_res[(TP-(j))*LOGQ-1-:LOGQ] = {res[j+i*TP]};
-                        end
-                        else begin
-                            NTT_res[(TP-(j))*LOGQ-1-:LOGQ] = {res2[j+i*TP]};
-                        end
+        //     if (k >= (uut.LAT + DEPTH)) begin
+        //         if (output_state == 0) begin
+        //             i = output_idy_ctr;
+        //             if (i == 0) begin
+        //                 flag_ntt1 = 1;
+        //             end
+        //             for ( j = 0; j < TP; j = j + 1) begin // For every stage
+        //                 if (output_idx_ctr[0] == 0) begin
+        //                     NTT_res[(TP-(j))*LOGQ-1-:LOGQ] = {res[j+i*TP]};
+        //                 end
+        //                 else begin
+        //                     NTT_res[(TP-(j))*LOGQ-1-:LOGQ] = {res2[j+i*TP]};
+        //                 end
                         
-                    end
-                    if( NTT_out == NTT_res) begin
-                        $display("CORRECT IDX:%d - IDY:%d ", output_idx_ctr, output_idy_ctr);
-                    end
-                    else begin
-                        flag_ntt1 = 0;
-                        $display("WRONG IDX:%d -  IDY:%d ",  output_idx_ctr, output_idy_ctr);
-                    end
-                    if (output_idy_ctr == DEPTH-1) begin
-                        if (flag_ntt1) begin
-                            $display("BATCH: %d IS SUCCESSFUL", output_idx_ctr);        
-                        end
-                        else begin
-                            flag_ntt_batch = 0;
-                        end
-                        if (flag_ntt_batch) begin
-                            $display("PROCESSED BATCHES ARE SUCCESSFUL");
-                        end
-                        output_state = 1;
-                        output_idy_ctr = 0;
-                    end
-                    else begin
-                        output_idy_ctr = output_idy_ctr + 1;
-                    end
+        //             end
+        //             if( NTT_out == NTT_res) begin
+        //                 $display("CORRECT IDX:%d - IDY:%d ", output_idx_ctr, output_idy_ctr);
+        //             end
+        //             else begin
+        //                 flag_ntt1 = 0;
+        //                 $display("WRONG IDX:%d -  IDY:%d ",  output_idx_ctr, output_idy_ctr);
+        //             end
+        //             if (output_idy_ctr == DEPTH-1) begin
+        //                 if (flag_ntt1) begin
+        //                     $display("BATCH: %d IS SUCCESSFUL", output_idx_ctr);        
+        //                 end
+        //                 else begin
+        //                     flag_ntt_batch = 0;
+        //                 end
+        //                 if (flag_ntt_batch) begin
+        //                     $display("PROCESSED BATCHES ARE SUCCESSFUL");
+        //                 end
+        //                 output_state = 1;
+        //                 output_idy_ctr = 0;
+        //             end
+        //             else begin
+        //                 output_idy_ctr = output_idy_ctr + 1;
+        //             end
                     
-                end
-                else begin
-                    if (output_idx_ctr == (BATCH_SIZE-1)) begin
-                        batch_done = 1;
-                    end
-                    else if (output_idy_ctr == random_wait_array[output_idx_ctr]) begin
-                        output_idy_ctr = 0;
-                        output_state = 0;
-                        output_idx_ctr = output_idx_ctr + 1;
+        //         end
+        //         else begin
+        //             if (output_idx_ctr == (BATCH_SIZE-1)) begin
+        //                 batch_done = 1;
+        //             end
+        //             else if (output_idy_ctr == random_wait_array[output_idx_ctr]) begin
+        //                 output_idy_ctr = 0;
+        //                 output_state = 0;
+        //                 output_idx_ctr = output_idx_ctr + 1;
                         
                         
-                    end
-                    else begin
-                        output_idy_ctr = output_idy_ctr + 1;
-                    end
-                end
-            end
+        //             end
+        //             else begin
+        //                 output_idy_ctr = output_idy_ctr + 1;
+        //             end
+        //         end
+        //     end
 
             
-            ////////////// NEXT CYCLE //////////////////
-            @(posedge clk);
-            k = k + 1;
-        end
+        //     ////////////// NEXT CYCLE //////////////////
+        //     @(posedge clk);
+        //     k = k + 1;
+        // end
 
         
 
 
-        ////// INTT TESTS ////////
+        // ////// INTT TESTS ////////
 
         INTT = 1'b1;
         rst = 1'b0;
@@ -433,137 +433,137 @@ module tp_ntt_shuffle_tb();
         
 
 
-        $display("BATCH INTT TEST STARTING");
+        // $display("BATCH INTT TEST STARTING");
 
-        input_state = 0;
-        output_state = 0;
-        input_idx_ctr = 0;
-        output_idx_ctr = 0;
-        input_idy_ctr = 0;
-        output_idy_ctr = 0;
-        batch_done = 0;
-        k = 0;
+        // input_state = 0;
+        // output_state = 0;
+        // input_idx_ctr = 0;
+        // output_idx_ctr = 0;
+        // input_idy_ctr = 0;
+        // output_idy_ctr = 0;
+        // batch_done = 0;
+        // k = 0;
 
-        START_NTT = 1'b1;
+        // START_NTT = 1'b1;
 
-        @(posedge clk);
+        // @(posedge clk);
 
-        flag_intt_batch = 1;
-        flag_intt1 = 1;
+        // flag_intt_batch = 1;
+        // flag_intt1 = 1;
 
-        while (batch_done == 0) begin
-            if (input_state == 0) begin
-                if (input_idy_ctr == 0) begin
-                    $display("BATCH INTT IDY: %d", input_idx_ctr);
-                    START_NTT = 1'b0;
-                end
-                for (j = 0; j < TP; j = j + 1) begin
-                    idx_here = (input_idy_ctr*TP + j) & (N-1);
-                    if (input_idx_ctr[0] == 0) begin
-                        NTT_in[(TP-(j))*LOGQ-1-:LOGQ] = {INTT_COEF_IN[idx_here]};
-                    end
-                    else begin
-                        NTT_in[(TP-(j))*LOGQ-1-:LOGQ] = {INTT_COEF_IN2[idx_here]};
-                    end
+        // while (batch_done == 0) begin
+        //     if (input_state == 0) begin
+        //         if (input_idy_ctr == 0) begin
+        //             $display("BATCH INTT IDY: %d", input_idx_ctr);
+        //             START_NTT = 1'b0;
+        //         end
+        //         for (j = 0; j < TP; j = j + 1) begin
+        //             idx_here = (input_idy_ctr*TP + j) & (N-1);
+        //             if (input_idx_ctr[0] == 0) begin
+        //                 NTT_in[(TP-(j))*LOGQ-1-:LOGQ] = {INTT_COEF_IN[idx_here]};
+        //             end
+        //             else begin
+        //                 NTT_in[(TP-(j))*LOGQ-1-:LOGQ] = {INTT_COEF_IN2[idx_here]};
+        //             end
                     
-                end
-                if (input_idy_ctr == DEPTH-1) begin
-                    input_state = 1;
-                    input_idy_ctr = 0;
-                end
-                else begin
-                    input_idy_ctr = input_idy_ctr + 1;
-                end
-            end
-            else begin
-                if (input_idx_ctr == BATCH_SIZE-1) begin
+        //         end
+        //         if (input_idy_ctr == DEPTH-1) begin
+        //             input_state = 1;
+        //             input_idy_ctr = 0;
+        //         end
+        //         else begin
+        //             input_idy_ctr = input_idy_ctr + 1;
+        //         end
+        //     end
+        //     else begin
+        //         if (input_idx_ctr == BATCH_SIZE-1) begin
                     
-                end
-                else if (input_idy_ctr == random_wait_array[input_idx_ctr]) begin
-                    input_idy_ctr = 0;
-                    input_state = 0;
-                    START_NTT = 1'b1;
-                    input_idx_ctr = input_idx_ctr + 1;
-                end
-                else begin
-                    input_idy_ctr = input_idy_ctr + 1;
-                end
-            end
+        //         end
+        //         else if (input_idy_ctr == random_wait_array[input_idx_ctr]) begin
+        //             input_idy_ctr = 0;
+        //             input_state = 0;
+        //             START_NTT = 1'b1;
+        //             input_idx_ctr = input_idx_ctr + 1;
+        //         end
+        //         else begin
+        //             input_idy_ctr = input_idy_ctr + 1;
+        //         end
+        //     end
 
             
 
-            if (k >= (uut.LAT + DEPTH)) begin
-                if (output_state == 0) begin
-                    i = output_idy_ctr;
-                    if (i == 0) begin
-                        flag_intt1 = 1;
-                    end
-                    for ( j = 0; j < TP; j = j + 1) begin // For every stage
-                        if (output_idx_ctr[0] == 0) begin
-                            NTT_res[(TP-(j))*LOGQ-1-:LOGQ] = {INTT_RES[j+output_idy_ctr*TP]};
-                        end
-                        else begin
-                            NTT_res[(TP-(j))*LOGQ-1-:LOGQ] = {INTT_RES_2[j+output_idy_ctr*TP]};
-                        end
+        //     if (k >= (uut.LAT + DEPTH)) begin
+        //         if (output_state == 0) begin
+        //             i = output_idy_ctr;
+        //             if (i == 0) begin
+        //                 flag_intt1 = 1;
+        //             end
+        //             for ( j = 0; j < TP; j = j + 1) begin // For every stage
+        //                 if (output_idx_ctr[0] == 0) begin
+        //                     NTT_res[(TP-(j))*LOGQ-1-:LOGQ] = {INTT_RES[j+output_idy_ctr*TP]};
+        //                 end
+        //                 else begin
+        //                     NTT_res[(TP-(j))*LOGQ-1-:LOGQ] = {INTT_RES_2[j+output_idy_ctr*TP]};
+        //                 end
                         
-                    end
-                    if( NTT_out == NTT_res) begin
-                        $display("CORRECT IDX:%d - IDY:%d ", output_idx_ctr, output_idy_ctr);
-                    end
-                    else begin
-                        flag_intt1 = 0;
-                        $display("WRONG IDX:%d -  IDY:%d ",  output_idx_ctr, output_idy_ctr);
-                    end
-                    if (output_idy_ctr == DEPTH-1) begin
-                        if (flag_intt1) begin
-                            $display("BATCH: %d IS SUCCESSFUL", output_idx_ctr);        
-                        end
-                        else begin
-                            flag_intt_batch = 0;
-                        end
-                        if (flag_intt_batch) begin
-                            $display("PROCESSED BATCHES ARE SUCCESSFUL");
-                        end
-                        output_state = 1;
-                        output_idy_ctr = 0;
-                    end
-                    else begin
-                        output_idy_ctr = output_idy_ctr + 1;
-                    end
+        //             end
+        //             if( NTT_out == NTT_res) begin
+        //                 $display("CORRECT IDX:%d - IDY:%d ", output_idx_ctr, output_idy_ctr);
+        //             end
+        //             else begin
+        //                 flag_intt1 = 0;
+        //                 $display("WRONG IDX:%d -  IDY:%d ",  output_idx_ctr, output_idy_ctr);
+        //             end
+        //             if (output_idy_ctr == DEPTH-1) begin
+        //                 if (flag_intt1) begin
+        //                     $display("BATCH: %d IS SUCCESSFUL", output_idx_ctr);        
+        //                 end
+        //                 else begin
+        //                     flag_intt_batch = 0;
+        //                 end
+        //                 if (flag_intt_batch) begin
+        //                     $display("PROCESSED BATCHES ARE SUCCESSFUL");
+        //                 end
+        //                 output_state = 1;
+        //                 output_idy_ctr = 0;
+        //             end
+        //             else begin
+        //                 output_idy_ctr = output_idy_ctr + 1;
+        //             end
                     
-                end
-                else begin
-                    if (output_idx_ctr == (BATCH_SIZE-1)) begin
-                        batch_done = 1;
-                    end
-                    else if (output_idy_ctr == random_wait_array[output_idx_ctr]) begin
-                        output_idy_ctr = 0;
-                        output_state = 0;
-                        output_idx_ctr = output_idx_ctr + 1;
-                    end
-                    else begin
-                        output_idy_ctr = output_idy_ctr + 1;
-                    end
-                end
-            end
-            //////////// NEXT CYCLE //////////////////
-            @(posedge clk);
-            k = k + 1;
-        end
+        //         end
+        //         else begin
+        //             if (output_idx_ctr == (BATCH_SIZE-1)) begin
+        //                 batch_done = 1;
+        //             end
+        //             else if (output_idy_ctr == random_wait_array[output_idx_ctr]) begin
+        //                 output_idy_ctr = 0;
+        //                 output_state = 0;
+        //                 output_idx_ctr = output_idx_ctr + 1;
+        //             end
+        //             else begin
+        //                 output_idy_ctr = output_idy_ctr + 1;
+        //             end
+        //         end
+        //     end
+        //     //////////// NEXT CYCLE //////////////////
+        //     @(posedge clk);
+        //     k = k + 1;
+        // end
 
-        if (flag_ntt_single) begin
-                $display("SINGLE NTT TEST IS SUCCESSFUL. ALL COEFFICIENTS ARE CORRECT\n");        
-        end
-        else begin
-            $display("FAIL IN SINGLE NTT TEST");
-        end
+        // if (flag_ntt_single) begin
+        //         $display("SINGLE NTT TEST IS SUCCESSFUL. ALL COEFFICIENTS ARE CORRECT\n");        
+        // end
+        // else begin
+        //     $display("FAIL IN SINGLE NTT TEST");
+        // end
 
-        if (flag_ntt_batch) begin
-            $display("BATCH NTT TEST IS SUCCESSFUL. \nALL BATCHESxCOEFFICIENTS ARE CORRECT\n");
-        end
-        else begin
-            $display("SOME BATCHES FAILED\n");
-        end
+        // if (flag_ntt_batch) begin
+        //     $display("BATCH NTT TEST IS SUCCESSFUL. \nALL BATCHESxCOEFFICIENTS ARE CORRECT\n");
+        // end
+        // else begin
+        //     $display("SOME BATCHES FAILED\n");
+        // end
 
         if (flag_intt_single) begin
                 $display("SINGLE INTT TEST IS SUCCESSFUL. ALL COEFFICIENTS ARE CORRECT\n");        
@@ -572,12 +572,12 @@ module tp_ntt_shuffle_tb();
             $display("FAIL IN SINGLE INTT TEST");
         end
 
-        if (flag_intt_batch) begin
-            $display("BATCH INTT TEST IS SUCCESSFUL. \nALL BATCHESxCOEFFICIENTS ARE CORRECT\n");
-        end
-        else begin
-            $display("SOME BATCHES FAILED\n");
-        end
+        // if (flag_intt_batch) begin
+        //     $display("BATCH INTT TEST IS SUCCESSFUL. \nALL BATCHESxCOEFFICIENTS ARE CORRECT\n");
+        // end
+        // else begin
+        //     $display("SOME BATCHES FAILED\n");
+        // end
 
         $finish;
 

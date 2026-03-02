@@ -21,7 +21,7 @@ module twiddle_load
         input           [TP*LOGQ  -1:0]     psi,
         output          [(TP-1)*LOGQ  -1:0]     psi_out
     );
-generate
+
 localparam N                        = 1 << LOGN;
 localparam N1                       = 1 << LOGN1;
 localparam N2                       = 1 << LOGN2;
@@ -61,7 +61,20 @@ localparam end_param = param_new_aa_pre < 0 ? param_new_aa_other+1 : param_new_a
 
 localparam minus =  param_new_aa_pre < 0 ? 1 : 0;
 
+localparam int GROUP = N2;
+
+// Synthesizable constant array using generate
+logic [31:0] MAP_LUT [0:TP-1];
+
+generate
+    for (genvar i = 0; i < TP/N2; i=i+1) begin
+        for (genvar j = 0; j < N2-1; j++) begin
+            assign MAP_LUT[i*(N2-1)+j] = j;
+        end
+        
+    end
 endgenerate
+
 
 // states
 localparam OP_IDLE                      = 1'd0;
@@ -100,7 +113,7 @@ wire [1:0] op_in_ntt;
 
 shiftreg #(
     .SHIFT (1),
-    .DATA  (LOG_DEPTH+2)
+    .DATA  (LOG_DEPTH+1)
 ) sre_ctr_read (
     .clk      (clk        ),
     .reset    (rst        ),
@@ -110,7 +123,7 @@ shiftreg #(
 
 shiftreg #(
     .SHIFT (1),
-    .DATA  (LOG_DEPTH+2)
+    .DATA  (LOG_DEPTH+1)
 ) sre_ctr_read_d2 (
     .clk      (clk        ),
     .reset    (rst        ),
@@ -120,7 +133,7 @@ shiftreg #(
 
 shiftreg #(
     .SHIFT (2),
-    .DATA  (LOG_DEPTH+2)
+    .DATA  (LOG_DEPTH+1)
 ) sre_ctr_read_d3 (
     .clk      (clk        ),
     .reset    (rst        ),
@@ -160,8 +173,8 @@ end
 
 
 
-reg [12:0] subctr, subctr2;  
-reg [12:0] write_addr, write_addr2;
+reg [LOG_DEPTH:0] subctr, subctr2;  
+reg [LOG_DEPTH:0] write_addr, write_addr2;
 
 reg en2;
 
@@ -171,6 +184,8 @@ always @(posedge clk) begin
         subctr2    <= 0;
         write_addr <= 1;
         write_addr2 <= (N3*N4)/TWID_FACTOR_N2;
+        en <= 'd0;
+        en2 <= 'd0;
     end
     else begin
         case (curr_state)
@@ -228,9 +243,10 @@ always @(posedge clk) begin
                 
             end
         endcase
-        if (DIM_NUM == 3) begin
+
+        if (DIM_NUM == 3 && twid_load_started) begin
             if (intt == 1'b0) begin
-                if (ctr == (1 + (1<<LOGN2))-1 ) begin
+                if (ctr == (1 + (1<<LOGN2))-1) begin
                     en <= 1'd1;
                 end
                 else if (ctr == DEPTH_LARGE - 1 ) begin
@@ -246,7 +262,7 @@ always @(posedge clk) begin
             end
             
         end
-        if (DIM_NUM == 4) begin
+        if (DIM_NUM == 4 && twid_load_started) begin
             if (intt == 1'b0) begin
                 if (ctr == (1 + (1<<LOGN2))-1 ) begin
                     en <= 1'd1;
@@ -270,9 +286,21 @@ always @(posedge clk) begin
             end
             
         end
-        
     end
+
 end
+
+wire twid_load_started;
+
+assign twid_load_started = (op == OP_TWIDDLE_LOAD || curr_state == OP_TWIDDLE_LOAD) ? 1'b1 : 1'b0;
+
+// always @(posedge clk or posedge rst) begin
+//     if (rst) begin
+//         twid_load_started <= 1'b0;
+//     end else begin
+//         twid_load_started <= ;
+//     end
+// end
 
 
 always @(posedge clk or posedge rst) begin
@@ -439,6 +467,9 @@ for (genvar i = 0; i < TP; i = i + 1) begin: FIFO_LOOP // BRAM for NTT
                         end
                     end 
                    
+                end
+                default: begin
+                    br_new[i] <= 0;
                 end
             endcase
         end
@@ -849,20 +880,22 @@ for (genvar loop_id = 0; loop_id < TP-1; loop_id = loop_id + 1) begin
             end else begin
                 if (DIM_NUM == 3) begin
                     if (ctr_read_d3 >= DEPTH && ctr_read_d3 < DEPTH * 2) begin
-                        if (loop_id < TP/N2) begin
-                            twiddle_in_true[(TP-1-((N2-1)*loop_id))*LOGQ-1-:(N2-1)*LOGQ] <= twiddle_in_read[(TP-1-((N2-1)*(((ctr_read_d3 & (DEPTH-1))>>LOGN2) & (TP/N2-1))))*LOGQ-1-:((N2-1)*LOGQ)];
-                        end
+                        //if (loop_id < TP/N2) begin
+                            twiddle_in_true[(TP-1-(loop_id))*LOGQ-1-:LOGQ] <= twiddle_in_read[(TP-1-((N2-1)*(((ctr_read_d3 & (DEPTH-1))>>LOGN2) & (TP/N2-1))+MAP_LUT[loop_id]))*LOGQ-1-:(LOGQ)];
+                        //end
                     end
                     else begin
                         twiddle_in_true[(TP-1-loop_id)*LOGQ-1-:LOGQ] <= twiddle_in_read[(TP-1-loop_id)*LOGQ-1-:LOGQ];
                     end
-                end else if (DIM_NUM == 2) begin
-                    twiddle_in_true[(TP-1-loop_id)*LOGQ-1-:LOGQ] <= twiddle_in_read[(TP-1-loop_id)*LOGQ-1-:LOGQ];
-                end else if (DIM_NUM == 4) begin
+                end 
+            //     else if (DIM_NUM == 2) begin
+            //         twiddle_in_true[(TP-1-loop_id)*LOGQ-1-:LOGQ] <= twiddle_in_read[(TP-1-loop_id)*LOGQ-1-:LOGQ];
+            //     end 
+                else if (DIM_NUM == 4) begin
                     if (ctr_read_d3 >= DEPTH && ctr_read_d3 < DEPTH * 2) begin
-                        if (loop_id < TP/N2) begin
-                            twiddle_in_true[(TP-1-((N2-1)*loop_id))*LOGQ-1-:(N2-1)*LOGQ] <= twiddle_in_read[(TP-1-((N2-1)*(((ctr_read_d3 & (DEPTH-1))>>LOGN2) & (TP/N2-1))))*LOGQ-1-:((N2-1)*LOGQ)];
-                        end
+                        //if (loop_id < TP/N2) begin
+                            twiddle_in_true[(TP-1-(loop_id))*LOGQ-1-:(N2-1)*LOGQ] <= twiddle_in_read[(TP-1-((N2-1)*(((ctr_read_d3 & (DEPTH-1))>>LOGN2) & (TP/N2-1))+MAP_LUT[loop_id]))*LOGQ-1-:(LOGQ)];
+                        //end
                     end
                     else begin
                         twiddle_in_true[(TP-1-loop_id)*LOGQ-1-:LOGQ] <= twiddle_in_read[(TP-1-loop_id)*LOGQ-1-:LOGQ];

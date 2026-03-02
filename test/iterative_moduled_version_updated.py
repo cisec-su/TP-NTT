@@ -524,6 +524,10 @@ if __name__ == "__main__":
 
     q = ntt_friendly_prime_gen(LOGQ, LOGQH, 1)[0]
 
+    q_file = open(f'{test_dir}/q.txt', 'r')
+
+    q = int(q_file.read().strip(), 16)
+
     size0 = n1*n2
     size1 = n3*n4
 
