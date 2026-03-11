@@ -610,7 +610,7 @@ shiftreg #(
 
 
 shiftreg #(
-    .SHIFT (4 + LAT0),
+    .SHIFT (4 + LAT0 + 1),
     .DATA  (2)
 ) sre300 (
     .clk      (clk          ),
@@ -653,7 +653,7 @@ shiftreg #(
 
 
 shiftreg #(
-    .SHIFT (4 + LAT0),
+    .SHIFT (4 + LAT0 + 1),
     .DATA  (LOGQH)
 ) sre400 (
     .clk      (clk      ),

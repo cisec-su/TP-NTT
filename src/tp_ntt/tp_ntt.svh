@@ -17,10 +17,10 @@ typedef enum int {
 } tp_ntt_dim_t;
 
 typedef enum int {
-    LAT0 = 1,
-    LAT1 = 2,
-    LAT2 = 3,
-    LAT3 = 4
+    LAT0 = 5,
+    LAT1 = 6,
+    LAT2 = 7,
+    LAT3 = 8
 } latency_table;
 
 
