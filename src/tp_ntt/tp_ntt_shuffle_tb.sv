@@ -5,12 +5,12 @@ module tp_ntt_shuffle_tb();
     `include "tp_ntt.svh"
 
     // TP-NTT Parameters
-    parameter LOGN                      = 16;
-    parameter LOGN1                     = 5;
-    parameter LOGN2                     = 1;
-    parameter LOGN3                     = 5;
-    parameter LOGTP                     = 5;
-    parameter LOGQ                      = 60;
+    parameter LOGN                      = 12;
+    parameter LOGN1                     = 6;
+    parameter LOGN2                     = 6;
+    parameter LOGN3                     = 0;
+    parameter LOGTP                     = 6;
+    parameter LOGQ                      = 64;
     parameter LOGQH                     = 17;
     parameter NON_STD                   = 1;
     parameter MORE_DSP                  = 0;
@@ -23,7 +23,7 @@ module tp_ntt_shuffle_tb();
     parameter FP                        = (2*HP);
     parameter TEST_DIR                  = "../../../../../test";
     parameter PYTHON                    = "/usr/bin/python3";
-    parameter GEN_TEST_VEC              = 0;
+    parameter GEN_TEST_VEC              = 1;
 
     localparam LOGN4                    = LOGN - LOGN1 - LOGN2 - LOGN3;
     localparam N                        = 1 << LOGN;

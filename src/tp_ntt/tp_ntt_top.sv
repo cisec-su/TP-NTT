@@ -10,7 +10,8 @@ module tp_ntt_top
         parameter LOGQ          = 60,
         parameter LOGQH         = 17,
         parameter NON_STD       = 1 ,
-        parameter MORE_DSP      = 0
+        parameter MORE_DSP      = 0 ,
+        parameter TW_STREAM     = 1
     )
     (
         input                           clk,
@@ -789,26 +790,29 @@ wire new_intt_flag;
 assign new_intt_flag = (twiddle_load_started || op == OP_TWIDDLE_LOAD)  ? intt : 0;
 
 
-
-twiddle_load #(
-    .LOGN    (LOGN    ),
-    .LOGN1   (LOGN1   ),
-    .LOGN2   (LOGN2   ),
-    .LOGN3   (LOGN3   ),
-    .LOGTP   (LOGTP   ),
-    .LOGQ    (LOGQ    ),
-    .LOGQH   (LOGQH   ),
-    .NON_STD (NON_STD ),
-    .MORE_DSP(MORE_DSP)
-) uut_twid (
-    .clk(clk),
-    .rst(rst),
-    .op(op),
-    .intt(intt),
-    .psi(psi),
-    .psi_out(psi_out)
-);
-
+if (TW_STREAM) begin
+    twiddle_load #(
+        .LOGN    (LOGN    ),
+        .LOGN1   (LOGN1   ),
+        .LOGN2   (LOGN2   ),
+        .LOGN3   (LOGN3   ),
+        .LOGTP   (LOGTP   ),
+        .LOGQ    (LOGQ    ),
+        .LOGQH   (LOGQH   ),
+        .NON_STD (NON_STD ),
+        .MORE_DSP(MORE_DSP)
+    ) uut_twid (
+        .clk(clk),
+        .rst(rst),
+        .op(op),
+        .intt(intt),
+        .psi(psi),
+        .psi_out(psi_out)
+    );
+end
+else begin
+    assign psi_out = psi[(TP-1)*LOGQ-1:0];
+end
 
 
 endmodule

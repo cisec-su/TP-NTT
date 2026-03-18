@@ -32,19 +32,19 @@ localparam SIZE0                    = N1 * N2;
 localparam SIZE1                    = N / (SIZE0);
 localparam DEPTH                    = N/TP ;
 localparam DEPTH_LARGE              = N/TP;
-localparam SIZE1_OVER_TP            = SIZE1/TP;
-localparam SIZE0_OVER_TP            = SIZE0/TP;
-localparam LOG_SIZE0_OVER_TP        = $clog2((SIZE0)/TP);
+//localparam SIZE1_OVER_TP            = SIZE1/TP;
+//localparam SIZE0_OVER_TP            = SIZE0/TP;
+//localparam LOG_SIZE0_OVER_TP        = $clog2((SIZE0)/TP);
 localparam BRAM_SIZE                = DEPTH;
 localparam BRAM_LOG_SIZE            = $clog2(BRAM_SIZE);
 localparam LOG_DEPTH                = $clog2(DEPTH);
-localparam LOG_DEPTH_LARGE          = $clog2(DEPTH_LARGE);
+//localparam LOG_DEPTH_LARGE          = $clog2(DEPTH_LARGE);
 localparam DIM_NUM                  = (LOGN4 != 0) ? 4 : ((LOGN3 != 0) ? 3 : 2);
-localparam LAST_PARTITION_SIZE      = DIM_NUM == 4 ? (1 << LOGN4) - 1 :  DIM_NUM == 3 ? (1 << LOGN3) - 1 : DIM_NUM == 2 ? (1 << LOGN2) - 1 : 0;
+//localparam LAST_PARTITION_SIZE      = DIM_NUM == 4 ? (1 << LOGN4) - 1 :  DIM_NUM == 3 ? (1 << LOGN3) - 1 : DIM_NUM == 2 ? (1 << LOGN2) - 1 : 0;
 localparam TWID_FACTOR_N2           = (TP>>LOGN2) * ((N2)-1);
-localparam NEEDED_TWIDDLE           = DIM_NUM == 4 ? (N-1) - (1+((1<<(LOGTP-LOGN2))*(N2-1))+((DEPTH_LARGE/N3)*(TP-1))+((DEPTH_LARGE-1-(1<<(LOGTP-LOGN2))-(DEPTH_LARGE/N3))*(N4-1))) : DIM_NUM == 3 ? (1<<LOGN) - 1 - (TP-1)*(DEPTH_LARGE-N2) - (N2 * TWID_FACTOR_N2) : DIM_NUM == 2 ? N - 1 - (TP-1)*DEPTH_LARGE : 0;
-localparam CTR_READ_NUM             = DIM_NUM == 2 ? (1+DEPTH)-1 : DIM_NUM == 3 ? (1+(N2)+DEPTH)-1    : DIM_NUM == 4 ? (1+(N2)+DEPTH+DEPTH)-1 : 0;
-localparam CTR_READ_NUM_INTT        = DIM_NUM == 2 ? (1+DEPTH)-1 : DIM_NUM == 3 ? (DEPTH+DEPTH+1)-1         : DIM_NUM == 4 ? (1+(1<<LOGN3)+DEPTH+DEPTH)-1 : 0;
+//localparam NEEDED_TWIDDLE           = DIM_NUM == 4 ? (N-1) - (1+((1<<(LOGTP-LOGN2))*(N2-1))+((DEPTH_LARGE/N3)*(TP-1))+((DEPTH_LARGE-1-(1<<(LOGTP-LOGN2))-(DEPTH_LARGE/N3))*(N4-1))) : DIM_NUM == 3 ? (1<<LOGN) - 1 - (TP-1)*(DEPTH_LARGE-N2) - (N2 * TWID_FACTOR_N2) : DIM_NUM == 2 ? N - 1 - (TP-1)*DEPTH_LARGE : 0;
+localparam CTR_READ_NUM             = DIM_NUM == 2 ? (DEPTH+1)-1 : DIM_NUM == 3 ? (1+(N2)+DEPTH)-1    : DIM_NUM == 4 ? (1+(N2)+DEPTH+DEPTH)-1 : 0;
+localparam CTR_READ_NUM_INTT        = DIM_NUM == 2 ? (DEPTH+1)-1 : DIM_NUM == 3 ? (DEPTH+DEPTH+1)-1         : DIM_NUM == 4 ? (1+(1<<LOGN3)+DEPTH+DEPTH)-1 : 0;
 
 localparam LOG_CTR = LOG_DEPTH+2;
 
@@ -63,7 +63,7 @@ localparam end_param = param_new_aa_pre < 0 ? param_new_aa_other+1 : param_new_a
 
 localparam minus =  param_new_aa_pre < 0 ? 1 : 0;
 
-localparam int GROUP = N2;
+//localparam int GROUP = N2;
 
 localparam TP_min_TWID_FACTOR_N2 = TP-TWID_FACTOR_N2;
 
@@ -75,12 +75,16 @@ localparam N3_times_tp_min_1 = N3*(TP-1);
 
 localparam N2_min1_mul_tp_min_twid_factor_n2 = (N2-1)<<(TP_min_TWID_FACTOR_N2_log2);
 
+localparam TP_over_n2_minus_1 = (TP/N2) - 1;
+
+//localparam TP_over_n2_log2 = $clog2(TP/N2);
+
 // Synthesizable constant array using generate
-wire [1:0] MAP_LUT [0:TP-1];
+wire [4:0] MAP_LUT [0:TP-1];
 
 
 
-generate
+if (TP == 32) begin
     if (DIM_NUM == 3) begin
         if (N2 == 4) begin
             assign MAP_LUT[0]=0;  assign MAP_LUT[1]=1;  assign MAP_LUT[2]=2;
@@ -144,11 +148,143 @@ generate
         assign MAP_LUT[14] = 0;
         assign MAP_LUT[15] = 0;
     end    
+end else if (TP == 64) begin
+    // if (conditions) begin
+        
+    // end else begin
+    //     assign MAP_LUT[0] = 0;
+    //     assign MAP_LUT[1] = 0;
+    //     assign MAP_LUT[2] = 0;
+    //     assign MAP_LUT[3] = 0;
+    //     assign MAP_LUT[4] = 0;
+    //     assign MAP_LUT[5] = 0;
+    //     assign MAP_LUT[6] = 0;
+    //     assign MAP_LUT[7] = 0;
+    //     assign MAP_LUT[8] = 0;
+    //     assign MAP_LUT[9] = 0;
+    //     assign MAP_LUT[10] = 0;
+    //     assign MAP_LUT[11] = 0;
+    //     assign MAP_LUT[12] = 0;
+    //     assign MAP_LUT[13] = 0;
+    //     assign MAP_LUT[14] = 0;
+    //     assign MAP_LUT[15] = 0;
+    //     assign MAP_LUT[16] = 0;
+    //     assign MAP_LUT[17] = 0;
+    //     assign MAP_LUT[18] = 0;
+    //     assign MAP_LUT[19] = 0;
+    //     assign MAP_LUT[20] = 0;
+    //     assign MAP_LUT[21] = 0;
+    //     assign MAP_LUT[22] = 0;
+    //     assign MAP_LUT[23] = 0;
+    //     assign MAP_LUT[24] = 0;
+    //     assign MAP_LUT[25] = 0;
+    //     assign MAP_LUT[26] = 0;
+    //     assign MAP_LUT[27] = 0;
+    //     assign MAP_LUT[28] = 0;
+    //     assign MAP_LUT[29] = 0;
+    //     assign MAP_LUT[30] = 0;
+    //     assign MAP_LUT[31] = 0;
+    // end
+    if (N2 == 2) begin
+        assign MAP_LUT[0]=0;  assign MAP_LUT[1]=0;  assign MAP_LUT[2]=0;  assign MAP_LUT[3]=0;
+        assign MAP_LUT[4]=0;  assign MAP_LUT[5]=0;  assign MAP_LUT[6]=0;  assign MAP_LUT[7]=0;
+        assign MAP_LUT[8]=0;  assign MAP_LUT[9]=0;  assign MAP_LUT[10]=0; assign MAP_LUT[11]=0;
+        assign MAP_LUT[12]=0; assign MAP_LUT[13]=0; assign MAP_LUT[14]=0; assign MAP_LUT[15]=0;
+        assign MAP_LUT[16]=0; assign MAP_LUT[17]=0; assign MAP_LUT[18]=0; assign MAP_LUT[19]=0;
+        assign MAP_LUT[20]=0; assign MAP_LUT[21]=0; assign MAP_LUT[22]=0; assign MAP_LUT[23]=0;
+        assign MAP_LUT[24]=0; assign MAP_LUT[25]=0; assign MAP_LUT[26]=0; assign MAP_LUT[27]=0;
+        assign MAP_LUT[28]=0; assign MAP_LUT[29]=0; assign MAP_LUT[30]=0; assign MAP_LUT[31]=0;
+        assign MAP_LUT[32]=0; assign MAP_LUT[33]=0; assign MAP_LUT[34]=0; assign MAP_LUT[35]=0;
+        assign MAP_LUT[36]=0; assign MAP_LUT[37]=0; assign MAP_LUT[38]=0; assign MAP_LUT[39]=0;
+        assign MAP_LUT[40]=0; assign MAP_LUT[41]=0; assign MAP_LUT[42]=0; assign MAP_LUT[43]=0;
+        assign MAP_LUT[44]=0; assign MAP_LUT[45]=0; assign MAP_LUT[46]=0; assign MAP_LUT[47]=0;
+        assign MAP_LUT[48]=0; assign MAP_LUT[49]=0; assign MAP_LUT[50]=0; assign MAP_LUT[51]=0;
+        assign MAP_LUT[52]=0; assign MAP_LUT[53]=0; assign MAP_LUT[54]=0; assign MAP_LUT[55]=0;
+        assign MAP_LUT[56]=0; assign MAP_LUT[57]=0; assign MAP_LUT[58]=0; assign MAP_LUT[59]=0;
+        assign MAP_LUT[60]=0; assign MAP_LUT[61]=0; assign MAP_LUT[62]=0; assign MAP_LUT[63]=0;
+    end
+    else if (N2 == 4) begin
+        assign MAP_LUT[0]=0;  assign MAP_LUT[1]=1;  assign MAP_LUT[2]=2;
+        assign MAP_LUT[3]=0;  assign MAP_LUT[4]=1;  assign MAP_LUT[5]=2;
+        assign MAP_LUT[6]=0;  assign MAP_LUT[7]=1;  assign MAP_LUT[8]=2;
+        assign MAP_LUT[9]=0;  assign MAP_LUT[10]=1; assign MAP_LUT[11]=2;
+        assign MAP_LUT[12]=0; assign MAP_LUT[13]=1; assign MAP_LUT[14]=2;
+        assign MAP_LUT[15]=0; assign MAP_LUT[16]=1; assign MAP_LUT[17]=2;
+        assign MAP_LUT[18]=0; assign MAP_LUT[19]=1; assign MAP_LUT[20]=2;
+        assign MAP_LUT[21]=0; assign MAP_LUT[22]=1; assign MAP_LUT[23]=2;
+        assign MAP_LUT[24]=0; assign MAP_LUT[25]=1; assign MAP_LUT[26]=2;
+        assign MAP_LUT[27]=0; assign MAP_LUT[28]=1; assign MAP_LUT[29]=2;
+        assign MAP_LUT[30]=0; assign MAP_LUT[31]=1; assign MAP_LUT[32]=2;
+        assign MAP_LUT[33]=0; assign MAP_LUT[34]=1; assign MAP_LUT[35]=2;
+        assign MAP_LUT[36]=0; assign MAP_LUT[37]=1; assign MAP_LUT[38]=2;
+        assign MAP_LUT[39]=0; assign MAP_LUT[40]=1; assign MAP_LUT[41]=2;
+        assign MAP_LUT[42]=0; assign MAP_LUT[43]=1; assign MAP_LUT[44]=2;
+        assign MAP_LUT[45]=0; assign MAP_LUT[46]=1; assign MAP_LUT[47]=2;
+        assign MAP_LUT[48]=0; assign MAP_LUT[49]=1; assign MAP_LUT[50]=2;
+        assign MAP_LUT[51]=0; assign MAP_LUT[52]=1; assign MAP_LUT[53]=2;
+        assign MAP_LUT[54]=0; assign MAP_LUT[55]=1; assign MAP_LUT[56]=2;
+        assign MAP_LUT[57]=0; assign MAP_LUT[58]=1; assign MAP_LUT[59]=2;
+        assign MAP_LUT[60]=0; assign MAP_LUT[61]=1; assign MAP_LUT[62]=2;
+    end
+    else if (N2 == 8) begin
+        assign MAP_LUT[0]=0;  assign MAP_LUT[1]=1;  assign MAP_LUT[2]=2;  assign MAP_LUT[3]=3;
+        assign MAP_LUT[4]=4;  assign MAP_LUT[5]=5;  assign MAP_LUT[6]=6;
+
+        assign MAP_LUT[7]=0;  assign MAP_LUT[8]=1;  assign MAP_LUT[9]=2;  assign MAP_LUT[10]=3;
+        assign MAP_LUT[11]=4; assign MAP_LUT[12]=5; assign MAP_LUT[13]=6;
+
+        assign MAP_LUT[14]=0; assign MAP_LUT[15]=1; assign MAP_LUT[16]=2; assign MAP_LUT[17]=3;
+        assign MAP_LUT[18]=4; assign MAP_LUT[19]=5; assign MAP_LUT[20]=6;
+
+        assign MAP_LUT[21]=0; assign MAP_LUT[22]=1; assign MAP_LUT[23]=2; assign MAP_LUT[24]=3;
+        assign MAP_LUT[25]=4; assign MAP_LUT[26]=5; assign MAP_LUT[27]=6;
+
+        assign MAP_LUT[28]=0; assign MAP_LUT[29]=1; assign MAP_LUT[30]=2; assign MAP_LUT[31]=3;
+        assign MAP_LUT[32]=4; assign MAP_LUT[33]=5; assign MAP_LUT[34]=6;
+
+        assign MAP_LUT[35]=0; assign MAP_LUT[36]=1; assign MAP_LUT[37]=2; assign MAP_LUT[38]=3;
+        assign MAP_LUT[39]=4; assign MAP_LUT[40]=5; assign MAP_LUT[41]=6;
+
+        assign MAP_LUT[42]=0; assign MAP_LUT[43]=1; assign MAP_LUT[44]=2; assign MAP_LUT[45]=3;
+        assign MAP_LUT[46]=4; assign MAP_LUT[47]=5; assign MAP_LUT[48]=6;
+
+        assign MAP_LUT[49]=0; assign MAP_LUT[50]=1; assign MAP_LUT[51]=2; assign MAP_LUT[52]=3;
+        assign MAP_LUT[53]=4; assign MAP_LUT[54]=5; assign MAP_LUT[55]=6;
+
+        assign MAP_LUT[56]=0; assign MAP_LUT[57]=1; assign MAP_LUT[58]=2; assign MAP_LUT[59]=3;
+        assign MAP_LUT[60]=4; assign MAP_LUT[61]=5; assign MAP_LUT[62]=6;
+    end
+    else if (N2 == 16) begin
+        assign MAP_LUT[0]=0;  assign MAP_LUT[1]=1;  assign MAP_LUT[2]=2;  assign MAP_LUT[3]=3;
+        assign MAP_LUT[4]=4;  assign MAP_LUT[5]=5;  assign MAP_LUT[6]=6;  assign MAP_LUT[7]=7;
+        assign MAP_LUT[8]=8;  assign MAP_LUT[9]=9;  assign MAP_LUT[10]=10; assign MAP_LUT[11]=11;
+        assign MAP_LUT[12]=12; assign MAP_LUT[13]=13; assign MAP_LUT[14]=14;
+
+        assign MAP_LUT[15]=0; assign MAP_LUT[16]=1; assign MAP_LUT[17]=2; assign MAP_LUT[18]=3;
+        assign MAP_LUT[19]=4; assign MAP_LUT[20]=5; assign MAP_LUT[21]=6; assign MAP_LUT[22]=7;
+        assign MAP_LUT[23]=8; assign MAP_LUT[24]=9; assign MAP_LUT[25]=10; assign MAP_LUT[26]=11;
+        assign MAP_LUT[27]=12; assign MAP_LUT[28]=13; assign MAP_LUT[29]=14;
+
+        assign MAP_LUT[30]=0; assign MAP_LUT[31]=1; assign MAP_LUT[32]=2; assign MAP_LUT[33]=3;
+        assign MAP_LUT[34]=4; assign MAP_LUT[35]=5; assign MAP_LUT[36]=6; assign MAP_LUT[37]=7;
+        assign MAP_LUT[38]=8; assign MAP_LUT[39]=9; assign MAP_LUT[40]=10; assign MAP_LUT[41]=11;
+        assign MAP_LUT[42]=12; assign MAP_LUT[43]=13; assign MAP_LUT[44]=14;
+
+        assign MAP_LUT[45]=0; assign MAP_LUT[46]=1; assign MAP_LUT[47]=2; assign MAP_LUT[48]=3;
+        assign MAP_LUT[49]=4; assign MAP_LUT[50]=5; assign MAP_LUT[51]=6; assign MAP_LUT[52]=7;
+        assign MAP_LUT[53]=8; assign MAP_LUT[54]=9; assign MAP_LUT[55]=10; assign MAP_LUT[56]=11;
+        assign MAP_LUT[57]=12; assign MAP_LUT[58]=13; assign MAP_LUT[59]=14;
+
+        assign MAP_LUT[60]=0; assign MAP_LUT[61]=1; assign MAP_LUT[62]=2; assign MAP_LUT[63]=3;
+    end
+    
+end
+    
     
    
 
 
-endgenerate
+
 
 localparam BRAM_SIZE_2                = 256;
 localparam BRAM_LOG_SIZE_2            = $clog2(BRAM_SIZE_2);
@@ -168,8 +304,8 @@ reg start_addr_gen;
 
 reg [LOGQ-1:0]                  bi00     [(TP-1)-1:0];
 wire[LOGQ-1:0]                  bo00     [(TP-1)-1:0];
-reg [LOG_DEPTH-1:0]             bw00     [(TP-1)-1:0];
-reg [LOG_DEPTH-1:0]             br00     [(TP-1)-1:0];
+reg [LOG_DEPTH+2-1:0]             bw00     [(TP-1)-1:0];
+reg [LOG_DEPTH+2-1:0]             br00     [(TP-1)-1:0];
 reg                             be00     [(TP-1)-1:0];
 
 reg [LOGQ-1:0]                  bi_new     [(TP-1)-1:0];
@@ -321,6 +457,25 @@ always @(posedge clk) begin
                 
             end
         endcase
+
+        if (DIM_NUM == 2 && twid_load_started) begin
+            if (intt == 1'b0) begin
+                if (ctr == (1 + (N2))-1) begin
+                    en <= 1'd1;
+                end
+                else if (ctr == DEPTH_LARGE - 1 ) begin
+                    en <= 1'd0;
+                end
+            end else begin
+                if (ctr == 0 ) begin
+                    en <= 1'd1;
+                end
+                else if (ctr == DEPTH_LARGE - 1 ) begin
+                    en <= 1'd0;
+                end
+            end
+            
+        end
 
         if (DIM_NUM == 3 && twid_load_started) begin
             if (intt == 1'b0) begin
@@ -507,7 +662,19 @@ for (genvar i = 0; i < TP-1; i = i + 1) begin: FIFO_LOOP // BRAM for NTT
         end else begin
             case (curr_state)
                 OP_TWIDDLE_LOAD: begin
-                    if (DIM_NUM == 3) begin
+                    if (DIM_NUM == 2) begin
+                        if (intt == 0) begin
+                            if (ctr >= DEPTH_LARGE) begin
+                                br_new[i] <= 0;
+                            end
+                        end else begin
+                            if (ctr >= DEPTH_LARGE ) begin
+                                br_new[i] <= ctr - (DEPTH_LARGE);
+                            end
+                            
+                        end
+                    end 
+                    else if (DIM_NUM == 3) begin
                         if (intt == 0) begin
                             if (ctr >= DEPTH_LARGE-2) begin
                                 br_new[i] <= ctr - (DEPTH_LARGE-2);
@@ -563,7 +730,30 @@ for (genvar i = 0; i < TP-1; i = i + 1) begin: FIFO_LOOP22 // BRAM for NTT
         end else begin
             case (curr_state)
                 OP_TWIDDLE_LOAD: begin
-                    if (DIM_NUM == 3) begin
+                    if (DIM_NUM == 2) begin
+                        if (intt == 0) begin
+                            if (ctr == i) begin
+                                bi_new[i] <= psi[LOGQ*(1)-1-:LOGQ];
+                                be_new[i] <= 1'b1;
+                                bw_new[i] <= 'b0;
+                            end
+                        end else begin
+                            if (ctr < DEPTH_LARGE ) begin
+                                //fifo_reg[LOGQ*(ctr+1)-1-:LOGQ] <= psi[LOGQ*(1)-1-:LOGQ];
+                                if (ctr == i) begin
+                                    bi_new[i] <= psi[LOGQ*(1)-1-:LOGQ];
+                                    be_new[i] <= 1'b1;
+                                    bw_new[i] <= 'b0;
+                                end
+                            end
+                            else begin
+                                bi_new[i] <='d0;
+                                be_new[i] <= 'd0;
+                                bw_new[i] <= 'd0;
+                            end
+                        end 
+                    end
+                    else if (DIM_NUM == 3) begin
                         if (intt == 0) begin
                             if (ctr == 0) begin
                                 if (i == 0) begin
@@ -582,7 +772,7 @@ for (genvar i = 0; i < TP-1; i = i + 1) begin: FIFO_LOOP22 // BRAM for NTT
                                 if (ctr < (N2)) begin
                                     if (i < ((ctr<<(TP_min_TWID_FACTOR_N2_log2))+1) && i >= ((ctr-1)<<(TP_min_TWID_FACTOR_N2_log2))+1) begin // take first (ctr-1)*4+1 (1-5-9-13)  elements from fifo 
                                         //fifo_reg[LOGQ*((i-(TWID_FACTOR_N2-1))+(ctr-1)*(TP_min_TWID_FACTOR_N2)+1)-1-:LOGQ] <= psi[LOGQ*((TP-i))-1-:LOGQ];
-                                        bi_new[i] <= psi[LOGQ*((TP-(i-(((ctr-1)<<(TP_min_TWID_FACTOR_N2_log2))+1)+TWID_FACTOR_N2)))-1-:LOGQ];
+                                        bi_new[i] <= psi[LOGQ*((TP-(i-(((ctr[LOGN2-1:0]-1)<<(TP_min_TWID_FACTOR_N2_log2))+1)+TWID_FACTOR_N2)))-1-:LOGQ];
                                         be_new[i] <= 1'b1;
                                         bw_new[i] <= ((ctr-1)>>log_div) & (div-1);
                                     end
@@ -847,12 +1037,12 @@ for (genvar i = 0; i < TP-1; i = i + 1) begin: BRAM_TWIDDLE_LOAD_2 // BRAM for N
                     else if (DIM_NUM == 2) begin
                         if (intt == 1'b0) begin
                             if (ctr == 0) begin
-                                bi00[i] <= 60'd1;//psi[(TP-i)*LOGQ-1-:LOGQ];
+                                bi00[i] <= psi[(TP-i)*LOGQ-1-:LOGQ];//psi[(TP-i)*LOGQ-1-:LOGQ];
                             end else begin
                                 if (ctr < DEPTH_LARGE) begin  
-                                    bi00[i] <=  60'd1;//psi[(TP-i)*LOGQ-1-:LOGQ];
+                                    bi00[i] <=  psi[(TP-i)*LOGQ-1-:LOGQ];//psi[(TP-i)*LOGQ-1-:LOGQ];
                                 end else begin
-                                    bi00[i] <= 60'd1;//fifo_reg[((LAST_PARTITION_SIZE)*(ctr-DEPTH_LARGE) + i + 1)*LOGQ-1-:LOGQ];
+                                    bi00[i] <= (i < TP-2) ? bo_new[i] : bi_new[TP-2];//fifo_reg[((LAST_PARTITION_SIZE)*(ctr-DEPTH_LARGE) + i + 1)*LOGQ-1-:LOGQ];
                                 end
                             end
                             br00[i] <= ctr_read_d1 < (1) ? 1'd0 : ((ctr_read_d1-1) & ((1<<(LOGN-LOGTP))-1)) + 1;
@@ -860,9 +1050,9 @@ for (genvar i = 0; i < TP-1; i = i + 1) begin: BRAM_TWIDDLE_LOAD_2 // BRAM for N
                             be00[i] <= (ctr < (1 + (1<<(LOGN-LOGTP)))) ? 1'b1 : 1'b0;
                         end else begin
                             if (ctr < DEPTH) begin
-                                bi00[i] <= 60'd1;//psi[(TP-i)*LOGQ-1-:LOGQ];
+                                bi00[i] <= psi[(TP-i)*LOGQ-1-:LOGQ];//psi[(TP-i)*LOGQ-1-:LOGQ];
                             end else begin
-                                bi00[i] <= 60'd1;//fifo_reg[((LAST_PARTITION_SIZE)*(ctr-DEPTH_LARGE) + i + 1)*LOGQ-1-:LOGQ];
+                                bi00[i] <=  (i < TP-2) ? bo_new[i] : bi_new[TP-2];//fifo_reg[((LAST_PARTITION_SIZE)*(ctr-DEPTH_LARGE) + i + 1)*LOGQ-1-:LOGQ];
                             end
                             br00[i] <= ctr_read_d1 < (DEPTH_LARGE) ? ctr_read_d1 : DEPTH;
                             bw00[i] <= ctr;
@@ -959,7 +1149,52 @@ for (genvar loop_id = 0; loop_id < TP-1; loop_id = loop_id + 1) begin
                 if (DIM_NUM == 3) begin
                     if (ctr_read_d3 >= DEPTH && ctr_read_d3 < DEPTH << 1) begin
                         //if (loop_id < TP/N2) begin
-                            twiddle_in_true[(TP-1-(loop_id))*LOGQ-1-:LOGQ] <= twiddle_in_read[(TP-1-((N2-1)*(((ctr_read_d3 & (DEPTH-1))>>LOGN2) & (TP/N2-1))+MAP_LUT[loop_id]))*LOGQ-1-:(LOGQ)];
+                            //twiddle_in_true[(TP-1-(loop_id))*LOGQ-1-:LOGQ] <= twiddle_in_read[(TP-1-((N2-1)*(((ctr_read_d3 & (DEPTH-1))>>LOGN2) & (TP/N2-1))+MAP_LUT[loop_id]))*LOGQ-1-:(LOGQ)];
+                            // (N2-1)*(((ctr_read_d3[LOG_DEPTH-1:LOGN2])) & (TP_over_n2_minus_1))
+
+                            // original: 
+                            // twiddle_in_true[(TP-1-(loop_id))*LOGQ-1-:LOGQ] <= twiddle_in_read[(TP-1-(((ctr_read_d3[LOG_DEPTH-1:LOGN2] & TP_over_n2_minus_1) << LOGN2) - (ctr_read_d3[LOG_DEPTH-1:LOGN2] & TP_over_n2_minus_1)+MAP_LUT[loop_id]))*LOGQ-1-:(LOGQ)];
+                            if (LOGQ == 60) begin
+                                if (N2==32) begin
+                                //twiddle_in_true[(TP-1-(loop_id))*LOGQ-1-:LOGQ] <= twiddle_in_read[(TP-1-(((ctr_read_d3[LOG_DEPTH-1:5] & 1'd0) << 5) - (ctr_read_d3[LOG_DEPTH-1:5] & 1'd0)+MAP_LUT[loop_id]))*LOGQ-1-:(LOGQ)];
+                                    twiddle_in_true[(TP-1-(loop_id))*LOGQ-1-:LOGQ] <= twiddle_in_read[((TP-1-MAP_LUT[loop_id])<<6) - ((TP-1-MAP_LUT[loop_id])<<2)-1-:(LOGQ)];  
+                                    
+                                end
+                                else if (N2==16) begin
+                                    twiddle_in_true[(TP-1-(loop_id))*LOGQ-1-:LOGQ] <= twiddle_in_read[((TP-1-(((ctr_read_d3[4:4] & 1'd1) << 4) - (ctr_read_d3[4:4] & 1'd1)+MAP_LUT[loop_id]))<<6) - ((TP-1-(((ctr_read_d3[4:4] & 1'd1) << 4) - (ctr_read_d3[4:4] & 1'd1)+MAP_LUT[loop_id]))<<2)-1-:(LOGQ)];  
+                                    //twiddle_in_true[(TP-1-loop_id)*LOGQ-1-:LOGQ] <= twiddle_in_read[(TP-1-loop_id)*LOGQ-1-:LOGQ];
+                                    
+                                end
+                                else if (N2==8) begin
+                                    //twiddle_in_true[(TP-1-(loop_id))*LOGQ-1-:LOGQ] <= twiddle_in_read[(TP-1-(((ctr_read_d3[LOG_DEPTH-1:3] & 2'd3) << 3) - (ctr_read_d3[LOG_DEPTH-1:3] & 2'd3)+MAP_LUT[loop_id]))*LOGQ-1-:(LOGQ)];
+                                    twiddle_in_true[(TP-1-(loop_id))*LOGQ-1-:LOGQ] <= twiddle_in_read[((TP-1-(((ctr_read_d3[4:3]) << 3) - (ctr_read_d3[4:3])+MAP_LUT[loop_id]))<<6) - ((TP-1-(((ctr_read_d3[4:3]) << 3) - (ctr_read_d3[4:3])+MAP_LUT[loop_id]))<<2)-1-:(LOGQ)];  
+                                    
+                                end
+                                else if (N2==4) begin
+                                    //twiddle_in_true[(TP-1-(loop_id))*LOGQ-1-:LOGQ] <= twiddle_in_read[(TP-1-(((ctr_read_d3[LOG_DEPTH-1:2] & 3'd7) << 2) - (ctr_read_d3[LOG_DEPTH-1:2] & 3'd7)+MAP_LUT[loop_id]))*LOGQ-1-:(LOGQ)];
+                                    twiddle_in_true[(TP-1-(loop_id))*LOGQ-1-:LOGQ] <= twiddle_in_read[((TP-1-(((ctr_read_d3[4:2]) << 2) - (ctr_read_d3[4:2])+MAP_LUT[loop_id]))<<6) - ((TP-1-(((ctr_read_d3[4:2]) << 2) - (ctr_read_d3[4:2])+MAP_LUT[loop_id]))<<2)-1-:(LOGQ)];  
+                                    
+                                end
+                                else if (N2==2) begin
+                                    //twiddle_in_true[(TP-1-(loop_id))*LOGQ-1-:LOGQ] <= twiddle_in_read[(TP-1-(((ctr_read_d3[LOG_DEPTH-1:1] & 4'd15) << 1) - (ctr_read_d3[LOG_DEPTH-1:1] & 4'd15)+MAP_LUT[loop_id]))*LOGQ-1-:(LOGQ)];
+                                    twiddle_in_true[(TP-1-(loop_id))*LOGQ-1-:LOGQ] <= twiddle_in_read[((TP-1-(((ctr_read_d3[4:1]) << 1) - (ctr_read_d3[4:1])+MAP_LUT[loop_id]))<<6) - ((TP-1-(((ctr_read_d3[4:1]) << 1) - (ctr_read_d3[4:1])+MAP_LUT[loop_id]))<<2)-1-:(LOGQ)];  
+                                    
+                                end
+                            end else if(LOGQ == 32) begin
+                                if (N2 == 2) begin
+                                    twiddle_in_true[(TP-1-(loop_id))*LOGQ-1-:LOGQ] <= twiddle_in_read[((TP-1-(((ctr_read_d3[5:1]) << 1) - (ctr_read_d3[5:1])+MAP_LUT[loop_id]))<<5)-1-:(LOGQ)];
+                                end
+                                else if (N2 == 4) begin
+                                    twiddle_in_true[(TP-1-(loop_id))*LOGQ-1-:LOGQ] <= twiddle_in_read[((TP-1-(((ctr_read_d3[5:2]) << 2) - (ctr_read_d3[5:2])+MAP_LUT[loop_id]))<<5)-1-:(LOGQ)];
+                                end
+                                else if (N2 == 8) begin
+                                    twiddle_in_true[(TP-1-(loop_id))*LOGQ-1-:LOGQ] <= twiddle_in_read[((TP-1-(((ctr_read_d3[5:3]) << 3) - (ctr_read_d3[5:3])+MAP_LUT[loop_id]))<<5)-1-:(LOGQ)];
+                                end
+                                else if (N2 == 16) begin
+                                    twiddle_in_true[(TP-1-(loop_id))*LOGQ-1-:LOGQ] <= twiddle_in_read[((TP-1-(((ctr_read_d3[5:4]) << 4) - (ctr_read_d3[5:4])+MAP_LUT[loop_id]))<<5)-1-:(LOGQ)];
+                                end
+                            end
+                            
                         //end
                     end
                     else begin
@@ -978,6 +1213,8 @@ for (genvar loop_id = 0; loop_id < TP-1; loop_id = loop_id + 1) begin
                     else begin
                         twiddle_in_true[(TP-1-loop_id)*LOGQ-1-:LOGQ] <= twiddle_in_read[(TP-1-loop_id)*LOGQ-1-:LOGQ];
                     end
+                end else if (DIM_NUM == 2) begin
+                    twiddle_in_true[(TP-1-loop_id)*LOGQ-1-:LOGQ] <= twiddle_in_read[(TP-1-loop_id)*LOGQ-1-:LOGQ];
                 end
             end
         end
