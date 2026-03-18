@@ -67,7 +67,7 @@ module iterative_tp_cons_file #(
     
             din_R[i_cntr] <= NTT_INPUT;
             din_T[i_cntr] <= TWIDDLE_INPUT;
-            dout          <= dout_total[LOGQ*(o_cntr+1)-1-:LOGQ];
+            dout          <= (LOGQ == 60) ? dout_total[((o_cntr+1)<<6) - ((o_cntr+1)<<2)-1-:LOGQ] : dout_total[((o_cntr+1)<<5)-1-:LOGQ];
             START_NTT_reg <= START_NTT_ALL;
             OP_TYPE_reg <= OP_TYPE_INPUT;
             Q_in_reg <= Q_in;
