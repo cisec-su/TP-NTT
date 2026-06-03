@@ -38,7 +38,6 @@ def small_stage_model(N, TP, start1, TWIDDLE_file, TWIDDLE_tuple_map, cont_write
             input1[i + 1][(((2*j)%(TP>>i))//(TP>>(i+1))) + ((2*j) % ((TP>>(i+1)))) + (((2*j)//(TP>>(i)))*(TP>>(i)))     ] =  input1[i][2*j    ] 
             input1[i + 1][(((2*j)%(TP>>i))//(TP>>(i+1))) + ((2*j) % ((TP>>(i+1)))) + (((2*j)//(TP>>(i)))*(TP>>(i))) + ((TP>>(i+1))*1)] =  input1[i][2*j + 1] 
             twiddle = TWIDDLE_tuple_map[(input1[i][2*j    ], input1[i][2*j + 1])]
-            print((input1[i][2*j    ], input1[i][2*j + 1]))
             if twiddle not in TWIDDLE_used_arr:
                 TWIDDLE_used_arr.append(twiddle)
 
@@ -151,7 +150,6 @@ def iterative_second_block(iter0_read, TP, n2, size0, size1, bram_skip, IDX, ver
             print("BEFORE: ", ctr, new_arr)
 
         for i in range(TP):
-            print(i,i%2 + ((i%n2)%4)//2*(n2//2) + ((i%n2)%8)//4*(n2//4) + ((i%n2)%16)//8*(n2//8) + ((i%n2)%32)//16*(n2//16) + (((i%n2)%64)//32)*(n2//32) + (((i%n2)%128)//64)*(n2//64) + ((i%n2)//128)*(n2//128) + (i//n2)*n2)
             in_arr[i%2 + ((i%n2)%4)//2*(n2//2) + ((i%n2)%8)//4*(n2//4) + ((i%n2)%16)//8*(n2//8) + ((i%n2)%32)//16*(n2//16) + (((i%n2)%64)//32)*(n2//32) + (((i%n2)%128)//64)*(n2//64) + ((i%n2)//128)*(n2//128) + (i//n2)*n2] = new_arr[i]
 
         if verbose:
@@ -268,24 +266,7 @@ def shuffle_modop_0(input1):
     return new_check
 
 def shuffle_modop_1(input1):
-    print(input1, )
     new_check = [[0 for i in range(len(input1[0]))] for j in range(len(input1))]
-
-    # for ctr in range(N//TP):
-    #     for j in range(TP):
-    #         new_check[ctr][j] = input1[ctr][(j - (ctr>>4)) % TP]
-
-    # print("PREV AAAAAAA")
-    # for arr in new_check:
-    #     print(arr)
-
-    # new_check_last = [[0 for i in range(len(input1[0]))] for j in range(len(input1))]
-
-    # for ctr in range(N//TP):
-    #     for j in range(TP):
-    #         if ctr == 0:
-    #             print((j % 8)*16, j)
-    #         new_check_last[ctr][j] = new_check[((j % 8)*16 + (ctr % 8)*8) % (N//TP)][j]
 
     input1_new = []
 
@@ -295,11 +276,6 @@ def shuffle_modop_1(input1):
             ee.append(elm)
         rotated = ee[-(idx//16):] + ee[:-(idx//16)] 
         input1_new.append(rotated)
-
-    print("FUNCTION GENERATED ARR: ")
-
-    for idx, arr in enumerate(input1_new):
-        print(arr)
     
     magical = (N//(n1*TP))
     magical2 = (n2*size1//TP)
@@ -466,20 +442,9 @@ if __name__ == "__main__":
         new_in_arr.append(new_in[i:i + TP])
 
 
-    print("PREVIOUS VERSION")
-    for arr in new_in_arr:
-        print(arr)
-
     new_in_arr_shuff = shuffle_modop_1(new_in_arr)
-    print("NEW VERSION")
-    for arr in new_in_arr_shuff:
-        print(arr)
-
-    print("NEEDED VERSION")
-    for arr in new_input_2:
-        print(arr)
     
-    print("shuffle check ? " , new_input_2 == new_in_arr_shuff)
+    print("BIT_REVERSE CHECK ? " , new_input_2 == new_in_arr_shuff)
 
     if iterative_four:
         iter_3_read = iterative_four_model(new_input_2, TP, n1, n2, size0, verbose, file1, TWIDDLE_tuple_map)
@@ -510,7 +475,6 @@ if __name__ == "__main__":
 
     intt_coeff_in_write_file = open(f"{test_dir}/intt_in.txt", 'w+')
 
-    #print("hex: ", hex_lines)
     for e in iter_3_read:
         for ide in e:
             intt_coeff_in_write_file.write(str(hex(hex_lines[ide])[2:]) + "\n")
@@ -528,14 +492,13 @@ if __name__ == "__main__":
 
     intt_coeff_in2_write_file = open(f"{test_dir}/intt_in2.txt", 'w+')
 
-    #print("hex: ", hex_lines)
     for e in iter_3_read:
         for ide in e:
             intt_coeff_in2_write_file.write(str(hex(hex_lines[ide])[2:]) + "\n")
 
 
 
-    print("check ? " , last1 == [i for i in range(N)])
+    print("NTT CHECK ? " , last1 == [i for i in range(N)])
 
 
     if iterative_four:
@@ -560,7 +523,6 @@ if __name__ == "__main__":
 
     intt_coeff_out_write_file = open(f"{test_dir}/intt_out.txt", 'w+')
 
-    #print("hex: ", hex_lines)
     for e in iter_3_read_intt:
         for ide in e:
             intt_coeff_out_write_file.write(str(hex(hex_lines[ide])[2:]) + "\n")
@@ -590,10 +552,6 @@ if __name__ == "__main__":
         for e in r:
             last1.append(e)
 
-    print("AFTER INTT")
-    for e in iter_3_read_intt:
-        print(e)
-
     last1_bit_rev_again = shuffle_modop_1(iter_3_read_intt)
 
     last1_bit_rev_again_res = []
@@ -601,7 +559,7 @@ if __name__ == "__main__":
         for e in r:
             last1_bit_rev_again_res.append(e)
 
-    print("LAST CHECK ? ", last1_bit_rev_again_res == [i for i in range(N)])
+    print("INTT CHECK ? ", last1_bit_rev_again_res == [i for i in range(N)])
 
     ####### create unique twiddles #######
     psi = nth_root_of_unity(2*N, q)
