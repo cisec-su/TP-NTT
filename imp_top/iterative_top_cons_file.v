@@ -1,13 +1,13 @@
 // top_module.v
 
 module iterative_tp_cons_file #(
-        parameter LOGN          = 16,
+        parameter LOGN          = 13,
         parameter LOGN1         = 6,
-        parameter LOGN2         = 4,
+        parameter LOGN2         = 1,
         parameter LOGN3         = 6,
         parameter LOGTP         = 6,
-        parameter LOGQ          = 60,
-        parameter LOGQH         = 17,
+        parameter LOGQ          = 32,
+        parameter LOGQH         = 15,
         parameter TW_STREAM     = 0
     )
     (

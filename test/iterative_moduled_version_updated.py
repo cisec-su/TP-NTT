@@ -20,7 +20,7 @@ def bitreverse(value, width):
         reversed_value |= (bit << (width - 1 - i))  # Set the reversed position
     return reversed_value
 
-def small_stage_model(N, TP, start1, TWIDDLE_file, TWIDDLE_tuple_map, cont_write): ##### AIM: to produce MERGED-NTT module with TP output
+def small_stage_model(N, TP, start1, TWIDDLE_file, TWIDDLE_tuple_map, cont_write):
     input1 = []
 
     stage_nums = int(log2(TP))
@@ -65,15 +65,8 @@ def iterative_first_block1(input1, TP, n1, n2, size0, bram_skip, IDX, verbose, f
             print("AAAA: ", input1[ctr])
         for i in range(TP):
             if not bram_skip:
-                #arr1[((i%(n2))*n1 + (i//(TP//2)) + ((i%(TP//2))//(TP//n1))*2)%TP] = input1[ctr][i]
-                #arr1[i%2 + ((i%4))//2*8 + (i%8)//4*4 + (i//8)*2] = input1[ctr][i]
-                #arr1[i%2 + (i%4)//2*4 + (i//4)*2] = input1[ctr][i] # 8-8 8
-                #arr1[i%2 + (i%4)//2*(TP//2) + ((i%(TP//2))//4)*4 + (i//(TP//2))*2 ] = input1[ctr][i]
-                #print(i%2 + (i%4)//2*16 + (i%8)//4*8 + (i%16)//8*4 + (i//16)*2)
-                #arr1[i%2 + (i%4)//2*16 + (i%8)//4*8 + (i%16)//8*4 + (i//16)*2] = input1[ctr][i]
                 arr1[i%2 + (i%4)//2*(TP//2) + (i%8)//4*(TP//4) + (i%16)//8*(TP//8) + (i%32)//16*(TP//16) + (i%64)//32*(TP//32) + (i%128)//64*(TP//64) + (i//128)*(TP//128)] = input1[ctr][i]
             else:
-                #arr1[((i%(n1//2))*(2) + ((i%n1)//(n1//2)) + (i//(n1))*(n1))%TP] = input1[ctr][i]
                 arr1[i%2 + (i%4)//2*(TP//2) + (i%8)//4*(TP//4) + (i%16)//8*(TP//8) + (i%32)//16*(TP//16) + (i%64)//32*(TP//32) + (i%128)//64*(TP//64) + (i//128)*(TP//128)] = input1[ctr][i]
 
         if verbose:
@@ -102,11 +95,7 @@ def iterative_first_block1(input1, TP, n1, n2, size0, bram_skip, IDX, verbose, f
 
         for i in range(TP):
             if not bram_skip:
-                #arr_new[i] = calc_res[((((i-(ctr%(size0//TP)))%TP)//(TP//n2) + (((i-(ctr%(size0//TP)))%TP)%(TP//n2))*n2)%TP)%TP]
                 arr_new[i] = calc_res[(((i - (ctr%(size0//TP)))%TP)//n2 + ((i - (ctr%(size0//TP)))%n2)*(TP//n2))%TP]
-                #print("new: ", ((i - (ctr%(size0//TP)))//n2 + (((i - (ctr%(size0//TP))))%n2)*2)%TP, i)
-                #print("prev: ", i, ((i//(TP//n2) + (i%(TP//n2))*n2)%TP+(ctr%(size0//TP)))%TP)
-                #arr_new[((i//(TP//n2) + (i%(TP//n2))*n2)%TP+(ctr%(size0//TP)))%TP] = calc_res[i]
             else:
                 arr_new[i] = calc_res[i]
             a = 0
@@ -162,9 +151,6 @@ def iterative_second_block(iter0_read, TP, n2, size0, size1, bram_skip, IDX, ver
             print("BEFORE: ", ctr, new_arr)
 
         for i in range(TP):
-            #in_arr[i] = new_arr[((i//n2*n2) + ((i)%2)*(n2//2) + (i%n2)//2)%TP]
-            #in_arr[i%2 + (i%4)//2*4 + (i//4)*2] = new_arr[i] # --> 8-8
-            #in_arr[i%2 + (i%(TP//2))//2*(TP//2) + (i//(TP//2))*2] = new_arr[i]
             print(i,i%2 + ((i%n2)%4)//2*(n2//2) + ((i%n2)%8)//4*(n2//4) + ((i%n2)%16)//8*(n2//8) + ((i%n2)%32)//16*(n2//16) + (((i%n2)%64)//32)*(n2//32) + (((i%n2)%128)//64)*(n2//64) + ((i%n2)//128)*(n2//128) + (i//n2)*n2)
             in_arr[i%2 + ((i%n2)%4)//2*(n2//2) + ((i%n2)%8)//4*(n2//4) + ((i%n2)%16)//8*(n2//8) + ((i%n2)%32)//16*(n2//16) + (((i%n2)%64)//32)*(n2//32) + (((i%n2)%128)//64)*(n2//64) + ((i%n2)//128)*(n2//128) + (i//n2)*n2] = new_arr[i]
 
@@ -194,15 +180,12 @@ def iterative_second_block(iter0_read, TP, n2, size0, size1, bram_skip, IDX, ver
 
         for i in range(TP):
             if not bram_skip:
-                #write_arr[( (i) + ctr//((size0//TP)*(size1//TP)))%TP] = calc_res_poly[i]
                 write_arr[( (i) + ctr//((size0//TP)))%TP] = calc_res_poly[i]
             else:
                 write_arr[i] = calc_res_poly[i]
 
         if verbose:   
             print("AUTOMORPHISM INPUT SHIFTED for di00 BRAM", ctr , write_arr)
-
-        #### WRITE TO BRAM
 
         iter1_out[ctr] = write_arr # Output Result
 
@@ -267,102 +250,6 @@ def ntt_friendly_prime_gen(logq, logqh, num_primes=None, debug=False, random=Non
         print(len(primes))
 
     return primes
-
-
-# if __name__ == "__main__":
-    
-#     N = int(sys.argv[1])
-#     n1 = int(sys.argv[2])
-#     n2 = int(sys.argv[3])
-#     n3 = int(sys.argv[4])
-#     n4 = int(sys.argv[5])
-#     TP = int(sys.argv[6])
-#     choice = int(sys.argv[7])
-#     q_bit_size = int(sys.argv[8])
-#     test_dir = sys.argv[9]
-#     verbose = int(sys.argv[10]) == 1
-
-#     if q_bit_size == 60:
-#         width = 17
-#     else:
-#         width = 13
-    
-
-#     k = q_bit_size # bit size
-
-#     LOGQ = q_bit_size
-
-#     if q_bit_size == 60:
-#         LOGQH = 17
-#     else:
-#         LOGQH = 15
-
-#     q = ntt_friendly_prime_gen(LOGQ, LOGQH, 1)[0]
-
-#     size0 = n1*n2
-#     size1 = n3*n4
-
-
-#     TWIDDLE_tuple_map = find_twiddle_map(N, q, math.ceil(q_bit_size/width), width)
-
-#     file1 = open(f"{test_dir}/psi.txt", 'w+')
-
-    
-
-#     iterative_seven = False
-#     iterative_six   = False
-#     iterative_four  = False
-
-#     if choice == 0:
-#         iterative_four = True
-#     elif choice == 1:
-#         iterative_six = True
-#     elif choice == 2:
-#         iterative_seven = True
-
-#     assert N == n1*n2*n3*n4 , "ERRORRRR"
-
-#     depth = N//TP
-
-#     in1 = [[0 for j in range(TP)] for i in range(depth)]
-
-#     input1 = []
-
-#     for ctr in range(depth):
-#         arr1 = []
-#         for i in range(TP):
-#             # Generate correct input sequence
-#             arr1.append((   (i)*(N//TP) + (ctr%(size0//TP))*(N//size0) + (ctr//(size0//TP))) % N)
-#         input1.append(arr1)
-
-
-#     if iterative_seven:
-#         iter_0_read = iterative_first_block1(input1, TP, n1, n2, size0, False, 0, verbose)
-
-#         iter_1_read = iterative_second_block(iter_0_read, TP, n2, size0, size1, False, 1, verbose)
-
-#         iter_2_read = iterative_first_block1(iter_1_read, TP, n3, n4, size1, False, 2, verbose)
-
-#         iter_3_read = iterative_first_block1(iter_2_read, TP, n4, n3, size1, True, 3, verbose)
-#     elif iterative_four:
-#         iter_0_read = iterative_first_block1(input1, TP, n1, n2, size0, False, 0, verbose)
-
-#         iter_3_read = iterative_second_block(iter_0_read, TP, n2, n1, n1*n2, True, 1, verbose)
-#     elif iterative_six:
-#         iter_0_read = iterative_first_block1(input1, TP, n1, n2, size0, False, 0, verbose)
-
-#         iter_1_read = iterative_second_block(iter_0_read, TP, n2, size0, size1, False, 1, verbose)
-
-#         iter_3_read = iterative_first_block1(iter_1_read, TP, n3, n4, size1, True, 2, verbose)
-
-
-#     # Check can you generate all elements in correct order, 0 to N-1
-#     last1 = []
-#     for r in iter_3_read:
-#         for e in r:
-#             last1.append(e)
-    
-#     print("check ? " , last1 == [i for i in range(N)])
 
 def shuffle_modop_0(input1):
     new_check = [[0 for i in range(len(input1[0]))] for j in range(len(input1))]
