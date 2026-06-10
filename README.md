@@ -60,17 +60,17 @@ parameter GEN_TEST_VEC;
 
 ### Parameter Description
 
-| Parameter      | Description                                                     |
-| -------------- | --------------------------------------------------------------- |
-| `LOGN`         | `log2(N)`                                                       |
-| `LOGN1`        | `log2(n1)`                                                      |
-| `LOGN2`        | `log2(n2)`                                                      |
-| `LOGN3`        | `log2(n3)`                                                      |
-| `LOGTP`        | `log2(TP)`                                                      |
-| `LOGQ`         | Modulus bit-size                                                |
-| `LOGQH`        | Internal modulus-related parameter                              |
-| `BATCH_SIZE`   | Number of consecutive NTT/INTT operations to test               |
-| `GEN_TEST_VEC` | Enables or disables test-vector generation inside the testbench |
+| Parameter      | Description                                                                        |
+| -------------- | ----------------------------------------------------------------------------------------- |
+| `LOGN`         | Ring dimension, i.e. polynomial degree                                                    |
+| `LOGN1`        | Logarithm of size of first hierarchical dimension                                         |
+| `LOGN2`        | Logarithm of size of second hierarchical dimension                                        |
+| `LOGN3`        | Logarithm of size of third hierarchical dimension                                         |
+| `LOGTP`        | Logarithm of throughput, i.e. number of parallel processing elements                      |
+| `LOGQ`         | Coefficient modulus bit-length                                                            |
+| `LOGQH`        | Bit-length of most-significant non-zero bits of the modulus, `Q=(QH << (LOGQ-LOGQH)) + 1` |
+| `BATCH_SIZE`   | Number of consecutive NTT/INTT operations to test                                         |
+| `GEN_TEST_VEC` | Enables or disables test-vector generation inside the testbench                           |
 
 The `BATCH_SIZE` parameter specifies how many consecutive NTT/INTT operations are tested for correctness.
 
@@ -146,14 +146,14 @@ q_size=$8
 
 | Parameter | Description                                         |
 | --------- | --------------------------------------------------- |
-| `N`       | Total NTT size                                      |
-| `n1`      | First hierarchical dimension                        |
-| `n2`      | Second hierarchical dimension                       |
-| `n3`      | Third hierarchical dimension                        |
-| `n4`      | Fourth hierarchical dimension                       |
-| `TP`      | Throughput / number of parallel processing elements |
+| `N`       | `1 << LOGN`                                         |
+| `n1`      | `1 << LOGN1`                                        |
+| `n2`      | `1 << LOGN2`                                        |
+| `n3`      | `1 << LOGN3`                                        |
+| `n4`      | `1 << (LOGN - LOGN1 - LOGN2 - LOGN3)`               |
+| `TP`      | `1 << LOGTP`                                        |
 | `choice`  | Hierarchical decomposition type                     |
-| `q_size`  | Modulus bit-size, either `32` or `60`               |
+| `q_size`  | `LOGQ`                                              |
 
 The `choice` parameter selects the decomposition type:
 
