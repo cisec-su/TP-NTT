@@ -2,7 +2,7 @@
 
 **Throughput-NTT Implementation with a Hierarchical Approach**
 
-This repository contains the **ThroughPut-NTT (TP-NTT)** implementation using a hierarchical multi-dimensional approach. The project includes test-vector generation scripts and Vivado simulation support for testing NTT/INTT correctness under different parameter configurations.
+This repository contains the **ThroughPut-NTT (TP-NTT)** implementation using a hierarchical multi-dimensional approach. The project includes Vivado simulation support, test-vector generation scripts, twiddle-factor generation, and correctness testing for NTT/INTT under different parameter configurations.
 
 ---
 
@@ -30,7 +30,89 @@ cd TP-NTT
 
 ---
 
-## 2. Test Vector Generation
+## 2. Vivado Simulation Testing
+
+Open the Vivado project:
+
+```bash
+vivado/iterative_parametric_32_64.xpr
+```
+
+In Vivado, go to the testbench source:
+
+```text
+src/tp_ntt_shuffle_tb
+```
+
+Update the following parameters according to the desired NTT configuration:
+
+```verilog
+parameter LOGN;
+parameter LOGN1;
+parameter LOGN2;
+parameter LOGN3;
+parameter LOGTP;
+parameter LOGQ;
+parameter LOGQH;
+parameter BATCH_SIZE;
+parameter GEN_TEST_VEC;
+```
+
+### Parameter Description
+
+| Parameter      | Description                                                     |
+| -------------- | --------------------------------------------------------------- |
+| `LOGN`         | `log2(N)`                                                       |
+| `LOGN1`        | `log2(n1)`                                                      |
+| `LOGN2`        | `log2(n2)`                                                      |
+| `LOGN3`        | `log2(n3)`                                                      |
+| `LOGTP`        | `log2(TP)`                                                      |
+| `LOGQ`         | Modulus bit-size                                                |
+| `LOGQH`        | Internal modulus-related parameter                              |
+| `BATCH_SIZE`   | Number of consecutive NTT/INTT operations to test               |
+| `GEN_TEST_VEC` | Enables or disables test-vector generation inside the testbench |
+
+The `BATCH_SIZE` parameter specifies how many consecutive NTT/INTT operations are tested for correctness.
+
+The `GEN_TEST_VEC` parameter controls test-vector generation in the testbench:
+
+```text
+GEN_TEST_VEC = 1  -> Generate test vectors
+GEN_TEST_VEC = 0  -> Bypass test-vector generation
+```
+
+For example, if:
+
+```text
+N  = 2^12
+n1 = 2^5
+n2 = 2^2
+n3 = 2^5
+TP = 2^5
+```
+
+then the corresponding Vivado parameters should be:
+
+```verilog
+parameter LOGN       = 12;
+parameter LOGN1      = 5;
+parameter LOGN2      = 2;
+parameter LOGN3      = 5;
+parameter LOGTP      = 5;
+```
+
+For modulus-size parameters:
+
+```text
+LOGQ = 60  -> LOGQH = 17
+LOGQ = 32  -> LOGQH = 15
+```
+
+Make sure that the Vivado simulation parameters match the test-vector generation parameters.
+
+---
+
+## 3. Test Vector Generation
 
 First, go to the test directory:
 
@@ -130,78 +212,61 @@ q_size = 60
 
 ---
 
-## 3. Vivado Simulation Testing
+## 4. Twiddle Factor Generation
 
-Open the Vivado project:
-
-```bash
-vivado/iterative_parametric_32_64.xpr
-```
-
-In Vivado, go to the testbench source:
+Twiddle factors are generated in the correct order using the helper functions in:
 
 ```text
-src/tp_ntt_shuffle_tb
+test/tp_ntt_api.py
 ```
 
-Update the following parameters according to the desired NTT configuration:
+In these function calls, `n` denotes the NTT size. The parameter `q` denotes the selected modulus from the RNS modulus list. The parameter `q_idx` denotes the index of this modulus in the RNS modulus list. The parameter `root_unity` denotes the forward root of unity used for the selected modulus, while `root_unity_inv` denotes the corresponding inverse root of unity. Finally, `LOGQ` denotes the bit-size of the modulus.
 
-```verilog
-parameter LOGN       
-parameter LOGN1     
-parameter LOGN2     
-parameter LOGN3     
-parameter LOGTP     
-parameter LOGQ       
-parameter LOGQH      
-parameter BATCH_SIZE
+The required twiddle tables are generated as follows:
+
+```python
+create_twiddles(
+    n,
+    q,
+    q_idx,
+    root_unity=root_unity,
+    root_unity_inv=root_unity_inv,
+    LOGQ=LOGQ,
+)
+
+create_unique_twiddles(
+    n,
+    q,
+    q_idx,
+    "test_vectors",
+    False,
+    LOGQ,
+)
+
+create_unique_twiddles(
+    n,
+    q,
+    q_idx,
+    "test_vectors",
+    True,
+    LOGQ,
+)
 ```
 
-### Parameter Description
+The purpose of these calls is:
 
-| Parameter    | Description                                       |
-| ------------ | ------------------------------------------------- |
-| `LOGN`       | `log2(N)`                                         |
-| `LOGN1`      | `log2(n1)`                                        |
-| `LOGN2`      | `log2(n2)`                                        |
-| `LOGN3`      | `log2(n3)`                                        |
-| `LOGTP`      | `log2(TP)`                                        |
-| `LOGQ`       | Modulus bit-size                                  |
-| `LOGQH`      | Internal modulus-related parameter                |
-| `BATCH_SIZE` | Number of consecutive NTT/INTT operations to test |
+| Function                                  | Description                                                                                             |
+| ----------------------------------------- | ------------------------------------------------------------------------------------------------------- |
+| `create_twiddles(...)`                    | Generates the full twiddle and inverse twiddle tables using the selected modulus `q` and roots of unity |
+| `create_unique_twiddles(..., False, ...)` | Generates the unique forward twiddle factors required by the hardware                                   |
+| `create_unique_twiddles(..., True, ...)`  | Generates the unique inverse twiddle factors required by the hardware                                   |
 
-For example, if:
+These functions should be called with parameters consistent with the selected `N`, modulus size, and hierarchical decomposition configuration.
 
-```text
-N  = 2^12
-n1 = 2^5
-n2 = 2^2
-n3 = 2^5
-TP = 2^5
-```
-
-then the corresponding Vivado parameters should be:
-
-```verilog
-parameter LOGN       = 12;
-parameter LOGN1      = 5;
-parameter LOGN2      = 2;
-parameter LOGN3      = 5;
-parameter LOGTP      = 5;
-```
-
-For modulus-size parameters:
-
-```text
-LOGQ = 60  -> LOGQH = 17
-LOGQ = 32  -> LOGQH = 15
-```
-
-Make sure that the Vivado simulation parameters match the test-vector generation parameters.
 
 ---
 
-## 4. Run Simulation
+## 5. Run Simulation
 
 After setting the parameters, click:
 
@@ -225,7 +290,7 @@ There should be no mismatch or error messages in the simulation output.
 
 ## Notes
 
-Make sure the following parameters are consistent between test-vector generation and Vivado simulation:
+Make sure the following parameters are consistent between test-vector generation, twiddle generation, and Vivado simulation:
 
 * `N`
 * `n1`
@@ -243,10 +308,27 @@ Make sure the following parameters are consistent between test-vector generation
 * `LOGQ`
 * `LOGQH`
 * `BATCH_SIZE`
+* `GEN_TEST_VEC`
 
-Mismatch between the generated test vectors and the Vivado testbench parameters may cause incorrect simulation results.
+Mismatch between the generated test vectors, twiddle factors, and Vivado testbench parameters may cause incorrect simulation results.
 
 The decomposition parameters `n1`, `n2`, `n3`, and `n4` should be selected according to the hierarchical decompositions described in the paper.
+
+---
+
+## Citation
+
+If you use this repository or the TP-NTT design in your work, please cite:
+
+```bibtex
+@misc{kocer_tp_ntt,
+      author = {Emre Koçer and Tolun Tosun and Beren Aydoğan and Erkay Savaş and Furkan Turan and Ingrid Verbauwhede},
+      title = {{TP}-{NTT}: Batch {NTT} Hardware with Application to Relinearization},
+      howpublished = {Cryptology {ePrint} Archive, Paper 2026/556},
+      year = {2026},
+      url = {https://eprint.iacr.org/2026/556}
+}
+```
 
 ---
 
