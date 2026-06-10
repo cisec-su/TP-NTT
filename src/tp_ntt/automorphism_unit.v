@@ -242,7 +242,7 @@ end
 if (LARGE) begin
     for (genvar rot = 0; rot < TP; rot = rot + 1 ) begin
         always @(posedge clk) begin
-            input_data_shift[rot*LOGQ +: LOGQ] <= input_data_int[(((rot + (ctr_shifted>>SIZE0_OVER_TP_MULT_SIZE1_OVER_TP_LOG2))&(TP-1)))];
+            input_data_shift[rot*LOGQ +: LOGQ] <= input_data_int[(((rot + (ctr_shifted/SIZE0_OVER_TP))&(TP-1)))];
         end
     end
 end else begin

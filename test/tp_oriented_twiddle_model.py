@@ -97,9 +97,8 @@ def generate_psi_table(w, n, q):
 twids = []
 
 def NTT(A, Psi_table, q, debug, L, w, test_dir=None):
-    print("aa: ", L, w)
     if debug:
-        debug_file = open(f"{test_dir}/ntt_debug.txt", 'w+')
+        debug_file = open(f"{test_dir}/ntt_debug.txt", 'a')
     N = len(A)
     B = [_ for _ in A]
 
@@ -128,24 +127,15 @@ def NTT(A, Psi_table, q, debug, L, w, test_dir=None):
                 V = (B[j + t] * S) % q
                 aa = B[j + t]
 
-                #debug_file.write("{} {} {} {} \n".format(hex(B[j]), hex(B[j + t]), hex((S*2**39)%q), hex(q)))
                 B[j] = (U + V) % q
                 B[j + t] = (U - V) % q
 
-                
-
-                
-                #SS = S * pow(2,L*w,q) % q
                 SS = S * pow(2, math.ceil(log2(q)), q) % q
-                #if SS not in twids and debug:
-                    #twids.append((j, j+t, SS))
                 
                 if debug:
                     debug_file.write("A[{}]--{} ve A[{}]--{} + W^{} --> A[{}] ve A[{}] \n".format( hex(U), j, hex(aa), j+t, hex(SS), hex(B[j]), hex(B[j + t])))
 
-
         m = 2 * m
-    #print(counterr)
     return B
 
 
@@ -171,9 +161,7 @@ def INTT(A, Psi_table, q, debug=True):
             Psi_pow = intReverse(h + i, l)
             S = Psi_table[Psi_pow]
             counterr += 1
-            #print(S)
             for j in range(j1, j2 + 1):
-                #print(S)
                 U = B[j]
                 V = B[j + t]
 
@@ -194,7 +182,7 @@ def INTT(A, Psi_table, q, debug=True):
 
 def INTT_wo_last(A, Psi_table, q, debug=True):
     if debug:
-        debug_file = open(f"{test_dir}/intt_debug.txt", 'w+')
+        debug_file = open(f"{test_dir}/intt_debug.txt", 'a')
     counterr = 0
     N = len(A)
     B = [_ for _ in A]
@@ -214,9 +202,7 @@ def INTT_wo_last(A, Psi_table, q, debug=True):
             Psi_pow = intReverse(h + i, l)
             S = Psi_table[Psi_pow] * (pow(2,-1,q)) % q
             counterr += 1
-            #print(S)
             for j in range(j1, j2 + 1):
-                #print(S)
                 U = B[j]
                 V = B[j + t]
 
@@ -303,8 +289,6 @@ def find_twiddle_map(N, q, w, L):
 
     psi = nth_root_of_unity(2*N, q)
 
-    print("nth root: ", psi)
-
     Psi_table = generate_ntt_tables(N, q, psi)
 
     twiddle_map = {}
@@ -321,24 +305,12 @@ def find_twiddle_map(N, q, w, L):
             S = Psi_table[Psi_pow]
 
             for j in range(j1, j2 + 1):
-
-                #U = B[j]
-                #V = (B[j + t] * S) % q
-                #aa = B[j + t]
-
-                #debug_file.write("{} {} {} {} \n".format(hex(B[j]), hex(B[j + t]), hex((S*2**39)%q), hex(q)))
-                #B[j] = (U + V) % q
-                #B[j + t] = (U - V) % q
-
-            
-                #SS = S * pow(2,w*L,q) % q
                 SS = S * pow(2, math.ceil(log2(q)), q) % q
                 twiddle_map[(B[j], B[j+t])] = SS
 
             
 
         m = 2 * m
-    #print(counterr)
     return twiddle_map
 
 
@@ -347,8 +319,6 @@ def find_twiddle_map_INTT(N, q, w, L):
     random.seed(0)
 
     psi = nth_root_of_unity(2*N, q)
-
-    print("nth root: ", psi)
 
     Psi_table_intt = generate_ntt_tables(N, q, pow(psi, -1, q))
 
@@ -374,23 +344,13 @@ def find_twiddle_map_INTT(N, q, w, L):
             Psi_pow = intReverse(h + i, l)
             S = Psi_table_intt[Psi_pow]
             counterr += 1
-            #print(S)
             for j in range(j1, j2 + 1):
-                #print(S)
-                #U = B[j]
-                #V = B[j + t]
-
-                #B[j] = (U + V) % q
-                #a = (U - V) * S
-                #B[j + t] = a % q
                 SS = S * pow(2, math.ceil(log2(q)), q) % q
                 twiddle_map[(B[j], B[j+t])] = (SS * pow(2,-1,q)) % q
             j1 = j1 + 2 * t
         t = 2 * t
         m = int(m / 2)
     
-    
-    #print(counterr)
     return twiddle_map
 
 
@@ -431,10 +391,6 @@ def ntt_friendly_prime_gen(logq, logqh, num_primes=None, debug=False, random=Non
 
 if __name__ == "__main__":
 
-    # n = 8192
-    # PE_number = 8
-    # PE = 2*PE_number
-
     n = int(sys.argv[1])
     PE_number = int(sys.argv[2])
     PE = 2*PE_number
@@ -442,18 +398,6 @@ if __name__ == "__main__":
     q_bit_size  = int(sys.argv[4])
     test_dir = sys.argv[5]
     k = q_bit_size # bit size
-
-    # prime_num_try = pow(2,k-1) + 1
-    
-
-
-    # for i in range(1,pow(2,20)):
-    #     try1 = prime_num_try + (i<<18)
-    #     if sympy.isprime(try1):
-    #         print(try1, bin(try1)[2:], hex(try1)[2:], len(bin(try1)[2:]))
-    #         break
-
-    # random_prime = try1
 
     LOGQ    = q_bit_size
     if q_bit_size == 60:
@@ -463,13 +407,16 @@ if __name__ == "__main__":
 
     q = ntt_friendly_prime_gen(LOGQ, LOGQH, 1)[0]
 
+    q_new = ntt_friendly_prime_gen(LOGQ, LOGQH, 5)
+
+    q = q_new[0]
+
+    q_gen = ntt_friendly_prime_gen(LOGQ, LOGQH, 30)
+
     q_file = open(f'{test_dir}/q.txt', 'w+')
 
     q_file.write(str(hex(q)[2:]) + "\n")
 
-    print("log: ", math.ceil(log2(q)))
-
-    #fd1_R = pow(2, 17*3, q)
     fd1_R = pow(2, math.ceil(log2(q)), q)
 
     WLMONT = False
@@ -484,6 +431,11 @@ if __name__ == "__main__":
 
     psi = nth_root_of_unity(2*n, q)
 
+    if pow(psi, n, q) == 1:
+        print("psi is not 2n-th root of unity")
+        assert "psi is not 2n-th root of unity"
+
+
     psi = psi
     psi_inv = modinv(psi, q)
     w = pow(psi, 2, q)
@@ -493,7 +445,6 @@ if __name__ == "__main__":
     #----- Create Random Inputs -------
 
     A = [random.randint(0, q - 1) for x in range(n)]
-    #print("A: ", A)
 
     f0 = open(f'{test_dir}/ntt_in.txt', 'w+')
     for i in range(n):
@@ -513,9 +464,6 @@ if __name__ == "__main__":
     # -------Merge NTT -------
     psi_table = generate_ntt_tables(n, q, pow(psi, 1, q))
 
-    print("nth root 2: ", psi)    
-    
-
     if q_bit_size == 60:
         width = 17
     else:
@@ -526,27 +474,16 @@ if __name__ == "__main__":
     A_NTT_merge = NTT(A, psi_table, q, True, math.ceil(q_bit_size/width), width, test_dir)
     B_NTT_merge = NTT(B, psi_table, q, False, math.ceil(q_bit_size/width), width)
 
-    # f1 = open(f'{test_dir}/psi.txt', 'w+')
-
-    # for elm_idx in range(len(twids)):
-    #     if elm_idx == len(twids) - 1:
-    #         f1.write(str(hex(twids[elm_idx][2]))[2:] + "\n")
-    #     else:
-    #         f1.write(str(hex(twids[elm_idx][2]))[2:] + "\n")
-    # f1.write("\n")
-
     res_merge = []
 
     for i in range(n):
         res_merge.append((A_NTT_merge[i] * B_NTT_merge[i]) % q)
 
     psi_table_inv = generate_ntt_tables(n, q, pow(psi_inv, 1, q))
-    #INTT_res_merge = INTT(A_NTT_merge,psi_table_inv, q)
 
     INTT_res_kk = INTT_wo_last(A_NTT_merge,psi_table_inv, q)
     INTT_res_kk_2 = INTT_wo_last(B_NTT_merge,psi_table_inv, q)
 
-    #check_res_minus_1 = []
     check_res_minus_1 = SchoolbookModPolMul_minus_1(A, B, q)
 
     print("----------------Parameters---------------\n")

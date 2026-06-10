@@ -23,4 +23,4 @@ __pycache__/
 *.sim
 *.cache
 *.webtalk
-src/tp_ntt/tp_ntt_shuffle_tb.sv
+#src/tp_ntt/tp_ntt_shuffle_tb.sv

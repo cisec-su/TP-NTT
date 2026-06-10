@@ -16,6 +16,13 @@ typedef enum int {
     DIM_4D = 2
 } tp_ntt_dim_t;
 
+typedef enum int {
+    LAT0 = 5,
+    LAT1 = 6,
+    LAT2 = 7,
+    LAT3 = 8
+} latency_table;
+
 
 typedef enum logic [1:0] {
     OP_NTT          = 2'b00,
@@ -62,6 +69,28 @@ function int tp_ntt_d2(input tp_ntt_params_t params);
     tp_ntt_d2 = (N3 * N4) / TP;
 endfunction
 
+function int tp_ntt_is_not_valid_partition(input tp_ntt_params_t params);
+    int N1 = 1 << params.LOGN1;
+    int N2 = 1 << params.LOGN2;
+    int N3 = 1 << params.LOGN3;
+    int N4 = 1 << tp_ntt_logn4(params);
+    int TP = 1 << params.LOGTP;
+
+    if ((tp_ntt_dim(params) == DIM_2D) && (N1 == N2 && N2 == TP)) begin
+        tp_ntt_is_not_valid_partition = 0;
+    end 
+    else if (tp_ntt_dim(params) == DIM_3D && (N1 == N3 && N3 == TP) && (1<N2 && TP >= N2)  ) begin
+        tp_ntt_is_not_valid_partition = 0;
+    end
+    else if (tp_ntt_dim(params) == DIM_4D && (N1 == N3 && N3 == N4 && N4 == TP) && (1<N2 && TP >= N2)  ) begin
+        tp_ntt_is_not_valid_partition = 0;
+    end
+    else begin
+        tp_ntt_is_not_valid_partition = 1;
+    end
+    
+endfunction
+
 /*
  * Latency refers to the number of clock cycles between the last input and first output (see tp_ntt_tb.sv)
  */
@@ -70,11 +99,11 @@ function int tp_ntt_lat(input tp_ntt_params_t params);
     butterfly_params_t butterfly_params = tp_ntt_butterfly_params(params);
     int butterfly_lat_plus1 = butterfly_lat(butterfly_params) + 1;
     if (tp_ntt_dim(params) == DIM_2D)
-        tp_ntt_lat = (butterfly_lat_plus1 * params.LOGN) + 9 + 2 + 3;
+        tp_ntt_lat = (butterfly_lat_plus1 * params.LOGN) + 9 + 2 + 3 + LAT0 + LAT1 + (1<<(params.LOGN-params.LOGTP)) + 8;
     else if (tp_ntt_dim(params) == DIM_3D)
-        tp_ntt_lat = (butterfly_lat_plus1 * params.LOGN) + tp_ntt_d1(params) + 15 + 3 + 3;
+        tp_ntt_lat = (butterfly_lat_plus1 * params.LOGN) + tp_ntt_d1(params) + 15 + 3 + 3 + LAT0 + LAT1 + LAT2 + (1<<(params.LOGN-params.LOGTP)) + 8;
     else
-        tp_ntt_lat = (butterfly_lat_plus1 * params.LOGN) + tp_ntt_d1(params) + tp_ntt_d2(params) + 21 + 4 + 3;
+        tp_ntt_lat = (butterfly_lat_plus1 * params.LOGN) + tp_ntt_d1(params) + tp_ntt_d2(params) + 21 + 4 + 3 +  LAT0 + LAT1 + LAT2 + LAT3 + (1<<(params.LOGN-params.LOGTP)) + 8;
 endfunction
 
 

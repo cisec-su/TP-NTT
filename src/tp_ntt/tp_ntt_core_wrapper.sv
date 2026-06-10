@@ -5,6 +5,8 @@ module tp_ntt_core_wrapper#(
         parameter LOGN          = 10,
         parameter LOGN1         = 6,
         parameter LOGN2         = 4,
+        parameter LOG_GLOBAL_N2 = 6,
+        parameter LOG_GLOBAL_N3 = 6,
         parameter LOGTP         = 6,
         parameter LOGQ          = 60,
         parameter LOGQH         = 17,
@@ -38,6 +40,20 @@ localparam DEPTH_LOG                =  $clog2(N/TP) + 1;
 localparam REG_CTR                  = $clog2(SIZE0_OVER_TP) + 1;
 localparam BRAM_REG_SIZE            =  (TP/N1)*(N1-1);
 localparam ITER_PART_NUM_TOT        = (DIM == DIM_2D) ? 2 : ((DIM == DIM_3D) ? 3 : 4);
+localparam LOG_NEEDED_GLOBAL_N2     = LOG_GLOBAL_N2;
+localparam LOG_NEEDED_GLOBAL_N3     = LOG_GLOBAL_N3;
+localparam TWID_LOAD_CTR            = (DIM == DIM_2D) ? (BLOCK_ID == 0) ? 1         : (BLOCK_ID == 1) ? DEPTH : 0 : (DIM == DIM_3D) ? (BLOCK_ID == 0) ? 1       : (BLOCK_ID == 1) ? 1<<LOG_NEEDED_GLOBAL_N2    : (BLOCK_ID == 2) ? DEPTH   : 0 : (DIM == DIM_4D) ? (BLOCK_ID == 0) ? 1       : (BLOCK_ID == 1) ? 1<<LOG_NEEDED_GLOBAL_N2 : (BLOCK_ID == 2) ? DEPTH                   :  (BLOCK_ID == 3) ? DEPTH  : 0 : 0;
+localparam TWID_LOAD_INV_CTR        = (DIM == DIM_2D) ? (BLOCK_ID == 0) ? DEPTH     : (BLOCK_ID == 1) ? 1     : 0 : (DIM == DIM_3D) ? (BLOCK_ID == 0) ? DEPTH   : (BLOCK_ID == 1) ? DEPTH       : (BLOCK_ID == 2) ? 1       : 0 : (DIM == DIM_4D) ? (BLOCK_ID == 0) ? DEPTH   : (BLOCK_ID == 1) ? DEPTH                   : (BLOCK_ID == 2) ? 1<<LOG_NEEDED_GLOBAL_N3 :  (BLOCK_ID == 3) ? 1      : 0 : 0;
+//localparam W_R_DEPTH                = (TWID_LOAD_CTR == 1) ? 1 : $clog2(TWID_LOAD_CTR);
+localparam W_R_DEPTH                = DEPTH_LOG-1;
+localparam BRAM_DEPTH_LOG2          = W_R_DEPTH;
+localparam BRAM_DEPTH               = 1 << W_R_DEPTH;
+localparam WRITE_TWIDDLE_START      = (DIM == DIM_2D) ? (BLOCK_ID == 0) ? 0         : (BLOCK_ID == 1) ? 1       : 0 : (DIM == DIM_3D) ? (BLOCK_ID == 0) ? 0         : (BLOCK_ID == 1) ? 1               : (BLOCK_ID == 2) ? 1+(1<<LOG_NEEDED_GLOBAL_N2)            : 0 : (DIM == DIM_4D) ? (BLOCK_ID == 0) ? 0     : (BLOCK_ID == 1) ? 1                               : (BLOCK_ID == 2) ? 1+(1<<LOG_NEEDED_GLOBAL_N2)                     : (BLOCK_ID == 3) ?  1+(1<<LOG_NEEDED_GLOBAL_N2)+DEPTH              : 0 : 0;
+localparam WRITE_TWIDDLE_END        = (DIM == DIM_2D) ? (BLOCK_ID == 0) ? 1         : (BLOCK_ID == 1) ? DEPTH+1 : 0 : (DIM == DIM_3D) ? (BLOCK_ID == 0) ? 1         : (BLOCK_ID == 1) ? 1+(1<<LOG_NEEDED_GLOBAL_N2)    : (BLOCK_ID == 2) ? 1+(1<<LOG_NEEDED_GLOBAL_N2)+DEPTH      : 0 : (DIM == DIM_4D) ? (BLOCK_ID == 0) ? 1     : (BLOCK_ID == 1) ? 1+(1<<LOG_NEEDED_GLOBAL_N2)     : (BLOCK_ID == 2) ? 1+(1<<LOG_NEEDED_GLOBAL_N2)+DEPTH               : (BLOCK_ID == 3) ?  1+(1<<LOG_NEEDED_GLOBAL_N2)+DEPTH+DEPTH        : 0 : 0;
+localparam WRITE_TWIDDLE_INV_START  = (DIM == DIM_2D) ? (BLOCK_ID == 0) ? 0         : (BLOCK_ID == 1) ? DEPTH   : 0 : (DIM == DIM_3D) ? (BLOCK_ID == 0) ? 0         : (BLOCK_ID == 1) ? DEPTH           : (BLOCK_ID == 2) ? DEPTH+DEPTH             : 0 : (DIM == DIM_4D) ? (BLOCK_ID == 0) ? 0     : (BLOCK_ID == 1) ? DEPTH                           : (BLOCK_ID == 2) ? DEPTH + DEPTH                                   : (BLOCK_ID == 3) ?  DEPTH + DEPTH + (1<<LOG_NEEDED_GLOBAL_N3)      : 0 : 0;
+localparam WRITE_TWIDDLE_INV_END    = (DIM == DIM_2D) ? (BLOCK_ID == 0) ? DEPTH     : (BLOCK_ID == 1) ? DEPTH+1 : 0 : (DIM == DIM_3D) ? (BLOCK_ID == 0) ? DEPTH     : (BLOCK_ID == 1) ? DEPTH+DEPTH     : (BLOCK_ID == 2) ? DEPTH+DEPTH+1           : 0 : (DIM == DIM_4D) ? (BLOCK_ID == 0) ? DEPTH : (BLOCK_ID == 1) ? DEPTH+DEPTH                     : (BLOCK_ID == 2) ? DEPTH + DEPTH + (1<<LOG_NEEDED_GLOBAL_N3)       : (BLOCK_ID == 3) ?  DEPTH + DEPTH + (1<<LOG_NEEDED_GLOBAL_N3) + 1  : 0 : 0;
+localparam TWID_TOTAL_CTR           = (DIM == DIM_2D) ? 1 + DEPTH : (DIM == DIM_3D) ? 1+(1<<LOG_NEEDED_GLOBAL_N2)+DEPTH : (DIM == DIM_4D) ? 1 + (1<<LOG_NEEDED_GLOBAL_N2) + DEPTH + DEPTH : 0;
+localparam TWID_TOTAL_INV_CTR       = (DIM == DIM_2D) ? 1 + DEPTH : (DIM == DIM_3D) ? DEPTH+DEPTH+1                     : (DIM == DIM_4D) ? 1 + (1<<LOG_NEEDED_GLOBAL_N3) + DEPTH + DEPTH : 0;
 
 // states
 localparam OP_IDLE                  = 2'd0;
@@ -51,6 +67,8 @@ reg [1:0] OP_TYPE;
 
 reg [1:0] curr_state, next_state;
 
+reg [1:0] curr_state_twid, next_state_twid;
+
 reg [LOGQ-1:0]                  di00     [TP-1:0];
 wire[LOGQ-1:0]                  do00     [TP-1:0];
 reg [REG_CTR-1:0]               dw00     [TP-1:0];
@@ -60,12 +78,12 @@ reg                             de00     [TP-1:0];
 
 reg [LOGQ-1:0]                  bi0     [BRAM_REG_SIZE-1:0];
 wire[LOGQ-1:0]                  bo0     [BRAM_REG_SIZE-1:0];
-reg [N_OVER_TP_LOG2-1:0]        bw0     [BRAM_REG_SIZE-1:0];
-reg [N_OVER_TP_LOG2-1:0]        br0     [BRAM_REG_SIZE-1:0];
+reg [W_R_DEPTH-1:0]             bw0     [BRAM_REG_SIZE-1:0];
+reg [W_R_DEPTH-1:0]             br0     [BRAM_REG_SIZE-1:0];
 reg                             be0     [BRAM_REG_SIZE-1:0];
 
 
-reg [DEPTH_LOG:0] ctr;
+reg [DEPTH_LOG:0] ctr, ctr_twid;
 
 reg [TP*LOGQ-1:0] NTT_core_in;
 wire [TP*LOGQ-1:0] NTT_core_out;
@@ -83,9 +101,6 @@ always @(posedge clk or posedge rst) begin
         ctr <= 0;
     end else begin
         case (curr_state)
-            OP_TWIDDLE_LOAD: begin
-                ctr <= ctr + 1;
-            end 
             OP_STARTED: begin
                 ctr <= ctr + 1;
             end
@@ -101,12 +116,37 @@ always @(posedge clk or posedge rst) begin
     end
 end
 
+always @(posedge clk or posedge rst) begin
+    if (rst) begin
+        ctr_twid <= 0;
+    end else begin
+        case (curr_state_twid)
+            OP_LOAD_TWIDDLE: begin
+                ctr_twid <= ctr_twid + 1;
+            end
+            default: begin
+                ctr_twid <= 0;
+            end
+            
+        endcase
+        
+    end
+end
+
 always @(posedge clk) 
 begin
     if(rst)
         curr_state <= OP_IDLE;
     else
         curr_state <= next_state;
+end
+
+always @(posedge clk) 
+begin
+    if(rst)
+        curr_state_twid <= OP_IDLE;
+    else
+        curr_state_twid <= next_state_twid;
 end
 
 
@@ -124,29 +164,21 @@ always @(*) begin
     next_state = curr_state;
     case (curr_state)
         OP_IDLE: begin
-            case (op)
-                OP_NTT: begin
-                    if (start) begin
-                        next_state = OP_STARTED;
-                    end else begin
+            if (start) begin
+                next_state = OP_STARTED;
+            end 
+            else begin
+                case (op)
+                    OP_LOAD_Q: begin
+                        next_state = OP_Q_LOAD;
+                    end
+                    default: begin
                         next_state = OP_IDLE;
                     end
-                    
-                end 
-                OP_LOAD_TWIDDLE: begin
-                    next_state = OP_TWIDDLE_LOAD;
-                end
-                OP_LOAD_Q: begin
-                    next_state = OP_Q_LOAD;
-                end
-                default: begin
-                    next_state = OP_IDLE;
-                end
-            endcase
+                endcase
+            end
+            
         end 
-        OP_TWIDDLE_LOAD: begin
-            next_state = (ctr == (ITER_PART_NUM_TOT)*DEPTH-1) ? OP_IDLE : OP_TWIDDLE_LOAD;
-        end
         OP_STARTED: begin
             next_state = ((ctr[DEPTH_LOG-2:0]) == (DEPTH-1)) ? OP_IDLE : OP_STARTED;
         end
@@ -155,6 +187,30 @@ always @(*) begin
         end
         default: begin
             next_state = OP_IDLE;
+        end
+    endcase
+end
+
+
+// New Next State Logic
+always @(*) begin
+    next_state_twid = curr_state_twid;
+    case (curr_state_twid)
+        OP_IDLE: begin
+            case (op)
+                OP_LOAD_TWIDDLE: begin
+                    next_state_twid = OP_TWIDDLE_LOAD;
+                end
+                default: begin
+                    next_state_twid = OP_IDLE;
+                end
+            endcase
+        end 
+        OP_TWIDDLE_LOAD: begin
+            next_state_twid = (ctr_twid == TWID_TOTAL_CTR-1 && intt == 0) || (ctr_twid == TWID_TOTAL_INV_CTR-1 && intt == 1)  ? OP_IDLE : OP_TWIDDLE_LOAD;
+        end
+        default: begin
+            next_state_twid = OP_IDLE;
         end
     endcase
 end
@@ -183,16 +239,23 @@ end
 for (genvar i = 0; i < BRAM_REG_SIZE; i = i + 1) begin
 
     always @(posedge clk) begin
-        if (curr_state == OP_STARTED) begin
-            bi0[i]       <= 0;
-            bw0[i]       <= 0;
-            br0[i]       <= (ctr & (DEPTH-1));  
-        end
-        else if (curr_state == OP_TWIDDLE_LOAD) begin
+        if (curr_state_twid == OP_TWIDDLE_LOAD && ((ctr_twid >= WRITE_TWIDDLE_START && ctr_twid < WRITE_TWIDDLE_END && intt == 0  ) || (ctr_twid >= WRITE_TWIDDLE_INV_START && ctr_twid < WRITE_TWIDDLE_INV_END && intt == 1) )) begin
             bi0[i]       <= psi[(TP-1-i)*LOGQ-1-:LOGQ];
-            bw0[i]       <= (ctr & (DEPTH-1));
+            bw0[i]       <= (intt == 0) ? ((ctr_twid-WRITE_TWIDDLE_START) & (TWID_LOAD_CTR-1)) : ((ctr_twid-WRITE_TWIDDLE_INV_START) & (TWID_LOAD_INV_CTR-1)); 
+        end
+        else begin
+            bi0[i]       <= 0;
+            bw0[i]       <= 0;  
+        end
+        
+        if (curr_state == OP_STARTED) begin
+            br0[i]       <= (intt == 0) ? ((ctr) & (TWID_LOAD_CTR-1)) : ((ctr) & (TWID_LOAD_INV_CTR-1)); 
+        end
+        else begin
             br0[i]       <= 0;  
         end
+
+
         
     end
 
@@ -200,9 +263,9 @@ for (genvar i = 0; i < BRAM_REG_SIZE; i = i + 1) begin
         if (rst) begin
             be0[i]       <= 0;
         end else begin
-            case (curr_state)
+            case (curr_state_twid)
                 OP_TWIDDLE_LOAD: begin
-                    if ((ctr >= (BLOCK_ID << (DEPTH_LOG-1))) && (ctr < (BLOCK_ID + 1) << (DEPTH_LOG-1))) begin
+                    if (((ctr_twid >= WRITE_TWIDDLE_START && ctr_twid < WRITE_TWIDDLE_END && intt == 0  ) || (ctr_twid >= WRITE_TWIDDLE_INV_START && ctr_twid < WRITE_TWIDDLE_INV_END && intt == 1) )) begin
                         be0[i]       <= 1'b1;
                     end
                     else begin
@@ -228,16 +291,16 @@ end
 if (LARGE) begin
     for (genvar i = 0; i < TP; i = i + 1) begin
         always @(posedge clk) begin
-            NTT_core_in[(TP-i)*LOGQ-1-:LOGQ] <= i_poly[(TP - (((i/N1)*N1 + (i & 1'd1)*(N1/2) + (i & (N1-1))/2)  & (TP-1)))*LOGQ-1-:LOGQ] ;
+            NTT_core_in[(TP-(((i & (1'd1)) + ((i&(N1-1))&(2'd3))/2*(N1/2) + ((i&(N1-1))&(3'D7))/4*(N1/4) + ((i&(N1-1))&4'd15)/8*(N1/8) + ((i&(N1-1))&5'd31)/16*(N1/16) + (((i%N1)&(6'd63))/32)*(N1/32) + (((i&(N1-1))&7'd127)/64)*(N1/64) + ((i&(N1-1))/128)*(N1/128) + (i/N1)*N1) & (TP-1)))*LOGQ-1-:LOGQ] <= i_poly[(TP - (i))*LOGQ-1-:LOGQ] ;
         end
     end
 end else begin
     for (genvar i = 0; i < TP; i = i + 1) begin
         always @(posedge clk) begin
             if (RW_DIS) begin
-                NTT_core_in[( TP - (((i & (N1/2-1))*2 + (i & (N1-1))/(N1/2) + (i/N1)*N1) & (TP-1)) )*LOGQ-1             -:LOGQ]    <= i_poly[(TP-i)*LOGQ-1-:LOGQ];
+                NTT_core_in[( TP - (((i & (1'd1)) + (i&(2'd3))/2*(TP/2) + (i&(3'd7))/4*(TP/4) + (i&4'd15)/8*(TP/8) + (i&5'd31)/16*(TP/16) + (i&6'd63)/32*(TP/32) + (i&7'd127)/64*(TP/64) + (i/128)*(TP/128)) & (TP-1)) )*LOGQ-1             -:LOGQ]    <= i_poly[(TP-i)*LOGQ-1-:LOGQ];
             end else begin
-                NTT_core_in[( TP - ((((i & (N2-1))*N1) + (i/(TP>>1)) + ((i & ((TP>>1)-1))/(TP/N1))*2) & (TP-1)) )*LOGQ-1-:LOGQ]    <= i_poly[(TP-i)*LOGQ-1-:LOGQ];
+                NTT_core_in[( TP - (((i & (1'd1)) + (i&(2'd3))/2*(TP/2) + (i&(3'd7))/4*(TP/4) + (i&4'd15)/8*(TP/8) + (i&5'd31)/16*(TP/16) + (i&6'd63)/32*(TP/32) + (i&7'd127)/64*(TP/64) + (i/128)*(TP/128)) & (TP-1)) )*LOGQ-1-:LOGQ]    <= i_poly[(TP-i)*LOGQ-1-:LOGQ];
             end
         end
     end
@@ -249,9 +312,9 @@ end
 
 for (genvar b2 = 0; b2 < BRAM_REG_SIZE; b2 = b2 + 1) begin: BRAM_GEN_BLOCK_TWIDDLE // BRAM for TWIDDLE
    BRAM #(
-    .DSIZE (LOGQ                  ),
-    .MSIZE (N >> LOGTP            ),
-    .DEPTH ($clog2(N >> LOGTP)    )
+    .DSIZE (LOGQ                       ),
+    .MSIZE (BRAM_DEPTH                 ),
+    .DEPTH (BRAM_DEPTH_LOG2            )
 ) bt000 (
     .clk   (clk            ),
     .wen   (be0[b2]        ),
